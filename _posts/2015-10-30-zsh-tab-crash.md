@@ -13,7 +13,7 @@ comments: true
 
 言归正传，对于tab自动补全crash的解决，需要执行以下的命令：
 
-{% highlight html %}
+{% highlight sh %}
 autoload -U compinit && compinit
 {% endhighlight %}
 
