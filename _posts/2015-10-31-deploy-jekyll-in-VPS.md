@@ -1,6 +1,6 @@
 ---
 layout: post
-title: VPS部署jekylldeply
+title: VPS部署jekyll
 description: "jekyll VPS"
 modified: 2015-10-31
 tags: [博客, Blog]
