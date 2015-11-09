@@ -9,13 +9,13 @@ comments: true
 
 小项目也有可能会分很多小的module开发，毕竟Maven早就支持了Aggregator Project。
 
-```
+{% highlight sh %}
 project
 |
 |--web module
 |--serviceA module
 |--serviceB module
-```
+{% endhighlight %}
 
 在Service比较复杂，比如封装了第三方接口的提供内部服务的情况下，我一般会单开一个module来管理代码。就算哪天这个第三方不用了，也不用去动主要业务代码。而且单独测试也容易的多。
 
