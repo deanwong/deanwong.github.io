@@ -10,8 +10,6 @@ comments: true
 经过一天的折腾，终于实现在VPS上搭建一个基于jekyll的博客来替换wordpress。
 
 Digital Ocean[^1] 的很多文章帮了大忙了
-[^1]: <https://www.digitalocean.com>
-
 
 ### 1. 创建用户(optional)
 如果觉得可以一直用root的话可以跳过这一步了。
@@ -65,3 +63,4 @@ gems :
 {% endhighlight %}
 
 重启build一把，ok。
+ [^1]: <https://www.digitalocean.com>
