@@ -46,6 +46,6 @@ PS:
 
 备忘一下JVM导入密匙的代码
 先通过浏览器下载证书，执行
-```
+{% highlight bash %}
 sudo keytool -import -alias "elongAPI" -keystore /Library/Java/JavaVirtualMachines/jdk1.7.0_75.jdk/Contents/Home/jre/lib/security/cacerts -file /Users/wangding/Downloads/api.elong.com.cer
-```
+{% endhighlight %}
