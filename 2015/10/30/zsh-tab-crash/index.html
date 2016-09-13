@@ -70,7 +70,7 @@
 <link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Mac," />
+  <meta name="keywords" content="Hexo, NexT" />
 
 
 
@@ -86,25 +86,22 @@
 
 
 
-<meta name="description" content="最近被这个问题折磨了两天。
-因为之前装了autojump，后来又卸载了才导致的，这里推荐使用z，因为oh my zsh自带这个插件，编辑~/.zshrc文件，在plugins=(git)这行中加上z变成plugins=(git z)，然后source ~/.zshrc重新加载配置文件，就好了。
-言归正传，对于tab自动补全crash的解决，需要执行以下的命令：
-1autoload -U compi">
+<meta name="description" content="—.shlayout: posttitle: zsh在Mac上tab补全不work的办法modified: 2015-10-30tags: [Mac]
+comments: true最近被这个问题折磨了两天。
+因为之前装了autojump，后来又卸载了才导致的，这里推荐使用z，因为oh my zsh自带这个插件，编辑~/.zshrc文件，在plugins=(git)这行中加上z变成plugins=(">
 <meta property="og:type" content="article">
-<meta property="og:title" content="zsh在Mac上tab补全不work的办法">
+<meta property="og:title" content="大名Dean鼎">
 <meta property="og:url" content="http://www.deanwangpro.com/2015/10/30/zsh-tab-crash/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
-<meta property="og:description" content="最近被这个问题折磨了两天。
-因为之前装了autojump，后来又卸载了才导致的，这里推荐使用z，因为oh my zsh自带这个插件，编辑~/.zshrc文件，在plugins=(git)这行中加上z变成plugins=(git z)，然后source ~/.zshrc重新加载配置文件，就好了。
-言归正传，对于tab自动补全crash的解决，需要执行以下的命令：
-1autoload -U compi">
-<meta property="og:updated_time" content="2016-09-13T15:55:21.000Z">
+<meta property="og:description" content="—.shlayout: posttitle: zsh在Mac上tab补全不work的办法modified: 2015-10-30tags: [Mac]
+comments: true最近被这个问题折磨了两天。
+因为之前装了autojump，后来又卸载了才导致的，这里推荐使用z，因为oh my zsh自带这个插件，编辑~/.zshrc文件，在plugins=(git)这行中加上z变成plugins=(">
+<meta property="og:updated_time" content="2016-09-13T16:05:20.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="zsh在Mac上tab补全不work的办法">
-<meta name="twitter:description" content="最近被这个问题折磨了两天。
-因为之前装了autojump，后来又卸载了才导致的，这里推荐使用z，因为oh my zsh自带这个插件，编辑~/.zshrc文件，在plugins=(git)这行中加上z变成plugins=(git z)，然后source ~/.zshrc重新加载配置文件，就好了。
-言归正传，对于tab自动补全crash的解决，需要执行以下的命令：
-1autoload -U compi">
+<meta name="twitter:title" content="大名Dean鼎">
+<meta name="twitter:description" content="—.shlayout: posttitle: zsh在Mac上tab补全不work的办法modified: 2015-10-30tags: [Mac]
+comments: true最近被这个问题折磨了两天。
+因为之前装了autojump，后来又卸载了才导致的，这里推荐使用z，因为oh my zsh自带这个插件，编辑~/.zshrc文件，在plugins=(git)这行中加上z变成plugins=(">
 
 
 
@@ -127,7 +124,7 @@
 
   <link rel="canonical" href="http://www.deanwangpro.com/2015/10/30/zsh-tab-crash/"/>
 
-  <title> zsh在Mac上tab补全不work的办法 | 大名Dean鼎 </title>
+  <title>  | 大名Dean鼎 </title>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="en">
@@ -256,7 +253,7 @@
             
             
               
-                zsh在Mac上tab补全不work的办法
+                
               
             
           </h1>
@@ -303,7 +300,8 @@
       
 
       
-        <p>最近被这个问题折磨了两天。</p>
+        <p>—.sh<br>layout: post<br>title: zsh在Mac上tab补全不work的办法<br>modified: 2015-10-30<br>tags: [Mac]</p>
+<h2 id="comments-true"><a href="#comments-true" class="headerlink" title="comments: true"></a>comments: true</h2><p>最近被这个问题折磨了两天。</p>
 <p>因为之前装了autojump，后来又卸载了才导致的，这里推荐使用z，因为oh my zsh自带这个插件，编辑<code>~/.zshrc</code>文件，在<code>plugins=(git)</code>这行中加上<code>z</code>变成<code>plugins=(git z)</code>，然后<code>source ~/.zshrc</code>重新加载配置文件，就好了。</p>
 <p>言归正传，对于tab自动补全crash的解决，需要执行以下的命令：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">autoload -U compinit &amp;&amp; compinit</div></pre></td></tr></table></figure>
@@ -327,12 +325,6 @@
     </div>
 
     <footer class="post-footer">
-      
-        <div class="post-tags">
-          
-            <a href="/tags/Mac/" rel="tag">#Mac</a>
-          
-        </div>
       
 
       
@@ -459,7 +451,7 @@
               
             
             
-              <p class="post-toc-empty">This post does not have a Table of Contents</p>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#comments-true"><span class="nav-number">1.</span> <span class="nav-text">comments: true</span></a></li></ol></div>
             
           </div>
         </section>
@@ -587,7 +579,7 @@
     <script type="text/javascript">
       var disqus_shortname = 'wangdean';
       var disqus_identifier = '2015/10/30/zsh-tab-crash/';
-      var disqus_title = "zsh在Mac上tab补全不work的办法";
+      var disqus_title = "";
       var disqus_url = 'http://www.deanwangpro.com/2015/10/30/zsh-tab-crash/';
 
       function run_disqus_script(disqus_script){
