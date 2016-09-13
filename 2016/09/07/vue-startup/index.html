@@ -1,0 +1,660 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="google-site-verification" content="6I4nQGwB4yLqPannMFWvXqWhKoRXMlOOaa5jtowR9Y0" />
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.0.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="JavaScript,Vue," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.0.1" />
+
+
+
+
+
+
+<meta name="description" content="近一个月拿Vue.JS做一个小项目练手。项目本身的server API是现成的，而且都是json格式，所以前端选型自然会选择MV*M的框架。由于做了一段时间的angular，感觉对于这个工期很短的项目angular显得有些庞大了。所以尝试了一下Vue.JS。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="vuejs前端开发的一些小坑">
+<meta property="og:url" content="http://www.deanwangpro.com/2016/09/07/vue-startup/index.html">
+<meta property="og:site_name" content="大名Dean鼎">
+<meta property="og:description" content="近一个月拿Vue.JS做一个小项目练手。项目本身的server API是现成的，而且都是json格式，所以前端选型自然会选择MV*M的框架。由于做了一段时间的angular，感觉对于这个工期很短的项目angular显得有些庞大了。所以尝试了一下Vue.JS。">
+<meta property="og:image" content="http://www.deanwangpro.com/images/14732664332786.jpg">
+<meta property="og:updated_time" content="2016-09-13T15:54:41.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="vuejs前端开发的一些小坑">
+<meta name="twitter:description" content="近一个月拿Vue.JS做一个小项目练手。项目本身的server API是现成的，而且都是json格式，所以前端选型自然会选择MV*M的框架。由于做了一段时间的angular，感觉对于这个工期很短的项目angular显得有些庞大了。所以尝试了一下Vue.JS。">
+<meta name="twitter:image" content="http://www.deanwangpro.com/images/14732664332786.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: 'Author'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://www.deanwangpro.com/2016/09/07/vue-startup/"/>
+
+  <title> vuejs前端开发的一些小坑 | 大名Dean鼎 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69554053-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">大名Dean鼎</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                vuejs前端开发的一些小坑
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">Posted on</span>
+            <time itemprop="dateCreated" datetime="2016-09-07T00:00:00+08:00" content="2016-09-07">
+              2016-09-07
+            </time>
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="/2016/09/07/vue-startup/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/09/07/vue-startup/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>近一个月拿Vue.JS做一个小项目练手。项目本身的server API是现成的，而且都是json格式，所以前端选型自然会选择MV*M的框架。由于做了一段时间的angular，感觉对于这个工期很短的项目angular显得有些庞大了。所以尝试了一下Vue.JS。</p>
+<a id="more"></a>
+<p>一开始上手确实极不适应，跟angular的思想有很多不一样的地方。</p>
+<ol>
+<li>最不习惯的就是component的概念，没有了page的概念，所有东西都是component，这个有点像React。</li>
+<li>不像angular管的那么宽，router，http之类的都要自己加library。</li>
+<li>构建用的是webpact，加上less-loader就可以自动build less代码，这一点很赞。安装好vue-cli之后<code>vue init</code>就可以建立一套脚手架。</li>
+</ol>
+<p><img src="/images/14732664332786.jpg" alt="建立后就是如图所见的结构"></p>
+<p>下面列一些遇到的坑</p>
+<h4 id="1-怎么使用第三方的JS，比如moment"><a href="#1-怎么使用第三方的JS，比如moment" class="headerlink" title="1.怎么使用第三方的JS，比如moment"></a>1.怎么使用第三方的JS，比如moment</h4><p>我在项目里面使用了<code>moment</code>做一些时间处理，如果载入这个<code>moment.js</code>，有两个选择</p>
+<ul>
+<li>传统的写法：在index.html</li>
+</ul>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">".."</span>&gt;</span><span class="undefined"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></div></pre></td></tr></table></figure>
+<ul>
+<li>Vue的写法：因为moment也是npm install的，所以在js的入口文件main.js写</li>
+</ul>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">window</span>.moment = <span class="built_in">require</span>(<span class="string">'moment'</span>)</div><div class="line"><span class="comment">// 任何地方都可以</span></div><div class="line"><span class="built_in">window</span>.moment.now()</div></pre></td></tr></table></figure>
+<h4 id="2-如何集成Less"><a href="#2-如何集成Less" class="headerlink" title="2.如何集成Less"></a>2.如何集成Less</h4><p>需要less-loader</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm install less-loader less --save-dev</div></pre></td></tr></table></figure>
+<p>在一个vue文件里可以这样写</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">&lt;style lang=<span class="string">"less"</span>&gt;</div><div class="line">  @<span class="keyword">import</span> <span class="string">'./assets/less/main.less'</span>;</div><div class="line"></div><div class="line">  .header-box &#123;</div><div class="line">    z-index: <span class="number">100</span>;</div><div class="line">    position: absolute;</div><div class="line">    width: <span class="number">100</span>%;</div><div class="line">    left: <span class="number">0</span>;</div><div class="line">    top: <span class="number">0</span>;</div><div class="line">  &#125;</div><div class="line"> &lt;<span class="regexp">/style&gt;</span></div></pre></td></tr></table></figure>
+<p>当然也可以加个scope，表示只在这个vue生效，不会污染到其他的component</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&lt;style scoped lang=<span class="string">"less"</span>&gt;</div></pre></td></tr></table></figure>
+<h4 id="3-图片放在哪儿"><a href="#3-图片放在哪儿" class="headerlink" title="3.图片放在哪儿"></a>3.图片放在哪儿</h4><p>放在static目录下</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">background-image: url("/static/images/slider-business-01.jpg");</div></pre></td></tr></table></figure>
+<p>这样引用就可以。</p>
+<h4 id="4-如果调用需要token的API"><a href="#4-如果调用需要token的API" class="headerlink" title="4.如果调用需要token的API"></a>4.如果调用需要token的API</h4><p>可以使用vue的http.interceptor</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">Vue.http.interceptors.push((request, next) =&gt; &#123;</div><div class="line">        <span class="comment">// ...</span></div><div class="line">        <span class="comment">// 可以把Token放到Header里</span></div><div class="line">        <span class="comment">// ...</span></div><div class="line">    next((response) =&gt; &#123;</div><div class="line">        <span class="comment">// ...</span></div><div class="line">        <span class="comment">// 请求发送后的处理逻辑</span></div><div class="line">        <span class="comment">// ...</span></div><div class="line">        <span class="comment">// 根据请求的状态，response参数会返回给successCallback或errorCallback</span></div><div class="line">        <span class="keyword">return</span> response</div><div class="line">    &#125;)</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
+<h4 id="5-登陆超时的调整"><a href="#5-登陆超时的调整" class="headerlink" title="5.登陆超时的调整"></a>5.登陆超时的调整</h4><p>在call一个service API时，如果超时了，一般会返回一个401或者其他的http code，我们可以通过写一个拦截器来统一处理。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">Vue.http.interceptors.push((request, next) =&gt; &#123;</div><div class="line">next((response) =&gt; &#123;</div><div class="line">    <span class="keyword">if</span> (response.code === <span class="number">401</span>) &#123;</div><div class="line">      Vue.$vux.alert.show(&#123;</div><div class="line">        title: <span class="string">'登陆超时'</span>,</div><div class="line">        content: <span class="string">'点击回到登陆页'</span>,</div><div class="line">        onHide () &#123;</div><div class="line">          <span class="built_in">window</span>.location.href = <span class="string">'/login'</span></div><div class="line">        &#125;</div><div class="line">      &#125;)</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> response</div><div class="line">  &#125;)</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
+<p>通过这样的一个拦截器就不用把这种代码写在每一个http请求方法里了。还有很多细节可以参考我当时学习的<a href="http://www.cnblogs.com/keepfool/p/5657065.html" target="_blank" rel="external">blog</a></p>
+<h4 id="6-调用API时的Loading怎么做"><a href="#6-调用API时的Loading怎么做" class="headerlink" title="6.调用API时的Loading怎么做"></a>6.调用API时的Loading怎么做</h4><p>其实还是用interceptor，通过修改isLoading这个变量的值来控制是否显示菊花图。<br>那么问题来了，isLoading是跨component的，这个时候就需要用到<a href="https://github.com/vuejs/vuex" target="_blank" rel="external">vuex</a>了，这是一个应用级别的状态机。<br>我在<code>App.vue</code>中放置一个loading图标</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="tag">&lt;<span class="name">loading</span> <span class="attr">:show</span>=<span class="string">"isLoading"</span> <span class="attr">position</span>=<span class="string">"absolute"</span>&gt;</span><span class="tag">&lt;/<span class="name">loading</span>&gt;</span></div></pre></td></tr></table></figure>
+<p>这时候isLoading从vuex中获得</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">vuex: &#123;</div><div class="line">      getters: &#123;</div><div class="line">        isLoading: (state) =&gt; state.isLoading</div><div class="line">      &#125;</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<p><code>store.js</code>里也定义这个state</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">const</span> state = &#123;</div><div class="line">  isLoading: <span class="literal">false</span></div><div class="line">&#125;</div><div class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="keyword">new</span> Vuex.Store(&#123;</div><div class="line">  state</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
+<p>剩下的就简单了，在interceptor里控制state.isLoading的值</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">Vue.http.interceptors.push((request, next) =&gt; &#123;</div><div class="line">  <span class="comment">// 显示loading</span></div><div class="line">  commit(<span class="string">'UPDATE_LOADING'</span>, <span class="literal">true</span>)</div><div class="line">  next((response) =&gt; &#123;</div><div class="line">    <span class="comment">// 不显示loading</span></div><div class="line">    commit(<span class="string">'UPDATE_LOADING'</span>, <span class="literal">false</span>)</div><div class="line">    <span class="keyword">return</span> response</div><div class="line">  &#125;)</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
+<h4 id="7-route-data-hook-VS-ready"><a href="#7-route-data-hook-VS-ready" class="headerlink" title="7.route data hook VS. ready"></a>7.route data hook VS. ready</h4><p>这个其实有各种各样的讨论，我个人经过实践觉得用route里的data勾子是比较好的，因为从生命周期角度说，data勾子比ready要早。所以一般组件初始化是在data勾子之后，但可能是比ready要早的。某些情况下，组件初始化就需要数据，这种时候大多用data hook。</p>
+<h4 id="8-computed有啥用"><a href="#8-computed有啥用" class="headerlink" title="8.computed有啥用"></a>8.computed有啥用</h4><p>挺有用的，特别是一些情况判断多的场景下，需要自己揣摩。</p>
+<h4 id="9-mount-local-module-vux"><a href="#9-mount-local-module-vux" class="headerlink" title="9.mount local module (vux)"></a>9.mount local module (vux)</h4><p>因为我是用了vux这套组件画UI，而vux是我fork的一个项目，所以就没有用<code>npm install</code>来安装，而是直接用本地的版本。<br>用npm link这个函数</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">cd</span> ~/projects/vux    <span class="comment"># go into the package directory</span></div><div class="line">npm link                    <span class="comment"># creates global link</span></div><div class="line"><span class="built_in">cd</span> ~/projects/myproject   <span class="comment"># go into some other package directory.</span></div><div class="line">npm link vux              <span class="comment"># link-install the package</span></div></pre></td></tr></table></figure>
+<p>这样在myproject就安装了vux了，跟<code>npm install vux</code>的效果一样。</p>
+<h4 id="10-SPA-nginx-404"><a href="#10-SPA-nginx-404" class="headerlink" title="10.SPA nginx 404"></a>10.SPA nginx 404</h4><p>最后写一个部署的问题，因为SPA这个项目其实都是以<code>index.html</code>为入口的，所以如果在nginx配置了一个如 <code>domain/login</code> 这样的URL，是会报404的，因为没有login.html。</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="section">server</span> &#123;</div><div class="line">    <span class="attribute">listen</span>       <span class="number">8000</span>;</div><div class="line">    <span class="attribute">root</span> /h5/dist;</div><div class="line">    <span class="attribute">location</span> / &#123;</div><div class="line">        <span class="attribute">try_files</span> <span class="variable">$uri</span> /index.html =<span class="number">404</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="attribute">location</span><span class="regexp"> ^~</span> /api &#123;</div><div class="line">        <span class="attribute">proxy_pass</span>   http://127.0.0.1:8080;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="attribute">error_page</span>   <span class="number">500</span> <span class="number">502</span> <span class="number">503</span> <span class="number">504</span>  /50x.html;</div><div class="line">    <span class="attribute">location</span> = /50x.html &#123;</div><div class="line">        <span class="attribute">root</span>   /usr/share/nginx/html;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>所以最重要的就是那一句<code>try_files</code>，一旦找不到相应的文件，就把流量引到<code>index.html</code>。这时候页面跳转其实是通过<code>vue-route</code>实现的，跟nginx就没关系了。就类似WordPress的请求都应该引到<code>index.php</code>一样。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/JavaScript/" rel="tag">#JavaScript</a>
+          
+            <a href="/tags/Vue/" rel="tag">#Vue</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/07/19/docker-for-mac/" rel="next" title="使用新版Docker for MAC">
+                <i class="fa fa-chevron-left"></i> 使用新版Docker for MAC
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar-cartoon.jpg"
+               alt="Dean Wang" />
+          <p class="site-author-name" itemprop="name">Dean Wang</p>
+          <p class="site-description motion-element" itemprop="description">理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">7</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">10</span>
+                <span class="site-state-item-name">tags</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-怎么使用第三方的JS，比如moment"><span class="nav-number">1.</span> <span class="nav-text">1.怎么使用第三方的JS，比如moment</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-如何集成Less"><span class="nav-number">2.</span> <span class="nav-text">2.如何集成Less</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-图片放在哪儿"><span class="nav-number">3.</span> <span class="nav-text">3.图片放在哪儿</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-如果调用需要token的API"><span class="nav-number">4.</span> <span class="nav-text">4.如果调用需要token的API</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-登陆超时的调整"><span class="nav-number">5.</span> <span class="nav-text">5.登陆超时的调整</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6-调用API时的Loading怎么做"><span class="nav-number">6.</span> <span class="nav-text">6.调用API时的Loading怎么做</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-route-data-hook-VS-ready"><span class="nav-number">7.</span> <span class="nav-text">7.route data hook VS. ready</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8-computed有啥用"><span class="nav-number">8.</span> <span class="nav-text">8.computed有啥用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9-mount-local-module-vux"><span class="nav-number">9.</span> <span class="nav-text">9.mount local module (vux)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#10-SPA-nginx-404"><span class="nav-number">10.</span> <span class="nav-text">10.SPA nginx 404</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Dean Wang</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="https://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.0.1"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.0.1"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.0.1"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.0.1"></script>
+
+
+
+  
+
+
+
+  
+
+    <script type="text/javascript">
+      var disqus_shortname = 'wangdean';
+      var disqus_identifier = '2016/09/07/vue-startup/';
+      var disqus_title = "vuejs前端开发的一些小坑";
+      var disqus_url = 'http://www.deanwangpro.com/2016/09/07/vue-startup/';
+
+      function run_disqus_script(disqus_script){
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      }
+
+      run_disqus_script('count.js');
+      
+        run_disqus_script('embed.js');
+      
+    </script>
+  
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
