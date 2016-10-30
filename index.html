@@ -249,6 +249,108 @@
             
               
                 
+                <a class="post-title-link" href="/2016/10/30/spring-featuretoggle/" itemprop="url">
+                  利用Spring的Conditional注解来实现FeatureToggle
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">Posted on</span>
+            <time itemprop="dateCreated" datetime="2016-10-30T00:00:00+08:00" content="2016-10-30">
+              2016-10-30
+            </time>
+          </span>
+
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>最近一个使用Spring的项目中需要进行性能调优。方式基本上是编写新的代码实现原来一样的业务逻辑，只是实现方式有一些调整，例如增加cache，优化算法等等。</p>
+<p>一开始大家希望直接在原有代码基础上修改，但是这样一来，就要跟上每周一次的发布节奏，一周搞定难度太大。于是决定拷贝出的package来重构。在没启用之前这个package下都是dead code。这样做的好处有几点：</p>
+<ul>
+<li>在调优后的code启用前，业务至少不会受影响。</li>
+<li>利用docker的特性，可以实现灰度发布，比如启动两个docker，一个是老的code，一个启用新的code，利用nginx实现分流。</li>
+<li>灰度发布后发现有紧急bug，只需要devOps修改一点配置，重启docker可以再切回老的code。</li>
+</ul>
+          <div class="post-more-link text-center">
+            <a class="btn" href="/2016/10/30/spring-featuretoggle/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
                 <a class="post-title-link" href="/2016/09/07/vue-startup/" itemprop="url">
                   vuejs前端开发的一些小坑
                 </a>
@@ -954,7 +1056,7 @@
         <nav class="site-state motion-element">
           <div class="site-state-item site-state-posts">
             <a href="/archives">
-              <span class="site-state-item-count">7</span>
+              <span class="site-state-item-count">8</span>
               <span class="site-state-item-name">posts</span>
             </a>
           </div>
