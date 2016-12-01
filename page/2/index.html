@@ -89,7 +89,7 @@
 <meta name="description" content="理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java &amp; PHP deveoper, Front-End Engineer， Music &amp; Movie &amp; Photograph lover">
 <meta property="og:type" content="website">
 <meta property="og:title" content="大名Dean鼎">
-<meta property="og:url" content="http://www.deanwangpro.com/archives/2015/10/index.html">
+<meta property="og:url" content="http://www.deanwangpro.com/page/2/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java &amp; PHP deveoper, Front-End Engineer， Music &amp; Movie &amp; Photograph lover">
 <meta name="twitter:card" content="summary">
@@ -122,13 +122,13 @@
 
 
 
-  <link rel="canonical" href="http://www.deanwangpro.com/archives/2015/10/"/>
+  <link rel="canonical" href="http://www.deanwangpro.com/page/2/"/>
 
 
 
 
 
-  <title> Archive | 大名Dean鼎 </title>
+  <title> 大名Dean鼎 </title>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="en">
@@ -158,7 +158,9 @@
     
   
 
-  <div class="container one-collumn sidebar-position-left  page-archive  ">
+  <div class="container one-collumn sidebar-position-left 
+   page-home 
+ ">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -237,103 +239,142 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
+  <section id="posts" class="posts-expand">
+    
+      
 
-  <section id="posts" class="posts-collapse">
-    <span class="archive-move-on"></span>
+  
 
-    <span class="archive-page-counter">
-      
-      
-      
-        
-      
-      Um..! 11 posts in total. Keep on posting.
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+  <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2015/10/30/zsh-tab-crash/">
+
+  <span style="display:none" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <meta itemprop="name" content="Dean Wang">
+    <meta itemprop="description" content="">
+    <meta itemprop="image" content="/images/avatar-cartoon.jpg">
+  </span>
+
+  <span style="display:none" itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+    <meta itemprop="name" content="大名Dean鼎">
+    <span style="display:none" itemprop="logo" itemscope itemtype="http://schema.org/ImageObject">
+      <img style="display:none;" itemprop="url image" alt="大名Dean鼎" src="">
     </span>
+  </span>
 
     
+      <header class="post-header">
 
-      
-      
-      
-
-      
         
-        <div class="collection-title">
-          <h2 class="archive-year motion-element" id="archive-year-2015">2015</h2>
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                
+                <a class="post-title-link" href="/2015/10/30/zsh-tab-crash/" itemprop="url">
+                  zsh在Mac上tab补全不work的办法
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2015-10-30T00:00:00+08:00">
+                2015-10-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <a href="/2015/10/30/zsh-tab-crash/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/10/30/zsh-tab-crash/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+
+          
+
         </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
       
       
 
       
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h1 class="post-title">
         
-            <a class="post-title-link" href="/2015/10/31/deploy-jekyll-in-VPS/" itemprop="url">
-              
-                <span itemprop="name">VPS部署jekyll</span>
-              
-            </a>
+          
+            <p>最近被这个问题折磨了两天。</p>
+<p>因为之前装了autojump，后来又卸载了才导致的，这里推荐使用z，因为oh my zsh自带这个插件，编辑<code>~/.zshrc</code>文件，在<code>plugins=(git)</code>这行中加上<code>z</code>变成<code>plugins=(git z)</code>，然后<code>source ~/.zshrc</code>重新加载配置文件，就好了。</p>
+<p>言归正传，对于tab自动补全crash的解决，需要执行以下的命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">autoload -U compinit &amp;&amp; compinit</div></pre></td></tr></table></figure>
+<p>如果重启以后又不工作的话，把这条命令加入到 ~/.zshrc 中。</p>
+
+          
         
-      </h1>
+      
+    </div>
 
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated"
-              datetime="2015-10-31T00:00:00+08:00"
-              content="2015-10-31" >
-          10-31
-        </time>
-      </div>
+    <div>
+      
+    </div>
 
-    </header>
+    <div>
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
   </article>
 
 
-
     
-
-      
-      
-      
-
-      
-      
-
-      
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <h1 class="post-title">
-        
-            <a class="post-title-link" href="/2015/10/30/zsh-tab-crash/" itemprop="url">
-              
-                <span itemprop="name">zsh在Mac上tab补全不work的办法</span>
-              
-            </a>
-        
-      </h1>
-
-      <div class="post-meta">
-        <time class="post-time" itemprop="dateCreated"
-              datetime="2015-10-30T00:00:00+08:00"
-              content="2015-10-30" >
-          10-30
-        </time>
-      </div>
-
-    </header>
-  </article>
-
-
-
-    
-
   </section>
 
   
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+  </nav>
 
 
 
@@ -522,12 +563,6 @@
   
 
   
-  
-    <script type="text/javascript" id="motion.page.archive">
-      $('.archive-year').velocity('transition.slideLeftIn');
-    </script>
-  
-
 
   
 

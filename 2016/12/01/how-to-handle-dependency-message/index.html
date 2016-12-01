@@ -1,0 +1,777 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="google-site-verification" content="6I4nQGwB4yLqPannMFWvXqWhKoRXMlOOaa5jtowR9Y0" />
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Java,MQ," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="在项目中踏完一系列坑后总结出来，消息的处理有两个要务：
+
+消费一定要快，我们喜欢供小于求的市场。生产者生产的消息要满足不了消费者才行。
+任何消息都不能丢，因为这都是数据啊，即使处理不了也得找地方存着。最好每次的消息都存着，之后就变成了event sourcing（另一个大坑）。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何处理有依赖的消息">
+<meta property="og:url" content="http://www.deanwangpro.com/2016/12/01/how-to-handle-dependency-message/index.html">
+<meta property="og:site_name" content="大名Dean鼎">
+<meta property="og:description" content="在项目中踏完一系列坑后总结出来，消息的处理有两个要务：
+
+消费一定要快，我们喜欢供小于求的市场。生产者生产的消息要满足不了消费者才行。
+任何消息都不能丢，因为这都是数据啊，即使处理不了也得找地方存着。最好每次的消息都存着，之后就变成了event sourcing（另一个大坑）。">
+<meta property="og:updated_time" content="2016-12-01T16:02:30.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="如何处理有依赖的消息">
+<meta name="twitter:description" content="在项目中踏完一系列坑后总结出来，消息的处理有两个要务：
+
+消费一定要快，我们喜欢供小于求的市场。生产者生产的消息要满足不了消费者才行。
+任何消息都不能丢，因为这都是数据啊，即使处理不了也得找地方存着。最好每次的消息都存着，之后就变成了event sourcing（另一个大坑）。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '384049',
+      author: 'Dean'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.deanwangpro.com/2016/12/01/how-to-handle-dependency-message/"/>
+
+
+
+
+
+  <title> 如何处理有依赖的消息 | 大名Dean鼎 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69554053-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">大名Dean鼎</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+  <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2016/12/01/how-to-handle-dependency-message/">
+
+  <span style="display:none" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <meta itemprop="name" content="Dean Wang">
+    <meta itemprop="description" content="">
+    <meta itemprop="image" content="/images/avatar-cartoon.jpg">
+  </span>
+
+  <span style="display:none" itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+    <meta itemprop="name" content="大名Dean鼎">
+    <span style="display:none" itemprop="logo" itemscope itemtype="http://schema.org/ImageObject">
+      <img style="display:none;" itemprop="url image" alt="大名Dean鼎" src="">
+    </span>
+  </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                如何处理有依赖的消息
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2016-12-01T00:00:00+08:00">
+                2016-12-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <a href="/2016/12/01/how-to-handle-dependency-message/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/12/01/how-to-handle-dependency-message/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>在项目中踏完一系列坑后总结出来，消息的处理有两个要务：</p>
+<ol>
+<li>消费一定要快，我们喜欢供小于求的市场。生产者生产的消息要满足不了消费者才行。</li>
+<li>任何消息都不能丢，因为这都是数据啊，即使处理不了也得找地方存着。最好每次的消息都存着，之后就变成了event sourcing（另一个大坑）。</li>
+</ol>
+<a id="more"></a>
+<p>要实现上述2点，其实要解决很多问题。一个<strong>快</strong>字就不是那么做到的。业务系统收到消息有可能会触发一连串的，并且包裹着<strong>事务</strong>的逻辑。因为通常我们希望如果这一连串的处理失败的话，可以把ack退回给MQ。一旦业务逻辑过于复杂，work消费消息的速度也会变慢。这就需要开发人员去做权衡了，是不是有些非常heavy的操作可以先记一笔，等业务不繁忙的时候再做。具体实现不在这篇讨论。</p>
+<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>回到主题，有一类消息最让人头疼，就是消息之间有依赖，关系一般为单向的父子关系。举个栗子，Product和SKU的关系，一个Product包含多个SKU。比如我们的业务逻辑是要监听这两个消息组成一颗树放到索引中。可想而知，这棵树肯定是至少两层结构，第一级是Product，下面挂着一个或多个SKU。</p>
+<p>一般来说，子结构如果是个单独的消息肯定会有个字段说明自己的parent id是什么。那么很自然的，我们在某一刻只收到一个SKU的Create事件，会去通过parent id找到索引中对应的Product，然后<strong>挂</strong>上去。问题来了，要是索引中没有对应的Product怎么办，消息是没有顺序的，可能是Product的Create事件还没处理到，或者是生产者出了bug消息没发出来造成的。这时SKU的消息就成了<strong>孤儿消息</strong>。</p>
+<h3 id="解决思路一"><a href="#解决思路一" class="headerlink" title="解决思路一"></a>解决思路一</h3><p>比较近粗暴的方式，就是利用SKU上的parent id虚拟出一个只有id的Product，由处理SKU事件的worker来帮忙创建这个Product。等下次Product的Create消息进来做一次更新就好了。（处理消息应该不要区分这是Create还是Update还是Delete，消费者就都当Update来做比较好，可以想想为什么）。</p>
+<p>当然这个思路一看就有点bad smell，从单一职责的角度上来看，处理SKU的worker应该只关注SKU，不应该关注Product。如果Product也是个<strong>孤儿</strong>怎么办呢？这个worker可能会越写越复杂。</p>
+<p><del>改进的话可以把创建虚拟Product的这个事情放到SKU这个对象中去做，实现以下setProduct这个方法。那么即使Product也有依赖，那Product自己也得有个setParent的方法，这样就可以递归下去了。</del>(之后想了一下无法处理多级关系，因为Product的消息没来，我们不知道它的parent id，父节点根本建不出来。所以思路一只能处理一个层级的依赖。)</p>
+<p>总结一下，<strong>思路一</strong>是一种不管三七二十一，谁也不能阻止我消费的路线，大不了自下而上的创建虚拟父节点。</p>
+<h3 id="解决思路二"><a href="#解决思路二" class="headerlink" title="解决思路二"></a>解决思路二</h3><p>相对思路一而言，这种思路还是比较优雅的，但是优雅不等于性能好。</p>
+<p>既然SKU是个<strong>孤儿</strong>，那么我们先收下来放<strong>孤儿院</strong>好了。新建一张<strong>孤儿院</strong>表：</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>parent_type</th>
+<th>parent_id</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>101010</td>
+<td>Product</td>
+<td>1010</td>
+</tr>
+<tr>
+<td>101011</td>
+<td>Product</td>
+<td>1010</td>
+</tr>
+</tbody>
+</table>
+<p>上面两条数据就是SKU的，然后为了提升一点性能我们得对对象分个类，一类是有依赖的，一类是无依赖的。没有依赖的直接消费就好，像Product，SKU这种有依赖的，都得打上标签（就是对象里写个isDependency）。例如一个SKU(101010)的消息进来，worker发现这是一个有依赖的消息，那么先拿parent id (1010)去找Product, 发现Product找不到就把这个SKU丢到<strong>孤儿院</strong>表里去。如果你是用OO的语言，这里其实可以抽象一下。一个BaseWorker，一个SKUWorker，BaseWork负责写个abstract的findParent()，SKUWorker去实现找Product的逻辑就好了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">BaseWorker</span>&lt;<span class="title">T</span>&gt; </span>&#123;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handle</span><span class="params">(T t)</span> </span>&#123;</div><div class="line">        <span class="keyword">if</span> (t.isDependency() &amp;&amp; findParent(t) == <span class="keyword">null</span>) &#123;</div><div class="line">            <span class="comment">// 送到孤儿院</span></div><div class="line">            takeToOrphanage(t);</div><div class="line">            <span class="keyword">return</span>;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">abstract</span> Entity <span class="title">findParent</span><span class="params">(T t)</span></span>;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">takeToOrphanage</span><span class="params">(T t)</span> </span>&#123;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>消息记录下来以后，Worker的工作就终止，等待下一条消息进来。过了几分钟，Product(1010)的消息过来了，这时候我们需要给BaseWorker再添加一些代码。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handle</span><span class="params">(T t)</span> </span>&#123;</div><div class="line">        <span class="keyword">if</span> (t.isDependency() &amp;&amp; findParent(t) == <span class="keyword">null</span>) &#123;</div><div class="line">            <span class="comment">// 送到孤儿院</span></div><div class="line">            takeToOrphanage(t);</div><div class="line">            <span class="keyword">return</span>;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="comment">// 正常业务...</span></div><div class="line"></div><div class="line">        <span class="comment">// 正常业务处理之后</span></div><div class="line">        <span class="keyword">if</span> (t.isDependency()) &#123;</div><div class="line">            List&lt;Entity&gt; children = findChildren(t);</div><div class="line">            <span class="keyword">if</span> (children != <span class="keyword">null</span>) &#123;</div><div class="line">                children.forEach(child -&gt; &#123;</div><div class="line">                    sendAsMessage(child);</div><div class="line">                &#125;);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">abstract</span> List&lt;Entity&gt; <span class="title">findChildren</span><span class="params">(T t)</span></span>;</div></pre></td></tr></table></figure>
+<p>我们增加一个findChildren方法，让ProductWorker去实现具体逻辑。handle()中增加的代码含义是，当Product这个消息消费完了以后，去<strong>孤儿院</strong>转一圈看看是不是有等待认领的孩子，简单的利用<code>parent_type</code>和<code>parent_id</code>就能查到。查到以后别直接处理，仍然是以消息的形式发出，让SKUWorker自己去handle，然后可以delete/soft-delete<strong>孤儿院</strong>中的记录。</p>
+<p>可以看到一个有依赖的消息我们在处理的过程，会多一次查询操作，性能多少会受点影响。之前的那次findParent查询其实思路一也有的，目的就是挂靠。</p>
+<p>再多一个层级看看是不是罩得住，<code>Category --&gt; Product --&gt; SKU</code> 三层。</p>
+<p>如果没有Category的消息进来，孤儿院里是酱紫的。</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>parent_type</th>
+<th>parent_id</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>101010</td>
+<td>Product</td>
+<td>1010</td>
+</tr>
+<tr>
+<td>101011</td>
+<td>Product</td>
+<td>1010</td>
+</tr>
+<tr>
+<td>1010</td>
+<td>Category</td>
+<td>10</td>
+</tr>
+</tbody>
+</table>
+<p>某一时刻Category的消息进来，CategoryWorker会先到表里查到一条1010的Product消息，把它send出来。ProductWorker收到之后再处理，紧接着又找到SKU的2条消息，再send出来，让SKUWorker去处理。可以看到，自带递归，多层级只要是单向依赖的肯定搞的定。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Java/" rel="tag"># Java</a>
+          
+            <a href="/tags/MQ/" rel="tag"># MQ</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/11/30/how-to-handle-dependency-message/" rel="next" title="如何处理有依赖的消息">
+                <i class="fa fa-chevron-left"></i> 如何处理有依赖的消息
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <div class="ds-share flat" data-thread-key="2016/12/01/how-to-handle-dependency-message/"
+     data-title="如何处理有依赖的消息"
+     data-content=""
+     data-url="http://www.deanwangpro.com/2016/12/01/how-to-handle-dependency-message/">
+  <div class="ds-share-inline">
+    <ul  class="ds-share-icons-16">
+
+      <li data-toggle="ds-share-icons-more"><a class="ds-more" href="javascript:void(0);">分享到：</a></li>
+      <li><a class="ds-weibo" href="javascript:void(0);" data-service="weibo">微博</a></li>
+      <li><a class="ds-qzone" href="javascript:void(0);" data-service="qzone">QQ空间</a></li>
+      <li><a class="ds-qqt" href="javascript:void(0);" data-service="qqt">腾讯微博</a></li>
+      <li><a class="ds-wechat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+
+    </ul>
+    <div class="ds-share-icons-more">
+    </div>
+  </div>
+</div>
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2016/12/01/how-to-handle-dependency-message/"
+           data-title="如何处理有依赖的消息" data-url="http://www.deanwangpro.com/2016/12/01/how-to-handle-dependency-message/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar-cartoon.jpg"
+               alt="Dean Wang" />
+          <p class="site-author-name" itemprop="name">Dean Wang</p>
+          <p class="site-description motion-element" itemprop="description">理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">11</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-name">tags</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#问题"><span class="nav-number">1.</span> <span class="nav-text">问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解决思路一"><span class="nav-number">2.</span> <span class="nav-text">解决思路一</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解决思路二"><span class="nav-number">3.</span> <span class="nav-text">解决思路二</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Dean Wang</span>
+</div>
+
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="https://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"deanwangpro"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+      
+      <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+      <script src="/js/src/hook-duoshuo.js?v=5.1.0"></script>
+    
+    
+    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
+    <script src="/js/src/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+</body>
+</html>
