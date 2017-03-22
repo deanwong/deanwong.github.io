@@ -94,7 +94,7 @@
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有答案.第一个高分回答表示各种位操作都看不懂。传说中的Hamming_weight算法。真是给跪了。
 突然想到Java的Inte">
-<meta property="og:updated_time" content="2016-11-14T15:53:47.000Z">
+<meta property="og:updated_time" content="2017-03-22T14:32:51.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="How to count the number of set bits in ASCII string">
 <meta name="twitter:description" content="这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有答案.第一个高分回答表示各种位操作都看不懂。传说中的Hamming_weight算法。真是给跪了。
@@ -306,7 +306,7 @@
               <span class="post-comments-count">
                 <span class="post-meta-divider">|</span>
                 <a href="/2016/11/14/asc-to-binary/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2016/11/14/asc-to-binary/" itemprop="commentCount"></span>
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/11/14/asc-to-binary/" itemprop="commentCount"></span>
                 </a>
               </span>
             
@@ -404,25 +404,6 @@
 
     <div class="post-spread">
       
-        <div class="ds-share flat" data-thread-key="2016/11/14/asc-to-binary/"
-     data-title="How to count the number of set bits in ASCII string"
-     data-content=""
-     data-url="http://www.deanwangpro.com/2016/11/14/asc-to-binary/">
-  <div class="ds-share-inline">
-    <ul  class="ds-share-icons-16">
-
-      <li data-toggle="ds-share-icons-more"><a class="ds-more" href="javascript:void(0);">分享到：</a></li>
-      <li><a class="ds-weibo" href="javascript:void(0);" data-service="weibo">微博</a></li>
-      <li><a class="ds-qzone" href="javascript:void(0);" data-service="qzone">QQ空间</a></li>
-      <li><a class="ds-qqt" href="javascript:void(0);" data-service="qqt">腾讯微博</a></li>
-      <li><a class="ds-wechat" href="javascript:void(0);" data-service="wechat">微信</a></li>
-
-    </ul>
-    <div class="ds-share-icons-more">
-    </div>
-  </div>
-</div>
-      
     </div>
   </div>
 
@@ -434,8 +415,11 @@
           
   <div class="comments" id="comments">
     
-      <div class="ds-thread" data-thread-key="2016/11/14/asc-to-binary/"
-           data-title="How to count the number of set bits in ASCII string" data-url="http://www.deanwangpro.com/2016/11/14/asc-to-binary/">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
       </div>
     
   </div>
@@ -634,36 +618,38 @@
 
   
 
-  
-    
-  
 
-  <script type="text/javascript">
-    var duoshuoQuery = {short_name:"deanwangpro"};
-    (function() {
-      var ds = document.createElement('script');
-      ds.type = 'text/javascript';ds.async = true;
-      ds.id = 'duoshuo-script';
-      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
-      ds.charset = 'UTF-8';
-      (document.getElementsByTagName('head')[0]
-      || document.getElementsByTagName('body')[0]).appendChild(ds);
-    })();
-  </script>
 
   
-    
+
+    <script type="text/javascript">
+      var disqus_shortname = 'wangdean';
+      var disqus_identifier = '2016/11/14/asc-to-binary/';
+
+      var disqus_title = "How to count the number of set bits in ASCII string";
+
+
+      function run_disqus_script(disqus_script) {
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      }
+
+      run_disqus_script('count.js');
+
       
-      <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
-      <script src="/js/src/hook-duoshuo.js?v=5.1.0"></script>
-    
-    
-    <script src="/lib/ua-parser-js/dist/ua-parser.min.js?v=0.7.9"></script>
-    <script src="/js/src/hook-duoshuo.js"></script>
+        var disqus_config = function () {
+            this.page.url = disqus_url;
+            this.page.identifier = disqus_identifier;
+            this.page.title = disqus_title;
+        };
+        run_disqus_script('embed.js');
+      
+
+    </script>
   
-
-
-
 
 
 
