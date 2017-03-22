@@ -70,7 +70,7 @@
 <link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Java,Spring,Maven," />
+  <meta name="keywords" content="Java,wechat," />
 
 
 
@@ -86,19 +86,31 @@
 
 
 
-<meta name="description" content="小项目也有可能会分很多小的module开发，毕竟Maven早就支持了Aggregator Project。
-12345project||--web module|--serviceA module|--serviceB module">
+<meta name="description" content="微信火了这么久，这两周第一次从一个开发者的角度来研究微信的生态系统而不是应用本身。现在做国内的项目或者产品难免都需要集成微信，其实现在微信背后的支撑平台已经是非常繁杂的了：
+
+公众平台（订阅号、服务号、企业号、小程序）
+开放平台（网页应用、移动应用、公众号第三方平台开发）
+商户平台 （支付）
+服务商平台（代支付）">
 <meta property="og:type" content="article">
-<meta property="og:title" content="如何在multi-module的项目中配置spring">
-<meta property="og:url" content="http://www.deanwangpro.com/2015/11/09/2015-11-9-multi-modules-spring/index.html">
+<meta property="og:title" content="说一说微信第三方平台的初步集成">
+<meta property="og:url" content="http://www.deanwangpro.com/2017/03/20/wechat-open-platform/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
-<meta property="og:description" content="小项目也有可能会分很多小的module开发，毕竟Maven早就支持了Aggregator Project。
-12345project||--web module|--serviceA module|--serviceB module">
-<meta property="og:updated_time" content="2016-09-13T15:56:19.000Z">
+<meta property="og:description" content="微信火了这么久，这两周第一次从一个开发者的角度来研究微信的生态系统而不是应用本身。现在做国内的项目或者产品难免都需要集成微信，其实现在微信背后的支撑平台已经是非常繁杂的了：
+
+公众平台（订阅号、服务号、企业号、小程序）
+开放平台（网页应用、移动应用、公众号第三方平台开发）
+商户平台 （支付）
+服务商平台（代支付）">
+<meta property="og:updated_time" content="2017-03-22T03:17:42.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="如何在multi-module的项目中配置spring">
-<meta name="twitter:description" content="小项目也有可能会分很多小的module开发，毕竟Maven早就支持了Aggregator Project。
-12345project||--web module|--serviceA module|--serviceB module">
+<meta name="twitter:title" content="说一说微信第三方平台的初步集成">
+<meta name="twitter:description" content="微信火了这么久，这两周第一次从一个开发者的角度来研究微信的生态系统而不是应用本身。现在做国内的项目或者产品难免都需要集成微信，其实现在微信背后的支撑平台已经是非常繁杂的了：
+
+公众平台（订阅号、服务号、企业号、小程序）
+开放平台（网页应用、移动应用、公众号第三方平台开发）
+商户平台 （支付）
+服务商平台（代支付）">
 
 
 
@@ -126,13 +138,13 @@
 
 
 
-  <link rel="canonical" href="http://www.deanwangpro.com/2015/11/09/2015-11-9-multi-modules-spring/"/>
+  <link rel="canonical" href="http://www.deanwangpro.com/2017/03/20/wechat-open-platform/"/>
 
 
 
 
 
-  <title> 如何在multi-module的项目中配置spring | 大名Dean鼎 </title>
+  <title> 说一说微信第三方平台的初步集成 | 大名Dean鼎 </title>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage" lang="en">
@@ -252,7 +264,7 @@
   
 
   <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-  <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2015/11/09/2015-11-9-multi-modules-spring/">
+  <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2017/03/20/wechat-open-platform/">
 
   <span style="display:none" itemprop="author" itemscope itemtype="http://schema.org/Person">
     <meta itemprop="name" content="Dean Wang">
@@ -276,7 +288,7 @@
             
             
               
-                如何在multi-module的项目中配置spring
+                说一说微信第三方平台的初步集成
               
             
           </h1>
@@ -289,8 +301,8 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2015-11-09T22:19:39+08:00">
-                2015-11-09
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2017-03-20T00:00:00+08:00">
+                2017-03-20
               </time>
             
 
@@ -305,8 +317,8 @@
             
               <span class="post-comments-count">
                 <span class="post-meta-divider">|</span>
-                <a href="/2015/11/09/2015-11-9-multi-modules-spring/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count ds-thread-count" data-thread-key="2015/11/09/2015-11-9-multi-modules-spring/" itemprop="commentCount"></span>
+                <a href="/2017/03/20/wechat-open-platform/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2017/03/20/wechat-open-platform/" itemprop="commentCount"></span>
                 </a>
               </span>
             
@@ -337,16 +349,38 @@
       
 
       
-        <p>小项目也有可能会分很多小的module开发，毕竟Maven早就支持了Aggregator Project。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">project</div><div class="line">|</div><div class="line">|--web module</div><div class="line">|--serviceA module</div><div class="line">|--serviceB module</div></pre></td></tr></table></figure>
+        <p>微信火了这么久，这两周第一次从一个开发者的角度来研究微信的生态系统而不是应用本身。现在做国内的项目或者产品难免都需要集成微信，其实现在微信背后的支撑平台已经是非常繁杂的了：</p>
+<ul>
+<li>公众平台（订阅号、服务号、企业号、小程序）</li>
+<li>开放平台（网页应用、移动应用、公众号第三方平台开发）</li>
+<li>商户平台 （支付）</li>
+<li>服务商平台（代支付）</li>
+</ul>
 <a id="more"></a>
-<p>在Service比较复杂，比如封装了第三方接口的提供内部服务的情况下，我一般会单开一个module来管理代码。就算哪天这个第三方不用了，也不用去动主要业务代码。而且单独测试也容易的多。</p>
-<p>那么想要利用Spring管理bean，比如在web module中注入一个serviceA module的一个服务，就需要给子module配置spring了。</p>
-<p>原理来讲，就是让容器在加载主工程时(一般指web module)，可以读到每个子module的spring 文件。</p>
-<p>在serviceA module的resources下新建一个<code>serviceAContext.xml</code>，内部配置跟一般的spring一样，在我的工程里采用了aop扫描package，所以我写了一段<code>aop:config</code>的配置，同时web module也有一段<code>aop:config</code>，不同点就是apo扫描的package目录不同，实测下来没有问题。</p>
-<p>最后在web module中加载这个context文件即可。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&lt;import resource=&quot;classpath*:serviceAContext.xml&quot; /&gt;</div></pre></td></tr></table></figure>
-<p>简单吧。</p>
+<p>是不是感觉有点懵，这么多平台如何选择，还是需要根据自己系统的业务来看。我今天说的是开放平台的初步集成。</p>
+<p>采用倒序的方式我们一步步来说：</p>
+<ol>
+<li><p>开放平台需要代公众号实现功能，就必须拿到公众号的<code>accessToken</code>，然后再去使用公众平台接口。那么获取<code>accessToken</code>的过程实际就是公众平台授权给你这个第三方开放平台的过程。相当于他给你了一把打开他家门的钥匙。详见<a href="https://open.weixin.qq.com/cgi-bin/showdocument?action=dir_list&amp;t=resource/res_list&amp;verify=1&amp;id=open1453779503&amp;token=&amp;lang=zh_CN" target="_blank" rel="external">官方文档</a>第5步.</p>
+</li>
+<li><p>获得钥匙的过程可是需要一些功夫的，因为老换锁啊，每7200s换一次，所以有位管理员大爷出现了，就是<code>refresh_token</code>，锁换了找大爷拿把新的就行。那么这个管理员大爷怎么找到的呢？是在第一次授权成功后会通过参数返回给你的一个<code>authorization_code</code>这个相当于是地图，能让你第一次在毫无经验的情况下找到第一把钥匙和管理员大爷，也就是官方文档的第4步。</p>
+</li>
+<li><p>想要找到地图，给公众平台的管理员发个链接吧<code>https://mp.weixin.qq.com/cgi-bin/componentloginpage?component_appid=xxxx&amp;pre_auth_code=xxxxx&amp;redirect_uri=xxxx</code>，redirect_uri就是把<code>authorization_code</code>给你的入口。例如你写的是<code>redirect_uri=mydomain.com/authrize/callback</code>，那么一旦授权成功，浏览器就会跳转到<code>mydomain.com/authrize/callback?auth_code=xxxx</code>上来，你就可以获取<code>authorization_code</code>这个地图了。</p>
+</li>
+<li><p>上一步的链接中有一个pre_auth_code那么这个值怎么来的？是通过<code>api_create_preauthcode</code>这个接口获得的。而调用这个接口又需要<code>component_access_token</code>，这个东东就是一个令牌，你作为第三方平台调用微信任何API都必须有这个令牌，获得这个令牌的办法就是用调用<code>api_component_token</code>通过<code>component_verify_ticket</code>去换。（仔细想一想，其实<code>component_verify_ticket</code>=<code>refresh_token</code>, <code>component_access_token</code>=<code>accessToken</code>）</p>
+</li>
+</ol>
+<p>这里面涉及到的变量很多，特别需要注意一些的：</p>
+<ul>
+<li><code>component_verify_ticket</code> 这张门票是微信推送，大概每隔十分钟推一次。</li>
+<li><code>api_component_token</code>刚才说了是用上面的那张门票换的，但是有保质期，2小时，那么能不能每次要调接口都用门票换一下？人家微信是有每天的接口调用次数限定的，所以建议用个cache缓存起来，到了1小时50分的时候让缓存失效，失效再去call API换。可以用<strong>redis</strong>的TTL实现。</li>
+<li>类比的上文第1步提到的公众号的<code>accessToken</code>也是有保质期的，所以一定要保存好对应的<code>refresh_token</code>，到了1小时50分的时候再去换<code>accessToken</code>。</li>
+</ul>
+<p>一旦拿到公众号的<code>accessToken</code>，那么就可以像普通公众号的后台服务那样，比如获取粉丝列表啊，推送文章图片啊等等。</p>
+<p>PS: 最好采用加解密算法来进行消息的接受和推送。这里面有一个坑:</p>
+<blockquote>
+<p>异常java.security.InvalidKeyException:illegal Key Size的解决方案：在官方网站下载JCE无限制权限策略文件</p>
+</blockquote>
+<p>另外根据<a href="http://mp.weixin.qq.com/wiki/17/2d4265491f12608cd170a95559800f2d.html" target="_blank" rel="external">官网提示</a>首次验证服务器地址的有效性，必须返回同样的<code>echostr</code>。</p>
 
       
     </div>
@@ -372,9 +406,7 @@
           
             <a href="/tags/Java/" rel="tag"># Java</a>
           
-            <a href="/tags/Spring/" rel="tag"># Spring</a>
-          
-            <a href="/tags/Maven/" rel="tag"># Maven</a>
+            <a href="/tags/wechat/" rel="tag"># wechat</a>
           
         </div>
       
@@ -383,8 +415,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2015/10/31/deploy-jekyll-in-VPS/" rel="next" title="VPS部署jekyll">
-                <i class="fa fa-chevron-left"></i> VPS部署jekyll
+              <a href="/2017/02/08/aop-in-java/" rel="next" title="Spring AOP的实现机制">
+                <i class="fa fa-chevron-left"></i> Spring AOP的实现机制
               </a>
             
           </div>
@@ -392,10 +424,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2016/02/28/angular-datepicker/" rel="prev" title="淘宝旅行的日历控件Angular化">
-                淘宝旅行的日历控件Angular化 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -410,10 +438,10 @@
 
     <div class="post-spread">
       
-        <div class="ds-share flat" data-thread-key="2015/11/09/2015-11-9-multi-modules-spring/"
-     data-title="如何在multi-module的项目中配置spring"
+        <div class="ds-share flat" data-thread-key="2017/03/20/wechat-open-platform/"
+     data-title="说一说微信第三方平台的初步集成"
      data-content=""
-     data-url="http://www.deanwangpro.com/2015/11/09/2015-11-9-multi-modules-spring/">
+     data-url="http://www.deanwangpro.com/2017/03/20/wechat-open-platform/">
   <div class="ds-share-inline">
     <ul  class="ds-share-icons-16">
 
@@ -440,8 +468,8 @@
           
   <div class="comments" id="comments">
     
-      <div class="ds-thread" data-thread-key="2015/11/09/2015-11-9-multi-modules-spring/"
-           data-title="如何在multi-module的项目中配置spring" data-url="http://www.deanwangpro.com/2015/11/09/2015-11-9-multi-modules-spring/">
+      <div class="ds-thread" data-thread-key="2017/03/20/wechat-open-platform/"
+           data-title="说一说微信第三方平台的初步集成" data-url="http://www.deanwangpro.com/2017/03/20/wechat-open-platform/">
       </div>
     
   </div>
