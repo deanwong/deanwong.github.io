@@ -95,7 +95,7 @@
 <meta property="og:image" content="http://www.deanwangpro.com/images/Jolokia.png">
 <meta property="og:image" content="http://www.deanwangpro.com/images/Grafana.png">
 <meta property="og:image" content="http://www.deanwangpro.com/images/tomcat.png">
-<meta property="og:updated_time" content="2017-03-25T16:40:11.000Z">
+<meta property="og:updated_time" content="2017-03-25T16:49:27.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Spring boot监控初探">
 <meta name="twitter:description" content="最近对devOps这个话题有点兴趣，所以研究了一下monitor相关的开源项目，翻到medium上的一篇文章,而且实际项目中也曾看到devOps组的同事搭过类似的监控，就想过把瘾，了解一下监控可视化。">
@@ -351,8 +351,17 @@
 <h3 id="查看监控数据"><a href="#查看监控数据" class="headerlink" title="查看监控数据"></a>查看监控数据</h3><p>我们访问InfluxDB看看有数据了没有<code>http://localhost:3004/</code>，切换数据库到Telegraf。输入以下命令试试吧</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">SHOW MEASUREMENTS</div><div class="line">SELECT * FROM jolokia</div><div class="line">SELECT * FROM cpu</div><div class="line">SELECT * FROM mem</div><div class="line">SELECT * FROM diskio</div></pre></td></tr></table></figure>
 <p>比如输入<code>SELECT * FROM jolokia</code>就能看到spring-boot暴露了哪些数据，从time列也可以看出Telegraf是每隔10s收集一次，太频繁了对server也是压力。<br><img src="/images/Jolokia.png" alt="Jolokia"></p>
-<p>上面基本涵盖了cpu，没存和存储的一些metrics。<br>其实也可以配置网络相关的，感兴趣的可以看官方的telegraf.conf，里面有配置[[inputs.net]]的例子。</p>
-<h3 id="数据可视化"><a href="#数据可视化" class="headerlink" title="数据可视化"></a>数据可视化</h3><p>数据有了，下一步就是可视化。<br>安装Github上面说的进入<code>http://localhost:3003/</code>，添加好InfluxDB后，新建一个Dashboard，然后快速的ADD几个Graph来。<br>为了演示，我添加了三个，分别使用下面三组查询语句来渲染出三张图表</p>
+<p>上面基本涵盖了cpu，内存和存储的一些metrics。<br>其实也可以配置网络相关的，感兴趣的可以看官方的telegraf.conf，里面有配置[[inputs.net]]的例子。</p>
+<h3 id="数据可视化"><a href="#数据可视化" class="headerlink" title="数据可视化"></a>数据可视化</h3><p>数据有了，下一步就是可视化。<br>按照Github上面说的进入<code>http://localhost:3003/</code>，</p>
+<ol>
+<li>Using the wizard click on <code>Add data source</code></li>
+<li>Choose a <code>name</code> for the source and flag it as <code>Default</code></li>
+<li>Choose <code>InfluxDB</code> as <code>type</code></li>
+<li>Choose <code>direct</code> as <code>access</code></li>
+<li>Fill remaining fields as follows and click on <code>Add</code> without altering other fields</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">Url: http://localhost:8086</div><div class="line">Database:	telegraf</div><div class="line">User: telegraf</div><div class="line">Password:	telegraf</div></pre></td></tr></table></figure>
+<p>添加好InfluxDB后，新建一个Dashboard，然后快速的ADD几个Graph来。<br>为了演示，我添加了三个，分别使用下面三组查询语句来渲染出三张图表</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">SELECT MEAN(usage_system) + MEAN(usage_user) AS cpu_total FROM cpu WHERE $timeFilter GROUP BY time($interval)</div><div class="line"></div><div class="line">SELECT mean(&quot;total&quot;) as &quot;total&quot; FROM &quot;mem&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</div><div class="line">SELECT mean(&quot;used&quot;) as &quot;used&quot; FROM &quot;mem&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</div><div class="line"></div><div class="line">SELECT mean(&quot;metrics_heap.used&quot;) as &quot;heap_usage&quot; FROM &quot;jolokia&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</div></pre></td></tr></table></figure>
 <p>第一张是CPU占用率；第二张是内存占用情况，绿线是Total，黄线是Used；第三张是jolokia提供的jvm heap的使用，可以到看到GC的情况。</p>
 <p><img src="/images/Grafana.png" alt="Grafana"></p>
