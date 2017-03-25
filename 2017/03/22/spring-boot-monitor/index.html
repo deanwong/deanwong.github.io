@@ -1,0 +1,714 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="google-site-verification" content="6I4nQGwB4yLqPannMFWvXqWhKoRXMlOOaa5jtowR9Y0" />
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Spring,DevOps," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="最近对devOps这个话题有点兴趣，所以研究了一下monitor相关的开源项目，翻到medium上的一篇文章,而且实际项目中也曾看到devOps组的同事搭过类似的监控，就想过把瘾，了解一下监控可视化。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring boot监控初探">
+<meta property="og:url" content="http://www.deanwangpro.com/2017/03/22/spring-boot-monitor/index.html">
+<meta property="og:site_name" content="大名Dean鼎">
+<meta property="og:description" content="最近对devOps这个话题有点兴趣，所以研究了一下monitor相关的开源项目，翻到medium上的一篇文章,而且实际项目中也曾看到devOps组的同事搭过类似的监控，就想过把瘾，了解一下监控可视化。">
+<meta property="og:image" content="http://www.deanwangpro.com/images/Jolokia.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/Grafana.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/tomcat.png">
+<meta property="og:updated_time" content="2017-03-25T16:40:11.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spring boot监控初探">
+<meta name="twitter:description" content="最近对devOps这个话题有点兴趣，所以研究了一下monitor相关的开源项目，翻到medium上的一篇文章,而且实际项目中也曾看到devOps组的同事搭过类似的监控，就想过把瘾，了解一下监控可视化。">
+<meta name="twitter:image" content="http://www.deanwangpro.com/images/Jolokia.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '384049',
+      author: 'Dean'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.deanwangpro.com/2017/03/22/spring-boot-monitor/"/>
+
+
+
+
+
+  <title> Spring boot监控初探 | 大名Dean鼎 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69554053-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/"  class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">大名Dean鼎</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+  <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2017/03/22/spring-boot-monitor/">
+
+  <span style="display:none" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <meta itemprop="name" content="Dean Wang">
+    <meta itemprop="description" content="">
+    <meta itemprop="image" content="/images/avatar-cartoon.jpg">
+  </span>
+
+  <span style="display:none" itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+    <meta itemprop="name" content="大名Dean鼎">
+    <span style="display:none" itemprop="logo" itemscope itemtype="http://schema.org/ImageObject">
+      <img style="display:none;" itemprop="url image" alt="大名Dean鼎" src="">
+    </span>
+  </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                Spring boot监控初探
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2017-03-22T00:00:00+08:00">
+                2017-03-22
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <a href="/2017/03/22/spring-boot-monitor/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2017/03/22/spring-boot-monitor/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>最近对devOps这个话题有点兴趣，所以研究了一下monitor相关的开源项目，翻到medium上的<a href="https://medium.com/@brunosimioni/near-real-time-monitoring-charts-with-spring-boot-actuator-jolokia-and-grafana-1ce267c50bcc#.il5xmlnv7" target="_blank" rel="external">一篇文章</a>,而且实际项目中也曾看到devOps组的同事搭过类似的监控，就想过把瘾，了解一下监控可视化。<br><a id="more"></a></p>
+<h3 id="被监控服务配置"><a href="#被监控服务配置" class="headerlink" title="被监控服务配置"></a>被监控服务配置</h3><p>本地正好有spring-boot的项目，并且也依赖了<code>jolokia</code>（主要就是为了把JMX的mbean通过HTTP暴露出去）<br>项目配置也少不了</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="attr">endpoints:</span></div><div class="line"><span class="attr">    enabled:</span> <span class="literal">true</span></div><div class="line"><span class="attr">    jmx:</span></div><div class="line"><span class="attr">        enabled:</span> <span class="literal">true</span></div><div class="line"><span class="attr">    jolokia:</span></div><div class="line"><span class="attr">        enabled:</span> <span class="literal">true</span></div><div class="line"></div><div class="line"><span class="attr">management:</span></div><div class="line"><span class="attr">    security:</span></div><div class="line"><span class="attr">        enabled:</span> <span class="literal">false</span></div></pre></td></tr></table></figure>
+<p>访问一下URL看看是不是ok</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">http://localhost:8080/jolokia/read/org.springframework.boot:name=metricsEndpoint,type=Endpoint/Data</div></pre></td></tr></table></figure>
+<h3 id="搭建监控系统"><a href="#搭建监控系统" class="headerlink" title="搭建监控系统"></a>搭建监控系统</h3><p>如果能看到数据，说明server端配置没问题了，下面我们怎么搭建Telegraf + InfluxDB + Grafana呢，这个三个组件是这么配合的，Telegraf实际就是收集信息的，比如每隔10s访问一次上面那个URL得到metrics，收集到的数据存到InfluxDB，然后Grafana做数据可视化。<br>但是如果纯手动安装实在太麻烦，求助万能的github，找到一个非常棒的项目(<a href="https://github.com/samuelebistoletti/docker-statsd-influxdb-grafana" target="_blank" rel="external">https://github.com/samuelebistoletti/docker-statsd-influxdb-grafana</a>), 直接fork然后修改一些配置就可以为自己的项目服务了。如果你不了解相关配置可以先直接run起来，然后通过ssh进去一探究竟。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ssh root@localhost -p 22022</div></pre></td></tr></table></figure>
+<p>配置方面，主要是要修改Telegraf的，因为它是对接不同项目的，你需要收集什么样的信息，比如cpu，disk，net等等都要在Telegraf里配。简单起见，我只设置了三个输入。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line"># /etc/telegraf/telegraf.conf</div><div class="line">[[inputs.jolokia]]</div><div class="line">  context = &quot;/jolokia&quot;</div><div class="line"></div><div class="line">[[inputs.jolokia.servers]]</div><div class="line">    name = &quot;springbootapp&quot;</div><div class="line">    host = &quot;&#123;app ip address&#125;&quot;</div><div class="line">    port = &quot;8080&quot;</div><div class="line"></div><div class="line">[[inputs.jolokia.metrics]]</div><div class="line">    name = &quot;metrics&quot;</div><div class="line">    mbean  = &quot;org.springframework.boot:name=metricsEndpoint,type=Endpoint&quot;</div><div class="line">    attribute = &quot;Data&quot;</div><div class="line">    </div><div class="line">[[inputs.jolokia.metrics]]</div><div class="line">    name = &quot;tomcat_max_threads&quot;</div><div class="line">    mbean  = &quot;Tomcat:name=\&quot;http-nio-8080\&quot;,type=ThreadPool&quot;</div><div class="line">    attribute = &quot;maxThreads&quot;</div><div class="line"></div><div class="line">[[inputs.jolokia.metrics]]</div><div class="line">    name = &quot;tomcat_current_threads_busy&quot;</div><div class="line">    mbean  = &quot;Tomcat:name=\&quot;http-nio-8080\&quot;,type=ThreadPool&quot;</div><div class="line">    attribute = &quot;currentThreadsBusy&quot;</div></pre></td></tr></table></figure>
+<p>其实就是spring-boot标准的metrics以及tomcat的Threads。<br>完成之后重启服务<code>/etc/init.d/telegraf restart</code></p>
+<h3 id="查看监控数据"><a href="#查看监控数据" class="headerlink" title="查看监控数据"></a>查看监控数据</h3><p>我们访问InfluxDB看看有数据了没有<code>http://localhost:3004/</code>，切换数据库到Telegraf。输入以下命令试试吧</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">SHOW MEASUREMENTS</div><div class="line">SELECT * FROM jolokia</div><div class="line">SELECT * FROM cpu</div><div class="line">SELECT * FROM mem</div><div class="line">SELECT * FROM diskio</div></pre></td></tr></table></figure>
+<p>比如输入<code>SELECT * FROM jolokia</code>就能看到spring-boot暴露了哪些数据，从time列也可以看出Telegraf是每隔10s收集一次，太频繁了对server也是压力。<br><img src="/images/Jolokia.png" alt="Jolokia"></p>
+<p>上面基本涵盖了cpu，没存和存储的一些metrics。<br>其实也可以配置网络相关的，感兴趣的可以看官方的telegraf.conf，里面有配置[[inputs.net]]的例子。</p>
+<h3 id="数据可视化"><a href="#数据可视化" class="headerlink" title="数据可视化"></a>数据可视化</h3><p>数据有了，下一步就是可视化。<br>安装Github上面说的进入<code>http://localhost:3003/</code>，添加好InfluxDB后，新建一个Dashboard，然后快速的ADD几个Graph来。<br>为了演示，我添加了三个，分别使用下面三组查询语句来渲染出三张图表</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">SELECT MEAN(usage_system) + MEAN(usage_user) AS cpu_total FROM cpu WHERE $timeFilter GROUP BY time($interval)</div><div class="line"></div><div class="line">SELECT mean(&quot;total&quot;) as &quot;total&quot; FROM &quot;mem&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</div><div class="line">SELECT mean(&quot;used&quot;) as &quot;used&quot; FROM &quot;mem&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</div><div class="line"></div><div class="line">SELECT mean(&quot;metrics_heap.used&quot;) as &quot;heap_usage&quot; FROM &quot;jolokia&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</div></pre></td></tr></table></figure>
+<p>第一张是CPU占用率；第二张是内存占用情况，绿线是Total，黄线是Used；第三张是jolokia提供的jvm heap的使用，可以到看到GC的情况。</p>
+<p><img src="/images/Grafana.png" alt="Grafana"></p>
+<p>刚才还配置了Tomcat的收集，想看Tomcat的Thread情况也是妥妥的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">SELECT mean(&quot;tomcat_max_threads&quot;) FROM &quot;jolokia&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</div><div class="line">SELECT mean(&quot;tomcat_current_threads_busy&quot;) FROM &quot;jolokia&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</div></pre></td></tr></table></figure>
+<p><img src="/images/tomcat.png" alt="tomcat"></p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>可以看到搭建这样一套环境其实很快，原理也并不复杂，监控数据可视化的难点在于</p>
+<ul>
+<li>哪些metrics需要监控</li>
+<li>哪些metrics需要配合起来可以判断问题，比如diskio+net是不是可以判断系统整体IO的瓶颈。</li>
+</ul>
+<p>这都是需要多年的经验总结才能获得的，我还是菜鸟一枚，再接再厉。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Spring/" rel="tag"># Spring</a>
+          
+            <a href="/tags/DevOps/" rel="tag"># DevOps</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/20/wechat-open-platform/" rel="next" title="说一说微信第三方平台的初步集成">
+                <i class="fa fa-chevron-left"></i> 说一说微信第三方平台的初步集成
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar-cartoon.jpg"
+               alt="Dean Wang" />
+          <p class="site-author-name" itemprop="name">Dean Wang</p>
+          <p class="site-description motion-element" itemprop="description">理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">17</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="/tags">
+                <span class="site-state-item-count">19</span>
+                <span class="site-state-item-name">tags</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#被监控服务配置"><span class="nav-number">1.</span> <span class="nav-text">被监控服务配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#搭建监控系统"><span class="nav-number">2.</span> <span class="nav-text">搭建监控系统</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#查看监控数据"><span class="nav-number">3.</span> <span class="nav-text">查看监控数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#数据可视化"><span class="nav-number">4.</span> <span class="nav-text">数据可视化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#小结"><span class="nav-number">5.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Dean Wang</span>
+</div>
+
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="https://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+
+<div class="busuanzi-count">
+
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv"><i class="fa fa-user"></i><span class="busuanzi-value" id="busuanzi_value_site_uv"></span></span>
+  
+
+  
+    <span class="site-pv"><i class="fa fa-eye"></i><span class="busuanzi-value" id="busuanzi_value_site_pv"></span></span>
+  
+  
+</div>
+
+
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+
+  
+
+    <script type="text/javascript">
+      var disqus_shortname = 'wangdean';
+      var disqus_identifier = '2017/03/22/spring-boot-monitor/';
+
+      var disqus_title = "Spring boot监控初探";
+
+
+      function run_disqus_script(disqus_script) {
+        var dsq = document.createElement('script');
+        dsq.type = 'text/javascript';
+        dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      }
+
+      run_disqus_script('count.js');
+
+      
+        var disqus_config = function () {
+            this.page.url = disqus_url;
+            this.page.identifier = disqus_identifier;
+            this.page.title = disqus_title;
+        };
+        run_disqus_script('embed.js');
+      
+
+    </script>
+  
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+
+</body>
+</html>
