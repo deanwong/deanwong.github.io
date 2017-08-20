@@ -86,6 +86,8 @@
 
 
 
+  <link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml" />
+
 
 
 
@@ -103,6 +105,7 @@
 <meta property="og:url" content="http://www.deanwangpro.com/2016/09/07/vue-startup/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="近一个月拿Vue.JS做一个小项目练手。项目本身的API是现成的，而且都是json格式，所以前端选型自然会选择MV*M的框架。由于做了一段时间的angularJS，感觉对于这个工期很短的项目angular显得有些庞大了。所以尝试了一下Vue.JS。">
+<meta property="og:locale" content="en">
 <meta property="og:image" content="http://www.deanwangpro.com/images/14732664332786.jpg">
 <meta property="og:updated_time" content="2016-10-30T14:39:43.000Z">
 <meta name="twitter:card" content="summary">
@@ -274,7 +277,7 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Dean Wang">
       <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar-cartoon.jpg">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -381,18 +384,18 @@
 <figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">background-image: url("/static/images/slider-business-01.jpg");</div></pre></td></tr></table></figure>
 <p>这样引用就可以。</p>
 <h4 id="4-如果调用需要token的API"><a href="#4-如果调用需要token的API" class="headerlink" title="4.如果调用需要token的API"></a>4.如果调用需要token的API</h4><p>可以使用vue的http.interceptor</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">Vue.http.interceptors.push((request, next) =&gt; &#123;</div><div class="line">        <span class="comment">// ...</span></div><div class="line">        <span class="comment">// 可以把Token放到Header里</span></div><div class="line">        <span class="comment">// ...</span></div><div class="line">    next((response) =&gt; &#123;</div><div class="line">        <span class="comment">// ...</span></div><div class="line">        <span class="comment">// 请求发送后的处理逻辑</span></div><div class="line">        <span class="comment">// ...</span></div><div class="line">        <span class="comment">// 根据请求的状态，response参数会返回给successCallback或errorCallback</span></div><div class="line">        <span class="keyword">return</span> response</div><div class="line">    &#125;)</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">Vue.http.interceptors.push(<span class="function">(<span class="params">request, next</span>) =&gt;</span> &#123;</div><div class="line">        <span class="comment">// ...</span></div><div class="line">        <span class="comment">// 可以把Token放到Header里</span></div><div class="line">        <span class="comment">// ...</span></div><div class="line">    next(<span class="function">(<span class="params">response</span>) =&gt;</span> &#123;</div><div class="line">        <span class="comment">// ...</span></div><div class="line">        <span class="comment">// 请求发送后的处理逻辑</span></div><div class="line">        <span class="comment">// ...</span></div><div class="line">        <span class="comment">// 根据请求的状态，response参数会返回给successCallback或errorCallback</span></div><div class="line">        <span class="keyword">return</span> response</div><div class="line">    &#125;)</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
 <h4 id="5-登陆超时的调整"><a href="#5-登陆超时的调整" class="headerlink" title="5.登陆超时的调整"></a>5.登陆超时的调整</h4><p>在call一个service API时，如果超时了，一般会返回一个401或者其他的http code，我们可以通过写一个拦截器来统一处理。</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">Vue.http.interceptors.push((request, next) =&gt; &#123;</div><div class="line">next((response) =&gt; &#123;</div><div class="line">    <span class="keyword">if</span> (response.code === <span class="number">401</span>) &#123;</div><div class="line">      Vue.$vux.alert.show(&#123;</div><div class="line">        title: <span class="string">'登陆超时'</span>,</div><div class="line">        content: <span class="string">'点击回到登陆页'</span>,</div><div class="line">        onHide () &#123;</div><div class="line">          <span class="built_in">window</span>.location.href = <span class="string">'/login'</span></div><div class="line">        &#125;</div><div class="line">      &#125;)</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> response</div><div class="line">  &#125;)</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">Vue.http.interceptors.push(<span class="function">(<span class="params">request, next</span>) =&gt;</span> &#123;</div><div class="line">next(<span class="function">(<span class="params">response</span>) =&gt;</span> &#123;</div><div class="line">    <span class="keyword">if</span> (response.code === <span class="number">401</span>) &#123;</div><div class="line">      Vue.$vux.alert.show(&#123;</div><div class="line">        <span class="attr">title</span>: <span class="string">'登陆超时'</span>,</div><div class="line">        <span class="attr">content</span>: <span class="string">'点击回到登陆页'</span>,</div><div class="line">        onHide () &#123;</div><div class="line">          <span class="built_in">window</span>.location.href = <span class="string">'/login'</span></div><div class="line">        &#125;</div><div class="line">      &#125;)</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> response</div><div class="line">  &#125;)</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
 <p>通过这样的一个拦截器就不用把这种代码写在每一个http请求方法里了。还有很多细节可以参考我当时学习的<a href="http://www.cnblogs.com/keepfool/p/5657065.html" target="_blank" rel="external">blog</a></p>
 <h4 id="6-调用API时的Loading怎么做"><a href="#6-调用API时的Loading怎么做" class="headerlink" title="6.调用API时的Loading怎么做"></a>6.调用API时的Loading怎么做</h4><p>其实还是用interceptor，通过修改isLoading这个变量的值来控制是否显示菊花图。<br>那么问题来了，isLoading是跨component的，这个时候就需要用到<a href="https://github.com/vuejs/vuex" target="_blank" rel="external">vuex</a>了，这是一个应用级别的状态机。<br>我在<code>App.vue</code>中放置一个loading图标</p>
 <figure class="highlight html"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="tag">&lt;<span class="name">loading</span> <span class="attr">:show</span>=<span class="string">"isLoading"</span> <span class="attr">position</span>=<span class="string">"absolute"</span>&gt;</span><span class="tag">&lt;/<span class="name">loading</span>&gt;</span></div></pre></td></tr></table></figure>
 <p>这时候isLoading从vuex中获得</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">vuex: &#123;</div><div class="line">      getters: &#123;</div><div class="line">        isLoading: (state) =&gt; state.isLoading</div><div class="line">      &#125;</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">vuex: &#123;</div><div class="line">      <span class="attr">getters</span>: &#123;</div><div class="line">        <span class="attr">isLoading</span>: <span class="function">(<span class="params">state</span>) =&gt;</span> state.isLoading</div><div class="line">      &#125;</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
 <p><code>store.js</code>里也定义这个state</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">const</span> state = &#123;</div><div class="line">  isLoading: <span class="literal">false</span></div><div class="line">&#125;</div><div class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="keyword">new</span> Vuex.Store(&#123;</div><div class="line">  state</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">const</span> state = &#123;</div><div class="line">  <span class="attr">isLoading</span>: <span class="literal">false</span></div><div class="line">&#125;</div><div class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="keyword">new</span> Vuex.Store(&#123;</div><div class="line">  state</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
 <p>剩下的就简单了，在interceptor里控制state.isLoading的值</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">Vue.http.interceptors.push((request, next) =&gt; &#123;</div><div class="line">  <span class="comment">// 显示loading</span></div><div class="line">  commit(<span class="string">'UPDATE_LOADING'</span>, <span class="literal">true</span>)</div><div class="line">  next((response) =&gt; &#123;</div><div class="line">    <span class="comment">// 不显示loading</span></div><div class="line">    commit(<span class="string">'UPDATE_LOADING'</span>, <span class="literal">false</span>)</div><div class="line">    <span class="keyword">return</span> response</div><div class="line">  &#125;)</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">Vue.http.interceptors.push(<span class="function">(<span class="params">request, next</span>) =&gt;</span> &#123;</div><div class="line">  <span class="comment">// 显示loading</span></div><div class="line">  commit(<span class="string">'UPDATE_LOADING'</span>, <span class="literal">true</span>)</div><div class="line">  next(<span class="function">(<span class="params">response</span>) =&gt;</span> &#123;</div><div class="line">    <span class="comment">// 不显示loading</span></div><div class="line">    commit(<span class="string">'UPDATE_LOADING'</span>, <span class="literal">false</span>)</div><div class="line">    <span class="keyword">return</span> response</div><div class="line">  &#125;)</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
 <h4 id="7-route-data-hook-VS-ready"><a href="#7-route-data-hook-VS-ready" class="headerlink" title="7.route data hook VS. ready"></a>7.route data hook VS. ready</h4><p>这个其实有各种各样的讨论，我个人经过实践觉得用route里的data勾子是比较好的，因为从生命周期角度说，data勾子比ready要早。所以一般组件初始化是在data勾子之后，但可能是比ready要早的。某些情况下，组件初始化就需要数据，这种时候大多用data hook。</p>
 <h4 id="8-computed有啥用"><a href="#8-computed有啥用" class="headerlink" title="8.computed有啥用"></a>8.computed有啥用</h4><p>挺有用的，特别是一些情况判断多的场景下，需要自己揣摩。</p>
 <h4 id="9-mount-local-module-vux"><a href="#9-mount-local-module-vux" class="headerlink" title="9.mount local module (vux)"></a>9.mount local module (vux)</h4><p>因为我是用了vux这套组件画UI，而vux是我fork的一个项目，所以就没有用<code>npm install</code>来安装，而是直接用本地的版本。<br>用npm link这个函数</p>
@@ -517,7 +520,7 @@
       <section class="site-overview sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           <img class="site-author-image" itemprop="image"
-               src="/images/avatar.gif"
+               src="/images/avatar-cartoon.jpg"
                alt="Dean Wang" />
           <p class="site-author-name" itemprop="name">Dean Wang</p>
            
@@ -551,8 +554,61 @@
         </nav>
 
         
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
 
         <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/deanwong" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/wongding" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.instagram.com/rockgeek" target="_blank" title="Instagram">
+                  
+                    <i class="fa fa-fw fa-instagram"></i>
+                  
+                    
+                      Instagram
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/wangding85" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
           
         </div>
 

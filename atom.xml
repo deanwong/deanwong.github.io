@@ -1,0 +1,892 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>大名Dean鼎</title>
+  
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://www.deanwangpro.com/"/>
+  <updated>2017-08-20T11:42:31.000Z</updated>
+  <id>http://www.deanwangpro.com/</id>
+  
+  <author>
+    <name>Dean Wang</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>短链接的简单实现</title>
+    <link href="http://www.deanwangpro.com/2017/08/20/dwz/"/>
+    <id>http://www.deanwangpro.com/2017/08/20/dwz/</id>
+    <published>2017-08-19T16:00:00.000Z</published>
+    <updated>2017-08-20T11:42:31.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>很久没更新了，加入了创业公司，从无到有的构建一套产品，从一开始的码框架到现在思考如何优化产品架构，适应更多的弹性需求和更大的数据量。时间真的是不够用，几乎快半年没有更新博客。近期产品慢慢走上正轨，又有小伙伴加入，所以抽出点时间总结一下这小半年内遇到的坑和走过的路。<br><a id="more"></a></p>
+<p>说一说最近做的一个短链服务，短链服务其实很简单，其实就是一张表或者说是一个map：<br>+——-+———————–+<br>|  短链  |         长链           |<br>+——-+———————–+<br>| 7Y65s | <a href="https://www.google.com" target="_blank" rel="external">https://www.google.com</a> |<br>+——-+———————–+</p>
+<p>就是这样一个结构，当用户访问 your-domain/7Y65s, 去表里查询一下对应的长链，301到该链接就可以了。</p>
+<h3 id="优化"><a href="#优化" class="headerlink" title="优化"></a>优化</h3><p>基本的思路确定后，我们一点一点来优化。</p>
+<p>首先分析大量查询肯定会出现在通过短链找长链这段逻辑中，如果用数据库肯定影响效率，缓存势在必行，而且一旦短链生成基本是不会变的，所以也不存在失效问题（这里可能会有个批量Archive的处理）。在我的项目中，我选择了redis作为缓存，反正是key-value的其他缓存组件肯定也能做。选用redis的原因是还可以用INCR来统计访问量。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">redisTemplate.opsForHash().put(&quot;short-urls:&quot; + slug, &quot;long_url&quot;, url);</div><div class="line">redisTemplate.opsForHash().increment(&quot;short-urls:&quot; + slug, VISITS_FIELD, 1L);</div></pre></td></tr></table></figure>
+<p>查询这一侧做完，到了生成短链这一块，这里实际上是刚刚说的那张表的create操作。这里有个基本逻辑是：当一个长链还没有短链的时候，我们生成它并返回，如果已经存在，直接获取返回。</p>
+<p>生成的算法直接贴代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line">package io.naza.urlshortener.generator;</div><div class="line"></div><div class="line">import org.apache.commons.codec.digest.DigestUtils;</div><div class="line"></div><div class="line">public class UrlShortHelper &#123;</div><div class="line"></div><div class="line">    private final static int LENGTH = 6;</div><div class="line"></div><div class="line">    private static char[] DIGITS = &quot;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789&quot;.toCharArray();</div><div class="line"></div><div class="line">    public static String[] shorten(String url) &#123;</div><div class="line">        String key = &quot;SECRET&quot;; // 自定义生成MD5加密字符串前的混合KEY</div><div class="line">        String hex = DigestUtils.md5Hex(key + url);</div><div class="line">        int hexLen = hex.length();</div><div class="line">        int subHexLen = hexLen / 8;</div><div class="line">        String[] shortStr = new String[subHexLen];</div><div class="line"></div><div class="line">        for (int i = 0; i &lt; subHexLen; i++) &#123;</div><div class="line">            StringBuilder outChars = new StringBuilder();</div><div class="line">            int j = i + 1;</div><div class="line">            String subHex = hex.substring(i * 8, j * 8);</div><div class="line">            long idx = Long.valueOf(&quot;3FFFFFFF&quot;, 16) &amp; Long.valueOf(subHex, 16);</div><div class="line">            for (int k = 0; k &lt; LENGTH; k++) &#123;</div><div class="line">                int index = (int) (Long.valueOf(&quot;0000003D&quot;, 16) &amp; idx);</div><div class="line">                outChars.append(DIGITS[index]);</div><div class="line">                idx = idx &gt;&gt; 5;</div><div class="line">            &#125;</div><div class="line">            shortStr[i] = outChars.toString();</div><div class="line">        &#125;</div><div class="line">        return shortStr;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>项目中按照长链生成一个固定长度为6位的短链接，只要长链是一样的，那么每次生成的短链也一样。</p>
+<p>考虑到每次生成短链前要查询一下长链是不是存在，继续加一个小缓存，这次反过来，长链作key，短链做value。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">redisTemplate.opsForHash().put(&quot;short-urls&quot;, url, slug);</div></pre></td></tr></table></figure>
+<h3 id="尾声"><a href="#尾声" class="headerlink" title="尾声"></a>尾声</h3><p>用比较简单的方式完成一个短链接服务，在做短链跳转的过程中可以分析用户的各类行为，比如操作系统，浏览器版本，地域等等。最后说两点要注意的：</p>
+<ol>
+<li>redis毕竟是作为缓存使用的，建议数据还是要落一次在DB，比如在生成短链时，写入到DB一份。这样当redis挂了，还可以从DB中全量恢复。</li>
+<li>对于长时间没有PV的短链，比如超过1年没有PV，需要做批量清理，一般一个月一次就可以了。 </li>
+</ol>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;很久没更新了，加入了创业公司，从无到有的构建一套产品，从一开始的码框架到现在思考如何优化产品架构，适应更多的弹性需求和更大的数据量。时间真的是不够用，几乎快半年没有更新博客。近期产品慢慢走上正轨，又有小伙伴加入，所以抽出点时间总结一下这小半年内遇到的坑和走过的路。&lt;br&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="http://www.deanwangpro.com/tags/Java/"/>
+    
+      <category term="Redis" scheme="http://www.deanwangpro.com/tags/Redis/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Spring boot监控初探</title>
+    <link href="http://www.deanwangpro.com/2017/03/22/spring-boot-monitor/"/>
+    <id>http://www.deanwangpro.com/2017/03/22/spring-boot-monitor/</id>
+    <published>2017-03-21T16:00:00.000Z</published>
+    <updated>2017-03-26T14:10:09.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>最近对devOps这个话题有点兴趣，所以研究了一下monitor相关的开源项目，翻到medium上的<a href="https://medium.com/@brunosimioni/near-real-time-monitoring-charts-with-spring-boot-actuator-jolokia-and-grafana-1ce267c50bcc#.il5xmlnv7" target="_blank" rel="external">一篇文章</a>,而且实际项目中也曾看到devOps组的同事搭过类似的监控，就想过把瘾，了解一下监控可视化。<br><a id="more"></a></p>
+<h3 id="被监控服务配置"><a href="#被监控服务配置" class="headerlink" title="被监控服务配置"></a>被监控服务配置</h3><p>本地正好有spring-boot的项目，并且也依赖了<code>jolokia</code>（主要就是为了把JMX的mbean通过HTTP暴露出去）<br>项目配置也少不了</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="attr">endpoints:</span></div><div class="line"><span class="attr">    enabled:</span> <span class="literal">true</span></div><div class="line"><span class="attr">    jmx:</span></div><div class="line"><span class="attr">        enabled:</span> <span class="literal">true</span></div><div class="line"><span class="attr">    jolokia:</span></div><div class="line"><span class="attr">        enabled:</span> <span class="literal">true</span></div><div class="line"></div><div class="line"><span class="attr">management:</span></div><div class="line"><span class="attr">    security:</span></div><div class="line"><span class="attr">        enabled:</span> <span class="literal">false</span></div></pre></td></tr></table></figure>
+<p>访问一下URL看看是不是ok</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">http://localhost:8080/jolokia/read/org.springframework.boot:name=metricsEndpoint,type=Endpoint/Data</div></pre></td></tr></table></figure>
+<h3 id="搭建监控系统"><a href="#搭建监控系统" class="headerlink" title="搭建监控系统"></a>搭建监控系统</h3><p>如果能看到数据，说明server端配置没问题了，下面我们怎么搭建Telegraf + InfluxDB + Grafana呢，这个三个组件是这么配合的，Telegraf实际就是收集信息的，比如每隔10s访问一次上面那个URL得到metrics，收集到的数据存到InfluxDB，然后Grafana做数据可视化。<br>但是如果纯手动安装实在太麻烦，求助万能的github，找到一个非常棒的项目(<a href="https://github.com/samuelebistoletti/docker-statsd-influxdb-grafana" target="_blank" rel="external">https://github.com/samuelebistoletti/docker-statsd-influxdb-grafana</a>), 直接fork然后修改一些配置就可以为自己的项目服务了。如果你不了解相关配置可以先直接run起来，然后通过ssh进去一探究竟。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ssh root@localhost -p 22022</div></pre></td></tr></table></figure>
+<p>配置方面，主要是要修改Telegraf的，因为它是对接不同项目的，你需要收集什么样的信息，比如cpu，disk，net等等都要在Telegraf里配。简单起见，我只设置了三个输入。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line"># /etc/telegraf/telegraf.conf</div><div class="line">[[inputs.jolokia]]</div><div class="line">  context = &quot;/jolokia&quot;</div><div class="line"></div><div class="line">[[inputs.jolokia.servers]]</div><div class="line">    name = &quot;springbootapp&quot;</div><div class="line">    host = &quot;&#123;app ip address&#125;&quot;</div><div class="line">    port = &quot;8080&quot;</div><div class="line"></div><div class="line">[[inputs.jolokia.metrics]]</div><div class="line">    name = &quot;metrics&quot;</div><div class="line">    mbean  = &quot;org.springframework.boot:name=metricsEndpoint,type=Endpoint&quot;</div><div class="line">    attribute = &quot;Data&quot;</div><div class="line">    </div><div class="line">[[inputs.jolokia.metrics]]</div><div class="line">    name = &quot;tomcat_max_threads&quot;</div><div class="line">    mbean  = &quot;Tomcat:name=\&quot;http-nio-8080\&quot;,type=ThreadPool&quot;</div><div class="line">    attribute = &quot;maxThreads&quot;</div><div class="line"></div><div class="line">[[inputs.jolokia.metrics]]</div><div class="line">    name = &quot;tomcat_current_threads_busy&quot;</div><div class="line">    mbean  = &quot;Tomcat:name=\&quot;http-nio-8080\&quot;,type=ThreadPool&quot;</div><div class="line">    attribute = &quot;currentThreadsBusy&quot;</div></pre></td></tr></table></figure>
+<p>其实就是spring-boot标准的metrics以及tomcat的Threads。<br>完成之后重启服务<code>/etc/init.d/telegraf restart</code></p>
+<h3 id="查看监控数据"><a href="#查看监控数据" class="headerlink" title="查看监控数据"></a>查看监控数据</h3><p>我们访问InfluxDB看看有数据了没有<code>http://localhost:3004/</code>，切换数据库到Telegraf。输入以下命令试试吧</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">SHOW MEASUREMENTS</div><div class="line">SELECT * FROM jolokia</div><div class="line">SELECT * FROM cpu</div><div class="line">SELECT * FROM mem</div><div class="line">SELECT * FROM diskio</div></pre></td></tr></table></figure>
+<p>比如输入<code>SELECT * FROM jolokia</code>就能看到spring-boot暴露了哪些数据，从time列也可以看出Telegraf是每隔10s收集一次，太频繁了对server也是压力。<br><img src="/images/Jolokia.png" alt="Jolokia"></p>
+<p>上面基本涵盖了cpu，内存和存储的一些metrics。<br>其实也可以配置网络相关的，感兴趣的可以看官方的telegraf.conf，里面有配置[[inputs.net]]的例子。</p>
+<h3 id="数据可视化"><a href="#数据可视化" class="headerlink" title="数据可视化"></a>数据可视化</h3><p>数据有了，下一步就是可视化。<br>按照Github上面说的进入<code>http://localhost:3003/</code>，</p>
+<ol>
+<li>Using the wizard click on <code>Add data source</code></li>
+<li>Choose a <code>name</code> for the source and flag it as <code>Default</code></li>
+<li>Choose <code>InfluxDB</code> as <code>type</code></li>
+<li>Choose <code>direct</code> as <code>access</code></li>
+<li>Fill remaining fields as follows and click on <code>Add</code> without altering other fields</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">Url: http://localhost:8086</div><div class="line">Database:	telegraf</div><div class="line">User: telegraf</div><div class="line">Password:	telegraf</div></pre></td></tr></table></figure>
+<p>添加好InfluxDB后，新建一个Dashboard，然后快速的ADD几个Graph来。<br>为了演示，我添加了三个，分别使用下面三组查询语句来渲染出三张图表</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">SELECT MEAN(usage_system) + MEAN(usage_user) AS cpu_total FROM cpu WHERE $timeFilter GROUP BY time($interval)</div><div class="line"></div><div class="line">SELECT mean(&quot;total&quot;) as &quot;total&quot; FROM &quot;mem&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</div><div class="line">SELECT mean(&quot;used&quot;) as &quot;used&quot; FROM &quot;mem&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</div><div class="line"></div><div class="line">SELECT mean(&quot;metrics_heap.used&quot;) as &quot;heap_usage&quot; FROM &quot;jolokia&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</div></pre></td></tr></table></figure>
+<p>第一张是CPU占用率；第二张是内存占用情况，绿线是Total，黄线是Used；第三张是jolokia提供的jvm heap的使用，可以到看到GC的情况。</p>
+<p><img src="/images/Grafana.png" alt="Grafana"></p>
+<p>刚才还配置了Tomcat的收集，想看Tomcat的Thread情况也是妥妥的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">SELECT mean(&quot;tomcat_max_threads&quot;) FROM &quot;jolokia&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</div><div class="line">SELECT mean(&quot;tomcat_current_threads_busy&quot;) FROM &quot;jolokia&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</div></pre></td></tr></table></figure>
+<p><img src="/images/tomcat.png" alt="tomcat"></p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>可以看到搭建这样一套环境其实很快，原理也并不复杂，监控数据可视化的难点在于</p>
+<ul>
+<li>哪些metrics需要监控</li>
+<li>哪些metrics需要配合起来可以判断问题，比如diskio+net是不是可以判断系统整体IO的瓶颈。</li>
+</ul>
+<p>这都是需要多年的经验总结才能获得的，我还是菜鸟一枚，再接再厉。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;最近对devOps这个话题有点兴趣，所以研究了一下monitor相关的开源项目，翻到medium上的&lt;a href=&quot;https://medium.com/@brunosimioni/near-real-time-monitoring-charts-with-spring-boot-actuator-jolokia-and-grafana-1ce267c50bcc#.il5xmlnv7&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;一篇文章&lt;/a&gt;,而且实际项目中也曾看到devOps组的同事搭过类似的监控，就想过把瘾，了解一下监控可视化。&lt;br&gt;
+    
+    </summary>
+    
+    
+      <category term="Spring" scheme="http://www.deanwangpro.com/tags/Spring/"/>
+    
+      <category term="DevOps" scheme="http://www.deanwangpro.com/tags/DevOps/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>说一说微信第三方平台的初步集成</title>
+    <link href="http://www.deanwangpro.com/2017/03/20/wechat-open-platform/"/>
+    <id>http://www.deanwangpro.com/2017/03/20/wechat-open-platform/</id>
+    <published>2017-03-19T16:00:00.000Z</published>
+    <updated>2017-03-22T03:17:42.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>微信火了这么久，这两周第一次从一个开发者的角度来研究微信的生态系统而不是应用本身。现在做国内的项目或者产品难免都需要集成微信，其实现在微信背后的支撑平台已经是非常繁杂的了：</p>
+<ul>
+<li>公众平台（订阅号、服务号、企业号、小程序）</li>
+<li>开放平台（网页应用、移动应用、公众号第三方平台开发）</li>
+<li>商户平台 （支付）</li>
+<li>服务商平台（代支付）</li>
+</ul>
+<a id="more"></a>
+<p>是不是感觉有点懵，这么多平台如何选择，还是需要根据自己系统的业务来看。我今天说的是开放平台的初步集成。</p>
+<p>采用倒序的方式我们一步步来说：</p>
+<ol>
+<li><p>开放平台需要代公众号实现功能，就必须拿到公众号的<code>accessToken</code>，然后再去使用公众平台接口。那么获取<code>accessToken</code>的过程实际就是公众平台授权给你这个第三方开放平台的过程。相当于他给你了一把打开他家门的钥匙。详见<a href="https://open.weixin.qq.com/cgi-bin/showdocument?action=dir_list&amp;t=resource/res_list&amp;verify=1&amp;id=open1453779503&amp;token=&amp;lang=zh_CN" target="_blank" rel="external">官方文档</a>第5步.</p>
+</li>
+<li><p>获得钥匙的过程可是需要一些功夫的，因为老换锁啊，每7200s换一次，所以有位管理员大爷出现了，就是<code>refresh_token</code>，锁换了找大爷拿把新的就行。那么这个管理员大爷怎么找到的呢？是在第一次授权成功后会通过参数返回给你的一个<code>authorization_code</code>这个相当于是地图，能让你第一次在毫无经验的情况下找到第一把钥匙和管理员大爷，也就是官方文档的第4步。</p>
+</li>
+<li><p>想要找到地图，给公众平台的管理员发个链接吧<code>https://mp.weixin.qq.com/cgi-bin/componentloginpage?component_appid=xxxx&amp;pre_auth_code=xxxxx&amp;redirect_uri=xxxx</code>，redirect_uri就是把<code>authorization_code</code>给你的入口。例如你写的是<code>redirect_uri=mydomain.com/authrize/callback</code>，那么一旦授权成功，浏览器就会跳转到<code>mydomain.com/authrize/callback?auth_code=xxxx</code>上来，你就可以获取<code>authorization_code</code>这个地图了。</p>
+</li>
+<li><p>上一步的链接中有一个pre_auth_code那么这个值怎么来的？是通过<code>api_create_preauthcode</code>这个接口获得的。而调用这个接口又需要<code>component_access_token</code>，这个东东就是一个令牌，你作为第三方平台调用微信任何API都必须有这个令牌，获得这个令牌的办法就是用调用<code>api_component_token</code>通过<code>component_verify_ticket</code>去换。（仔细想一想，其实<code>component_verify_ticket</code>=<code>refresh_token</code>, <code>component_access_token</code>=<code>accessToken</code>）</p>
+</li>
+</ol>
+<p>这里面涉及到的变量很多，特别需要注意一些的：</p>
+<ul>
+<li><code>component_verify_ticket</code> 这张门票是微信推送，大概每隔十分钟推一次。</li>
+<li><code>api_component_token</code>刚才说了是用上面的那张门票换的，但是有保质期，2小时，那么能不能每次要调接口都用门票换一下？人家微信是有每天的接口调用次数限定的，所以建议用个cache缓存起来，到了1小时50分的时候让缓存失效，失效再去call API换。可以用<strong>redis</strong>的TTL实现。</li>
+<li>类比的上文第1步提到的公众号的<code>accessToken</code>也是有保质期的，所以一定要保存好对应的<code>refresh_token</code>，到了1小时50分的时候再去换<code>accessToken</code>。</li>
+</ul>
+<p>一旦拿到公众号的<code>accessToken</code>，那么就可以像普通公众号的后台服务那样，比如获取粉丝列表啊，推送文章图片啊等等。</p>
+<p>PS: 最好采用加解密算法来进行消息的接受和推送。这里面有一个坑:</p>
+<blockquote>
+<p>异常java.security.InvalidKeyException:illegal Key Size的解决方案：在官方网站下载JCE无限制权限策略文件</p>
+</blockquote>
+<p>另外根据<a href="http://mp.weixin.qq.com/wiki/17/2d4265491f12608cd170a95559800f2d.html" target="_blank" rel="external">官网提示</a>首次验证服务器地址的有效性，必须返回同样的<code>echostr</code>。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;微信火了这么久，这两周第一次从一个开发者的角度来研究微信的生态系统而不是应用本身。现在做国内的项目或者产品难免都需要集成微信，其实现在微信背后的支撑平台已经是非常繁杂的了：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;公众平台（订阅号、服务号、企业号、小程序）&lt;/li&gt;
+&lt;li&gt;开放平台（网页应用、移动应用、公众号第三方平台开发）&lt;/li&gt;
+&lt;li&gt;商户平台 （支付）&lt;/li&gt;
+&lt;li&gt;服务商平台（代支付）&lt;/li&gt;
+&lt;/ul&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="http://www.deanwangpro.com/tags/Java/"/>
+    
+      <category term="wechat" scheme="http://www.deanwangpro.com/tags/wechat/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Spring AOP的实现机制</title>
+    <link href="http://www.deanwangpro.com/2017/02/08/aop-in-java/"/>
+    <id>http://www.deanwangpro.com/2017/02/08/aop-in-java/</id>
+    <published>2017-02-07T16:00:00.000Z</published>
+    <updated>2017-02-08T16:52:29.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>AOP（Aspect Orient Programming），一般称为面向切面编程，作为面向对象的一种补充，用于处理系统中分布于各个模块的横切关注点，比如事务管理、日志、缓存等等。AOP实现的关键在于AOP框架自动创建的AOP代理，AOP代理主要分为静态代理和动态代理，静态代理的代表为AspectJ；而动态代理则以Spring AOP为代表。静态代理是编译期实现，动态代理是运行期实现，可想而知前者拥有更好的性能。本文主要介绍Spring AOP的两种代理实现机制，JDK动态代理和CGLIB动态代理。</p>
+<a id="more"></a>
+<p>静态代理是编译阶段生成AOP代理类，也就是说生成的字节码就织入了增强后的AOP对象；动态代理则不会修改字节码，而是在内存中临时生成一个AOP对象，这个AOP对象包含了目标对象的全部方法，并且在特定的切点做了增强处理，并回调原对象的方法。</p>
+<p>Spring AOP中的动态代理主要有两种方式，JDK动态代理和CGLIB动态代理。JDK动态代理通过反射来接收被代理的类，并且要求被代理的类必须实现一个接口。JDK动态代理的核心是InvocationHandler接口和Proxy类。</p>
+<p>如果目标类没有实现接口，那么Spring AOP会选择使用CGLIB来动态代理目标类。CGLIB（Code Generation Library），是一个代码生成的类库，可以在运行时动态的生成某个类的子类，注意，CGLIB是通过继承的方式做的动态代理，因此如果某个类被标记为final，那么它是无法使用CGLIB做动态代理的，诸如private的方法也是不可以作为切面的。</p>
+<p>我们分别通过实例来研究AOP的具体实现。</p>
+<h4 id="直接使用Spring-AOP"><a href="#直接使用Spring-AOP" class="headerlink" title="直接使用Spring AOP"></a>直接使用Spring AOP</h4><p>首先定义需要切入的接口和实现。为了简单起见，定义一个<code>Speakable</code>接口和一个具体的实现类，只有两个方法<code>sayHi()</code>和<code>sayBye()</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Speakable</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">sayHi</span><span class="params">()</span></span>;</div><div class="line">    <span class="function"><span class="keyword">void</span> <span class="title">sayBye</span><span class="params">()</span></span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@Service</span></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">PersonSpring</span> <span class="keyword">implements</span> <span class="title">Speakable</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sayHi</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            Thread.currentThread().sleep(<span class="number">30</span>);</div><div class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(e);</div><div class="line">        &#125;</div><div class="line">        System.out.println(<span class="string">"Hi!!"</span>);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sayBye</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            Thread.currentThread().sleep(<span class="number">10</span>);</div><div class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(e);</div><div class="line">        &#125;</div><div class="line">        System.out.println(<span class="string">"Bye!!"</span>);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>接下来我们希望实现一个记录<code>sayHi()</code>和<code>sayBye()</code>执行时间的功能。</p>
+<p>定义一个<code>MethodMonitor</code>类用来记录Method执行时间</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MethodMonitor</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> <span class="keyword">long</span> start;</div><div class="line">    <span class="keyword">private</span> String method;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MethodMonitor</span><span class="params">(String method)</span> </span>&#123;</div><div class="line">        <span class="keyword">this</span>.method = method;</div><div class="line">        System.out.println(<span class="string">"begin monitor.."</span>);</div><div class="line">        <span class="keyword">this</span>.start = System.currentTimeMillis();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">log</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">long</span> elapsedTime = System.currentTimeMillis() - start;</div><div class="line">        System.out.println(<span class="string">"end monitor.."</span>);</div><div class="line">        System.out.println(<span class="string">"Method: "</span> + method + <span class="string">", execution time: "</span> + elapsedTime + <span class="string">" milliseconds."</span>);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>光有这个类还是不够的，希望有个静态方法用起来更顺手，像这样</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">MonitorSession.begin();</div><div class="line">doWork();</div><div class="line">MonitorSession.end();</div></pre></td></tr></table></figure>
+<p>说干就干，定义一个<code>MonitorSession</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MonitorSession</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> <span class="keyword">static</span> ThreadLocal&lt;MethodMonitor&gt; monitorThreadLocal = <span class="keyword">new</span> ThreadLocal&lt;&gt;();</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">begin</span><span class="params">(String method)</span> </span>&#123;</div><div class="line">        MethodMonitor logger = <span class="keyword">new</span> MethodMonitor(method);</div><div class="line">        monitorThreadLocal.set(logger);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">end</span><span class="params">()</span> </span>&#123;</div><div class="line">        MethodMonitor logger = monitorThreadLocal.get();</div><div class="line">        logger.log();</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>万事具备，接下来只需要我们做好切面的编码，</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@Aspect</span></div><div class="line"><span class="meta">@Component</span></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MonitorAdvice</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="meta">@Pointcut</span>(<span class="string">"execution (* com.deanwangpro.aop.service.Speakable.*(..))"</span>)</div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">pointcut</span><span class="params">()</span> </span>&#123;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Around</span>(<span class="string">"pointcut()"</span>)</div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">around</span><span class="params">(ProceedingJoinPoint pjp)</span> <span class="keyword">throws</span> Throwable </span>&#123;</div><div class="line">        MonitorSession.begin(pjp.getSignature().getName());</div><div class="line">        pjp.proceed();</div><div class="line">        MonitorSession.end();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如何使用？我用了spring boot，写一个启动函数吧。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@SpringBootApplication</span></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Application</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="meta">@Autowired</span></div><div class="line">    <span class="keyword">private</span> Speakable personSpring;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</div><div class="line">        SpringApplication.run(Application.class, args);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Bean</span></div><div class="line">    <span class="function"><span class="keyword">public</span> CommandLineRunner <span class="title">commandLineRunner</span><span class="params">(ApplicationContext ctx)</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> args -&gt; &#123;</div><div class="line">            <span class="comment">// spring aop</span></div><div class="line">            System.out.println(<span class="string">"******** spring aop ******** "</span>);</div><div class="line">            personSpring.sayHi();</div><div class="line">            personSpring.sayBye();</div><div class="line">            System.exit(<span class="number">0</span>);</div><div class="line">        &#125;;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>运行后输出:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">******** jdk dynamic proxy ******** </div><div class="line">begin monitor..</div><div class="line">Hi!!</div><div class="line">end monitor..</div><div class="line">Method: sayHi, execution time: 32 milliseconds.</div><div class="line">begin monitor..</div><div class="line">Bye!!</div><div class="line">end monitor..</div><div class="line">Method: sayBye, execution time: 22 milliseconds.</div></pre></td></tr></table></figure></p>
+<h4 id="JDK动态代理"><a href="#JDK动态代理" class="headerlink" title="JDK动态代理"></a>JDK动态代理</h4><p>刚刚的例子其实内部实现机制就是JDK动态代理，因为Person实现了一个接口。</p>
+<p>为了不和第一个例子冲突，我们再定义一个<code>Person</code>来实现<code>Speakable</code>, 这个实现是不带Spring Annotation的，所以他不会被Spring托管。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">PersonImpl</span> <span class="keyword">implements</span> <span class="title">Speakable</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sayHi</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            Thread.currentThread().sleep(<span class="number">30</span>);</div><div class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(e);</div><div class="line">        &#125;</div><div class="line">        System.out.println(<span class="string">"Hi!!"</span>);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sayBye</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            Thread.currentThread().sleep(<span class="number">10</span>);</div><div class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(e);</div><div class="line">        &#125;</div><div class="line">        System.out.println(<span class="string">"Bye!!"</span>);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>重头戏来了，我们需要利用<code>InvocationHandler</code>实现一个代理，让它去包含<code>Person</code>这个对象。那么再运行期实际上是执行这个代理的方法，然后代理再去执行真正的方法。所以我们得以在执行真正方法的前后做一些手脚。JDK动态代理是利用反射实现，直接看代码。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DynamicProxy</span> <span class="keyword">implements</span> <span class="title">InvocationHandler</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> Object target;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="title">DynamicProxy</span><span class="params">(Object object)</span> </span>&#123;</div><div class="line">        <span class="keyword">this</span>.target = object;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">invoke</span><span class="params">(Object arg0, Method arg1, Object[] arg2)</span></span></div><div class="line">            <span class="keyword">throws</span> Throwable &#123;</div><div class="line">        MonitorSession.begin(arg1.getName());</div><div class="line">        Object obj = arg1.invoke(target, arg2);</div><div class="line">        MonitorSession.end();</div><div class="line">        <span class="keyword">return</span> obj;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</div><div class="line">    <span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">getProxy</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> (T) Proxy.newProxyInstance(</div><div class="line">                target.getClass().getClassLoader(),</div><div class="line">                target.getClass().getInterfaces(),</div><div class="line">                <span class="keyword">this</span></div><div class="line">        );</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>通过<code>getProxy</code>可以得到这个代理对象，<code>invoke</code>就是具体的执行方法，可以看到我们在执行每个真正的方法前后都加了Monitor。</p>
+<p>我实现了一个工厂类来获取Person代理对象</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">PersonProxyFactory</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Speakable <span class="title">newJdkProxy</span><span class="params">()</span> </span>&#123;</div><div class="line">    		<span class="comment">// 代理PersonImpl</span></div><div class="line">        DynamicProxy dynamicProxy = <span class="keyword">new</span> DynamicProxy(<span class="keyword">new</span> PersonImpl());</div><div class="line">        Speakable proxy = dynamicProxy.getProxy();</div><div class="line">        <span class="keyword">return</span> proxy;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>具体使用</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"> <span class="comment">// jdk dynamic proxy</span></div><div class="line">System.out.println(<span class="string">"******** jdk dynamic proxy ******** "</span>);</div><div class="line">Speakable jdkProxy = PersonProxyFactory.newJdkProxy();</div><div class="line">jdkProxy.sayHi();</div><div class="line">jdkProxy.sayBye();</div></pre></td></tr></table></figure>
+<p>输出结果:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">******** jdk dynamic proxy ******** </div><div class="line">begin monitor..</div><div class="line">Hi!!</div><div class="line">end monitor..</div><div class="line">Method: sayHi, execution time: 32 milliseconds.</div><div class="line">begin monitor..</div><div class="line">Bye!!</div><div class="line">end monitor..</div><div class="line">Method: sayBye, execution time: 22 milliseconds.</div></pre></td></tr></table></figure>
+<h4 id="CGLib动态代理"><a href="#CGLib动态代理" class="headerlink" title="CGLib动态代理"></a>CGLib动态代理</h4><p>我们再新建一个<code>Person</code>来，这次不实现任何接口。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Person</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sayHi</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            Thread.currentThread().sleep(<span class="number">30</span>);</div><div class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(e);</div><div class="line">        &#125;</div><div class="line">        System.out.println(<span class="string">"Hi!!"</span>);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sayBye</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            Thread.currentThread().sleep(<span class="number">10</span>);</div><div class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(e);</div><div class="line">        &#125;</div><div class="line">        System.out.println(<span class="string">"Bye!!"</span>);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如果Spring识别到所代理的类没有实现Interface，那么就会使用CGLib来创建动态代理，原理实际上成为所代理类的子类。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CGLibProxy</span> <span class="keyword">implements</span> <span class="title">MethodInterceptor</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> <span class="keyword">static</span> CGLibProxy instance = <span class="keyword">new</span> CGLibProxy();</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">private</span> <span class="title">CGLibProxy</span><span class="params">()</span> </span>&#123;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> CGLibProxy <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> instance;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> Enhancer enhancer = <span class="keyword">new</span> Enhancer();</div><div class="line"></div><div class="line">    <span class="meta">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</div><div class="line">    <span class="keyword">public</span>  &lt;T&gt; <span class="function">T <span class="title">getProxy</span><span class="params">(Class&lt;T&gt; clazz)</span> </span>&#123;</div><div class="line">        enhancer.setSuperclass(clazz);</div><div class="line">        enhancer.setCallback(<span class="keyword">this</span>);</div><div class="line">        <span class="keyword">return</span> (T) enhancer.create();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> Object <span class="title">intercept</span><span class="params">(Object arg0, Method arg1, Object[] arg2,</span></span></div><div class="line">                            MethodProxy arg3) <span class="keyword">throws</span> Throwable &#123;</div><div class="line">        MonitorSession.begin(arg1.getName());</div><div class="line">        Object obj = arg3.invokeSuper(arg0, arg2);</div><div class="line">        MonitorSession.end();</div><div class="line">        <span class="keyword">return</span> obj;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>类似的通过<code>getProxy</code>可以得到这个代理对象，<code>intercept</code>就是具体的执行方法，可以看到我们在执行每个真正的方法前后都加了Monitor。</p>
+<p>在工厂类中增加获得Person代理类的方法,</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Person <span class="title">newCglibProxy</span><span class="params">()</span> </span>&#123;</div><div class="line">    CGLibProxy cglibProxy = CGLibProxy.getInstance();</div><div class="line">    Person proxy = cglibProxy.getProxy(Person.class);</div><div class="line">    <span class="keyword">return</span> proxy;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>具体使用</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// cglib dynamic proxy</span></div><div class="line">System.out.println(<span class="string">"******** cglib proxy ******** "</span>);</div><div class="line">Person cglibProxy = PersonProxyFactory.newCglibProxy();</div><div class="line">cglibProxy.sayHi();</div><div class="line">cglibProxy.sayBye();</div></pre></td></tr></table></figure>
+<p>输出结果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">begin monitor..</div><div class="line">Hi!!</div><div class="line">end monitor..</div><div class="line">Method: sayHi, execution time: 53 milliseconds.</div><div class="line">begin monitor..</div><div class="line">Bye!!</div><div class="line">end monitor..</div><div class="line">Method: sayBye, execution time: 14 milliseconds.</div></pre></td></tr></table></figure>
+<h4 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h4><p>对比JDK动态代理和CGLib代理，在实际使用中发现CGLib在创建代理对象时所花费的时间却比JDK动态代理要长，实测数据</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">Method: newJdkProxy, execution time: 5 milliseconds.</div><div class="line">Method: newCglibProxy, execution time: 18 milliseconds.</div></pre></td></tr></table></figure>
+<p>所以CGLib更适合代理不需要频繁实例化的类。</p>
+<p>在具体方法执行效率方面，理应是不通过反射的CGlib更快一些，然后测试结果并非如此，还需要高手指教。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">JDK</div><div class="line">Method: sayHi, execution time: 32 milliseconds.</div><div class="line">CGLib</div><div class="line">Method: sayHi, execution time: 53 milliseconds.</div></pre></td></tr></table></figure>
+<p>以上code都可以通过<a href="https://github.com/deanwong/aop-study" target="_blank" rel="external">Github</a>中获取。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;AOP（Aspect Orient Programming），一般称为面向切面编程，作为面向对象的一种补充，用于处理系统中分布于各个模块的横切关注点，比如事务管理、日志、缓存等等。AOP实现的关键在于AOP框架自动创建的AOP代理，AOP代理主要分为静态代理和动态代理，静态代理的代表为AspectJ；而动态代理则以Spring AOP为代表。静态代理是编译期实现，动态代理是运行期实现，可想而知前者拥有更好的性能。本文主要介绍Spring AOP的两种代理实现机制，JDK动态代理和CGLIB动态代理。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="http://www.deanwangpro.com/tags/Java/"/>
+    
+      <category term="Spring" scheme="http://www.deanwangpro.com/tags/Spring/"/>
+    
+      <category term="aop" scheme="http://www.deanwangpro.com/tags/aop/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>阿里电面试题汇总</title>
+    <link href="http://www.deanwangpro.com/2017/01/31/ali-interview/"/>
+    <id>http://www.deanwangpro.com/2017/01/31/ali-interview/</id>
+    <published>2017-01-30T16:00:00.000Z</published>
+    <updated>2017-01-31T15:30:13.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>年前意外的经历了一次阿里的电话面试，话说还没想换工作，但这位业余HR（应该是技术负责人）都没介绍工作岗位和要求，直接就约定某晚的电面时间，抱着好奇的态度被“虐”了一把。</p>
+<p>总体感觉这位面试官问的问题非常深，基本都是系统或者原理级别的。不知道是不是代表了阿里面试的基本思路。</p>
+<a id="more"></a>
+<h4 id="JVM的内存模型"><a href="#JVM的内存模型" class="headerlink" title="JVM的内存模型"></a>JVM的内存模型</h4><p>内存空间（Runtime Data Area）中可以按照是否线程共享分成两块，线程共享的是方法区（Method Area）和堆（Heap），线程独享的是Java栈（Java Stack），本地方法栈（Native Method Stack）和PC寄存器（Program Counter Register）。</p>
+<p>当然从1.8开始有一些变化，按照我的理解，原来常量池等信息都储存方法区，现在都移到堆里了。</p>
+<blockquote>
+<p>1.8中-XX:PermSize 和 -XX:MaxPermSize 已经失效，取而代之的是一个新的区域 —— Metaspace（元数据区）。</p>
+<p>在 JDK 1.7 及以往的 JDK 版本中，Java 类信息、常量池、静态变量都存储在 Perm（永久代）里。类的元数据和静态变量在类加载的时候分配到 Perm，当类被卸载的时候垃圾收集器从 Perm 处理掉类的元数据和静态变量。当然常量池的东西也会在 Perm 垃圾收集的时候进行处理。</p>
+<p>JDK 1.8 的对 JVM 架构的改造将类元数据放到本地内存中，另外，将常量池和静态变量放到 Java 堆里。HotSopt VM 将会为类的元数据明确分配和释放本地内存。在这种架构下，类元信息就突破了原来 -XX:MaxPermSize 的限制，现在可以使用更多的本地内存。这样就从一定程度上解决了原来在运行时生成大量类的造成经常 Full GC 问题，如运行时使用反射、代理等。</p>
+</blockquote>
+<p>所以升级以后Java堆空间可能会增加。</p>
+<h4 id="http1-0，http1-1，http2-0区别"><a href="#http1-0，http1-1，http2-0区别" class="headerlink" title="http1.0，http1.1，http2.0区别"></a>http1.0，http1.1，http2.0区别</h4><p>说实话没有接触过1.0，只知道跟1.0相比1.1可以一次传输多个文件，各类浏览器大概都支持3~5个请求同时发送。</p>
+<p>http2.0也是最近调Nginx才知道的一些，主要就是二进制的格式替代了原来的文本。后来查了资料大概知道增加了多路复用和首部压缩解决了head of line blocking，另外还有server pushing等新特性。协议的东西还是要看一看官网的说明，不过这东西过一段就容易忘。</p>
+<h4 id="Get-Post对缓存的影响"><a href="#Get-Post对缓存的影响" class="headerlink" title="Get/Post对缓存的影响"></a>Get/Post对缓存的影响</h4><p>这题我一直没Get到点，意图其实是问浏览器缓存对于HTTP Method中Get和Post的请求是否支持，答案就是不支持Post Method。Get可以被浏览器缓存。</p>
+<h4 id="浏览器渲染机制"><a href="#浏览器渲染机制" class="headerlink" title="浏览器渲染机制"></a>浏览器渲染机制</h4><p>这题其实我没法答，问的太大，大概瞥过V8的一些机制。比如构建Dom，生成CSS Rule等等。但是真实没有特别系统的理解过。</p>
+<h4 id="mysql的Join原理以及索引数据结构和实现原理"><a href="#mysql的Join原理以及索引数据结构和实现原理" class="headerlink" title="mysql的Join原理以及索引数据结构和实现原理"></a>mysql的Join原理以及索引数据结构和实现原理</h4><p>只知道mysql innoDB join只支持Nested Loop，不支持Hash Join，就是确定一个驱动表后不断Join得到结果集，再继续往下Join。所以Join的顺序很重要。</p>
+<p>索引只知道数据结构是B+Tree，其实就真悲催了。所以检讨一下，搜到一篇不错的<a href="http://blog.codinglabs.org/articles/theory-of-mysql-index.html" target="_blank" rel="external">文章</a>。</p>
+<h4 id="浏览器meta-charset和response中content-type的优先级"><a href="#浏览器meta-charset和response中content-type的优先级" class="headerlink" title="浏览器meta charset和response中content-type的优先级"></a>浏览器meta charset和response中content-type的优先级</h4><p>这题也是懵了，其实应该回想一下这一句，</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="tag">&lt;<span class="name">meta</span> <span class="attr">http-equiv</span>=<span class="string">"Content-Type"</span> <span class="attr">content</span>=<span class="string">"text/html; charset=utf-8"</span> /&gt;</span></div></pre></td></tr></table></figure>
+<p>简写才是</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">"utf-8"</span> /&gt;</span></div></pre></td></tr></table></figure>
+<p>http-equiv 这个属性就是对应 HTTP response headers 里面的项目，其初衷是让不能（比如没有权限）设定服务器 header 的站点可以通过它来告知浏览器一些页面内容的相关信息。</p>
+<p>了解以上就知道肯定是后者的优先级更高。</p>
+<p>总结一下，裸面被虐残，阿里的面试官绝对是技术大拿，一言不合就问原理，触及灵魂了。反省自己还是应用做的太多，协议啊操作系统啊还是忘得快，没有系统的理解。以后还是应该多温故知新。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;年前意外的经历了一次阿里的电话面试，话说还没想换工作，但这位业余HR（应该是技术负责人）都没介绍工作岗位和要求，直接就约定某晚的电面时间，抱着好奇的态度被“虐”了一把。&lt;/p&gt;
+&lt;p&gt;总体感觉这位面试官问的问题非常深，基本都是系统或者原理级别的。不知道是不是代表了阿里面试的基本思路。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="面试" scheme="http://www.deanwangpro.com/tags/%E9%9D%A2%E8%AF%95/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>蜕变的2016</title>
+    <link href="http://www.deanwangpro.com/2016/12/30/2016-summary/"/>
+    <id>http://www.deanwangpro.com/2016/12/30/2016-summary/</id>
+    <published>2016-12-29T16:00:00.000Z</published>
+    <updated>2017-01-06T15:27:44.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>今天是2016年的倒数第二天，仿佛踮起脚就能够到17年。16年对于我来说是不平凡的一年，即使在暮年回首想必也会历历在目。</p>
+<a id="more"></a>
+<h3 id="孩子"><a href="#孩子" class="headerlink" title="孩子"></a>孩子</h3><p>最大的蜕变就是身份升级成了父亲，老婆从1月怀孕经历艰难的十月怀胎，终于在10月产下一个胖小子。这是全家最大的欢乐，即便有一些磕磕碰碰，但随着这个孩子的降临，一切都有了新的希望。感谢老婆，岳母岳母，爸妈对孩子的悉心照顾。自己也有了新的责任感，陪伴孩子的几个月真的是这一辈子最难忘也最怀念的时光。</p>
+<h3 id="技术"><a href="#技术" class="headerlink" title="技术"></a>技术</h3><p>工作一直还算比较安定和自由，有一定的自主权选择自己喜欢的方向做一些东西。最打的收获应该说是全方位的体验了一次微服务的洗礼。一个既存系统从mono到拆成20多个小的service，期间经历了林林种种的问题，大约花费了半年的时间总算稳定下来。所以微服务给我最大的感受就是，这真不是一般公司可以玩儿的起的。对于架构师，甚至一线程序员的要求都高出不少。devops文化，API设计的规范，性能优化的能力等等都得具备。</p>
+<p>接触到技术或者床架主要是kubernetes，和spring-boot提供一系列微服务方案，其中包含了netflix的各类组件比如hytrix。如果用spring-boot从无到有的构建一个微服务，在官网上已经给出了<a href="https://spring.io/blog/2015/07/14/microservices-with-spring" target="_blank" rel="external">答案</a>，而且Github上的脚手架也是不少。</p>
+<p>微服务之间的通信除了API的直接通信，更多的是一种基于消息的异步通信，好处是提高throughput，16年大约有4个月的时间我都在研究基于消息的数据同步存储。也写了几篇浅见发在自己的博客上。这个<a href="http://www.deanwangpro.com/">博客</a>也是今年刚刚上线，一开始是jekyll的，后来转到hexo，托管在Github。有了技术博客，有个很大的好处是一旦有一些技术发现就想纪录下来，并且写的过程也是一个揣摩再消化的过程。明年希望能够保持一周到两周一篇的更新频率。</p>
+<p>工作之外接触最多的技术还就是docker了，再加上玩儿了WordPress一两年了，所以也利用compose搞了一个WordPress的开发环境，大概是这样的配置<code>nginx-apline + php7-fpm-alpine + mariadb + wordpress 4.6</code></p>
+<h3 id="财务"><a href="#财务" class="headerlink" title="财务"></a>财务</h3><p>结婚以后家里柴米油盐都是花销，从08年我就有记账的习惯，保持至今。今年家里添丁，花销自然是不少，所以最后结果仅仅是略有盈余，但是明年还需要买车位装修，交契税，更大的花销还在17年。</p>
+<ul>
+<li>最大的开支是车位预支了3w定金</li>
+<li>保险花费了1.6w，这一项比较固定，今年新增加了宝宝的保险</li>
+<li>养车1.2w</li>
+<li>生宝宝医院费用 + 月嫂 + 各种育儿用品2w</li>
+<li>家里水电宽带各种新添置的电器等等共计1.5w</li>
+<li>平时吃饭包括聚会什么的共计1w</li>
+<li>其余手机费，买衣服，看演出等费用非常低，大约0.5w左右，可见今年养孩子真是没有娱乐活动的。</li>
+</ul>
+<p>综上，一年花销在11w左右，财务状况还是挺正常的，开源节流看来没有必要，还是想想怎么多赚钱好了。</p>
+<h3 id="愿望"><a href="#愿望" class="headerlink" title="愿望"></a>愿望</h3><ul>
+<li>多多跟孩子在一起，真的不像错过儿子任何一个成长的瞬间。</li>
+<li>磨炼技艺，多赚钱，真想再深挖一下WordPress的潜力。</li>
+<li>坚持更新技术博客，二三周一遍的频率。</li>
+<li>坚持夜跑，每天2~3公里。</li>
+<li>坚持看书，一周3~4小时。</li>
+<li>坚持练习口语，一周3~4小时。</li>
+</ul>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;今天是2016年的倒数第二天，仿佛踮起脚就能够到17年。16年对于我来说是不平凡的一年，即使在暮年回首想必也会历历在目。&lt;/p&gt;
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>利用JPA实现消息落地的一些问题</title>
+    <link href="http://www.deanwangpro.com/2016/12/25/jpa-and-spring-retry/"/>
+    <id>http://www.deanwangpro.com/2016/12/25/jpa-and-spring-retry/</id>
+    <published>2016-12-24T16:00:00.000Z</published>
+    <updated>2017-03-22T14:32:30.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>目前我们处理消息的同步，一般是落地到DB后，再同过异步的方式做数据的聚合和处理。至于DB的操作为了简单直接用了Hibernate提供的一套JPA接口，（老实说真的是不喜欢JPA，一是sql log不好分析无法优化，二是必须非常了解JPA的所有关键字含义，不然就要出问题，所以我一直喜欢用mybatis这种更轻量的甚至spring-jdbc）。</p>
+<p>那么使用JPA的过程就遇到了一些问题，见招拆招一件一件来。</p>
+<a id="more"></a>
+<h3 id="问题1"><a href="#问题1" class="headerlink" title="问题1"></a>问题1</h3><p>遇到的第一个问题就非常的要命，我们的系统是一张单表需要支持multi-tenant多租户，简单说就是表中有个tenantId的字段来区分租户，这是比较常见的设计。那么在对DB做操作的时候，ORM框架应该提供分租户的CURD接口，而不需要开发人员都自己在<code>where</code>中加<code>tenantId=***</code>。</p>
+<h3 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h3><p>这个问题其实没有解决，因为Hibernate还没有实现单表的Multi-tenant（真是相当的坑）。<a href="https://docs.jboss.org/hibernate/orm/4.3/devguide/en-US/html/ch16.html" target="_blank" rel="external">官网文档</a>中说了这样三种情况</p>
+<blockquote>
+<p>SCHEMA<br>Correlates to the separate schema approach. It is an error to attempt to open a session without a tenant identifier using this strategy. Additionally, a MultiTenantConnectionProvider must be specified.</p>
+<p>DATABASE<br>Correlates to the separate database approach. It is an error to attempt to open a session without a tenant identifier using this strategy. Additionally, a MultiTenantConnectionProvider must be specified.</p>
+<p>DISCRIMINATOR<br>Correlates to the partitioned (discriminator) approach. It is an error to attempt to open a session without a tenant identifier using this strategy. This strategy is not yet implemented in Hibernate as of 4.0 and 4.1. Its support is planned for 5.0.</p>
+</blockquote>
+<p>可以看到最后一种还不支持呢。没办法只有手写where啦。</p>
+<h3 id="问题2"><a href="#问题2" class="headerlink" title="问题2"></a>问题2</h3><p>由于是处理消息，即使收到DELETE的message也不能真的删除，因为消息是<strong>乱序</strong>的，如果先来了DELETE再来UPDATE怎么办，实际上是先UPDATE再DELETE，但由于处理效率不一致，所以收到的消息顺序也是无法确定的。基于这点，为了保证数据的最终一致性，所以操作都作为UPDATE处理。删除操作必须是<strong>soft delete</strong></p>
+<h3 id="解决-1"><a href="#解决-1" class="headerlink" title="解决"></a>解决</h3><p>可以写一个BaseEntity，都有isactive这个字段，默认都是true</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@MappedSuperclass</span></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BaseEntity</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="meta">@Column</span>(name=<span class="string">"isactive"</span>, columnDefinition=<span class="string">"boolean DEFAULT true"</span>)</div><div class="line">    <span class="keyword">private</span> Boolean active = <span class="keyword">true</span>;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> Boolean <span class="title">getActive</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> active;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setActive</span><span class="params">(Boolean active)</span> </span>&#123;</div><div class="line">        <span class="keyword">this</span>.active = active;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>然后继承一下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@Entity</span></div><div class="line"><span class="meta">@Inheritance</span>(strategy = InheritanceType.JOINED)</div><div class="line"><span class="meta">@Table</span>(name = <span class="string">"Product"</span>)</div><div class="line"><span class="meta">@Where</span>(clause=<span class="string">"isactive = 1"</span>)</div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ProductEntity</span> <span class="keyword">extends</span> <span class="title">BaseEntity</span> </span>&#123;&#125;</div></pre></td></tr></table></figure>
+<p>注意<code>@Where</code>就是所有操作都会拼上这个condition从而实现soft delete。</p>
+<h3 id="问题3"><a href="#问题3" class="headerlink" title="问题3"></a>问题3</h3><p>在处理类似外键关联这种数据的时候，例如Product上有个CategoryId字段，那么数据库设计是一张Category表，一张Product表，Product表上CategoryId字段作为外键关联到Category表的ID字段。那么作为一个JPA的Entity，大家知道Entity是OO的，Product Entity下应该包含一个Category Entity，关系是oneToMany的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ProductEntity</span> <span class="keyword">extends</span> <span class="title">BaseEntity</span> </span>&#123;</div><div class="line"></div><div class="line">	<span class="meta">@ManyToOne</span>(fetch = FetchType.EAGER)</div><div class="line">	<span class="meta">@JoinColumn</span>(name = <span class="string">"categoryId"</span>)</div><div class="line">	<span class="keyword">private</span> CategoryEntity category;</div><div class="line">	</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>（这里要插一句，其实如果只是把Category当普通字段，存一个CategoryId也是没有问题的，但是在查询的时候就需要用这个Product.CategoryId再去Category里查一次。用了JPA之后，为了减少一次查询，有时候事情反而会复杂）。</p>
+<p>至于消息，比如先收到Product的CREATE事件，这时候会拿消息体里的categoryId去category表查一下有没有这个Category Entity，如果有直接得到后塞到Product的Category属性上去，但是如果没有这个Category怎么办？</p>
+<h3 id="解决-2"><a href="#解决-2" class="headerlink" title="解决"></a>解决</h3><p>如果没有的话，按照JPA的外键关联原则，我们需要建立一个虚拟的Category，也就是说插入一条占位数据到Category表中，只有ID有值。所以对ProductEntity做些改造。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ProductEntity</span> <span class="keyword">extends</span> <span class="title">BaseEntity</span> </span>&#123;</div><div class="line"></div><div class="line">	<span class="meta">@ManyToOne</span>(cascade = &#123;CascadeType.PERSIST&#125;, fetch = FetchType.EAGER)</div><div class="line">	<span class="meta">@NotFound</span>(action= NotFoundAction.IGNORE)</div><div class="line">	<span class="meta">@JoinColumn</span>(name = <span class="string">"categoryId"</span>)</div><div class="line">	<span class="keyword">private</span> CategoryEntity category;</div><div class="line">	</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>注意加了两点，一是<code>cascade = {CascadeType.PERSIST}</code>，意思是如果Persist了Product的话，发现categoryId不为空而category表中又没有该Category，那么级联插入这条数据（只有ID）。二是<code>@NotFound(action= NotFoundAction.IGNORE)</code>，加这条是防止当收到一个Category.DELETE事件后软删除了Category，而读取Product的时候就会Eager地获得Category，一旦获取不到JPA会抛出<code>EntityNotExist</code>的异常。加了这个注解，Product里的category就为null，不会出异常。</p>
+<h3 id="问题4"><a href="#问题4" class="headerlink" title="问题4"></a>问题4</h3><p>这实际上是问题3的衍生，解决3的时候我们使用了<code>Cascade=PERSIST</code>，那么在发现Category不存在的时候，JPA会发起一个insert，当然数据只有ID，其他的字段等待真正的Category的CREATE事件来了再填充。但是并发的问题就出现了，如果正好就在发起insert之前，Category的CREATE事件来了（另一个Worker在处理），那里也发现表里没有这个Category，所以也随即发起一个insert操作。conflict就这样发生了，主键冲突！这时候怎么办？</p>
+<h3 id="解决-3"><a href="#解决-3" class="headerlink" title="解决"></a>解决</h3><p>我采取了一种比较粗暴的方式，就是retry，首先每次收到事件后的写操作，都是查Entity是否存在，存在就Update，不存在就Insert。当两个Worker同时做写入操作，肯定一个成功一个失败，失败的只要retry一次就会发现Entity有了（另一个Worker写入的），这时候变成Update操作就不会有conflict。</p>
+<p>因为项目中依赖Spring，所以恰好有了spring-retry这个包，直接用起来。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RetryTemplateBuilder</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">protected</span> RetryTemplate buildable;</div><div class="line">    <span class="keyword">protected</span> RetryTemplateBuilder builder;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="title">RetryTemplateBuilder</span><span class="params">()</span> </span>&#123;</div><div class="line">        buildable = createBuildable();</div><div class="line">        builder = getBuilder();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> RetryTemplateBuilder <span class="title">retryTemplate</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> <span class="keyword">new</span> RetryTemplateBuilder();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> RetryTemplateBuilder <span class="title">withPolicies</span><span class="params">(RetryPolicy... policies)</span> </span>&#123;</div><div class="line">        CompositeRetryPolicy compositePolicy = <span class="keyword">new</span> CompositeRetryPolicy();</div><div class="line">        compositePolicy.setPolicies(policies);</div><div class="line">        buildable.setRetryPolicy(compositePolicy);</div><div class="line">        <span class="keyword">return</span> <span class="keyword">this</span>;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> RetryTemplateBuilder <span class="title">withPolicies</span><span class="params">(RetryPolicy retryPolicy, BackOffPolicy backOffPolicy)</span> </span>&#123;</div><div class="line">        buildable.setRetryPolicy(retryPolicy);</div><div class="line">        buildable.setBackOffPolicy(backOffPolicy);</div><div class="line">        <span class="keyword">return</span> <span class="keyword">this</span>;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> RetryTemplateBuilder <span class="title">withPolicies</span><span class="params">(BackOffPolicy backOffPolicy)</span> </span>&#123;</div><div class="line">        buildable.setBackOffPolicy(backOffPolicy);</div><div class="line">        <span class="keyword">return</span> <span class="keyword">this</span>;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> RetryTemplate <span class="title">build</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> buildable;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">protected</span> RetryTemplate <span class="title">createBuildable</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> <span class="keyword">new</span> RetryTemplate();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">protected</span> RetryTemplateBuilder <span class="title">getBuilder</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> <span class="keyword">this</span>;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这是一个TemplateBuilder，可以理解成retry的模板，一个retryTemplate可以包含多个policy。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SimpleRetryPolicyBuilder</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">protected</span> SimpleRetryPolicy buildable;</div><div class="line">    <span class="keyword">protected</span> SimpleRetryPolicyBuilder builder;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SimpleRetryPolicyBuilder</span><span class="params">()</span> </span>&#123;</div><div class="line">        buildable = createBuildable();</div><div class="line">        builder = getBuilder();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> SimpleRetryPolicyBuilder <span class="title">simpleRetryPolicy</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> <span class="keyword">new</span> SimpleRetryPolicyBuilder();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> SimpleRetryPolicy <span class="title">simpleRetryPolicyWithRetryableExceptions</span><span class="params">(<span class="keyword">int</span> maxAttempts,</span></span></div><div class="line">                                                                             Map&lt;Class&lt;? extends Throwable&gt;, Boolean&gt; exception) &#123;</div><div class="line">        <span class="keyword">return</span> <span class="keyword">new</span> SimpleRetryPolicy(maxAttempts, exception);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> SimpleRetryPolicyBuilder <span class="title">withMaxAttempts</span><span class="params">(<span class="keyword">int</span> maxAttempts)</span> </span>&#123;</div><div class="line">        buildable.setMaxAttempts(maxAttempts);</div><div class="line">        <span class="keyword">return</span> <span class="keyword">this</span>;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> SimpleRetryPolicy <span class="title">build</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> buildable;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">protected</span> SimpleRetryPolicy <span class="title">createBuildable</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> <span class="keyword">new</span> SimpleRetryPolicy();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">protected</span> SimpleRetryPolicyBuilder <span class="title">getBuilder</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> <span class="keyword">this</span>;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>比如这种Policy，就是可以定义需要重试几次，在哪些异常发生的时候重试。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FixedBackOffPolicyBuilder</span> </span>&#123;</div><div class="line"></div><div class="line"></div><div class="line">    <span class="keyword">protected</span> FixedBackOffPolicy buildable;</div><div class="line">    <span class="keyword">protected</span> FixedBackOffPolicyBuilder builder;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">private</span> <span class="title">FixedBackOffPolicyBuilder</span><span class="params">()</span> </span>&#123;</div><div class="line">        buildable = createBuildable();</div><div class="line">        builder = getBuilder();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> FixedBackOffPolicyBuilder <span class="title">fixedBackOffPolicy</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> <span class="keyword">new</span> FixedBackOffPolicyBuilder();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> FixedBackOffPolicyBuilder <span class="title">withDelay</span><span class="params">(<span class="keyword">long</span> delay)</span> </span>&#123;</div><div class="line">        buildable.setBackOffPeriod(delay);</div><div class="line">        <span class="keyword">return</span> <span class="keyword">this</span>;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> FixedBackOffPolicy <span class="title">build</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> buildable;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">protected</span> FixedBackOffPolicy <span class="title">createBuildable</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> <span class="keyword">new</span> FixedBackOffPolicy();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">protected</span> FixedBackOffPolicyBuilder <span class="title">getBuilder</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">return</span> <span class="keyword">this</span>;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>还有这种可以定义retry的间隔时间。</p>
+<p>最后用起来就手到擒来了，</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">Map&lt;Class&lt;? extends Throwable&gt;, Boolean&gt; retryFor = <span class="keyword">new</span> HashMap&lt;&gt;();</div><div class="line"><span class="comment">// 定义两种异常发生时retry</span></div><div class="line">retryFor.put(DataIntegrityViolationException.class, Boolean.TRUE);</div><div class="line">retryFor.put(ConstraintViolationException.class, Boolean.TRUE);</div><div class="line"><span class="comment">// 定义最大retry次数和间隔时间</span></div><div class="line">RetryTemplate retryTemplate = RetryTemplateBuilder.retryTemplate()</div><div class="line">        .withPolicies(</div><div class="line">                SimpleRetryPolicyBuilder.simpleRetryPolicyWithRetryableExceptions(MAX_ATTEMPTS, retryFor),</div><div class="line">                FixedBackOffPolicyBuilder.fixedBackOffPolicy().withDelay(RETRY_DELAY).build())</div><div class="line">        .build();</div><div class="line"></div><div class="line">retryTemplate.execute(<span class="keyword">new</span> RetryCallback() &#123;</div><div class="line">    <span class="function"><span class="keyword">public</span> Void <span class="title">doWithRetry</span><span class="params">(RetryContext context)</span> </span>&#123;</div><div class="line">        log.info(<span class="string">"Attempt times ["</span> + context.getRetryCount() + <span class="string">"]"</span>);</div><div class="line">        <span class="comment">// Your logic code</span></div><div class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</div><div class="line">    &#125;</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<p>在生产环境测试，99%的情况一次retry就可以解决问题，所以我的经验值是设置了3次最大重试次数。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;目前我们处理消息的同步，一般是落地到DB后，再同过异步的方式做数据的聚合和处理。至于DB的操作为了简单直接用了Hibernate提供的一套JPA接口，（老实说真的是不喜欢JPA，一是sql log不好分析无法优化，二是必须非常了解JPA的所有关键字含义，不然就要出问题，所以我一直喜欢用mybatis这种更轻量的甚至spring-jdbc）。&lt;/p&gt;
+&lt;p&gt;那么使用JPA的过程就遇到了一些问题，见招拆招一件一件来。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="MQ" scheme="http://www.deanwangpro.com/tags/MQ/"/>
+    
+      <category term="JPA，Spring" scheme="http://www.deanwangpro.com/tags/JPA%EF%BC%8CSpring/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>解决jenkins中npm install的symlink问题</title>
+    <link href="http://www.deanwangpro.com/2016/12/16/jenkins-npm-symlink-issue/"/>
+    <id>http://www.deanwangpro.com/2016/12/16/jenkins-npm-symlink-issue/</id>
+    <published>2016-12-15T16:00:00.000Z</published>
+    <updated>2016-12-19T16:24:38.000Z</updated>
+    
+    <content type="html"><![CDATA[<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>这一周在Jenkins上跑npm install经常会出现build fail，查了日志就是下面输出的样子：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">npm ERR! node v4.4.7</div><div class="line">npm ERR! npm  v2.15.8</div><div class="line">npm ERR! path ../gulp/bin/gulp.js</div><div class="line">npm ERR! code EEXIST</div><div class="line">npm ERR! errno -17</div><div class="line">npm ERR! syscall symlink</div><div class="line"></div><div class="line">npm ERR! EEXIST: file already exists, symlink &apos;../gulp/bin/gulp.js&apos; -&gt; &apos;/.jenkins/workspace/eshop/build/node_modules/.bin/gulp&apos;</div><div class="line">File exists: ../gulp/bin/gulp.js</div><div class="line">Move it away, and try again. </div><div class="line"></div><div class="line">npm ERR! Please include the following file with any support request:</div><div class="line">npm ERR!    /.jenkins/workspace/eshop/build/npm-debug.log</div><div class="line">[INFO] ------------------------------------------------------------------------</div><div class="line">[INFO] BUILD FAILURE</div><div class="line">[INFO] ------------------------------------------------------------------------</div><div class="line">[INFO] Total time: 19.399 s</div><div class="line">[INFO] Finished at: 2016-12-15T06:06:26+00:00</div><div class="line">[INFO] Final Memory: 8M/63M</div><div class="line">[INFO] -----------------------------------------------------------------------</div></pre></td></tr></table></figure>
+<p>一开始以为是建symlink的问题，考虑了可能权限或者symlink已存在的情况。但是用全新的一个虚机去跑npm install还是失败，错误有原因也是一样。本着死马当活马医的思路，加了一个<code>-–no-bin-link</code>参数，问题奇迹的解决了。查看官网的一段解释<code>The --no-bin-links argument will prevent npm from creating symlinks for any binaries the package might contain.</code>貌似也是在虚机才会出现这种情况。</p>
+<p>之后又咨询了我们做构建的同事，他们建议把nodejs升级到6，同样也解决了问题。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>看来root cause是查不到了，只能给两个建议</p>
+<ol>
+<li>加<code>-–no-bin-link</code>参数</li>
+<li>升级Jenkins机器上的nodejs版本到6</li>
+</ol>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h3 id=&quot;问题&quot;&gt;&lt;a href=&quot;#问题&quot; class=&quot;headerlink&quot; title=&quot;问题&quot;&gt;&lt;/a&gt;问题&lt;/h3&gt;&lt;p&gt;这一周在Jenkins上跑npm install经常会出现build fail，查了日志就是下面输出的样子：&lt;/p&gt;
+&lt;figure cla
+    
+    </summary>
+    
+    
+      <category term="Javascript" scheme="http://www.deanwangpro.com/tags/Javascript/"/>
+    
+      <category term="npm" scheme="http://www.deanwangpro.com/tags/npm/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>如何处理有依赖的消息</title>
+    <link href="http://www.deanwangpro.com/2016/12/01/how-to-handle-dependency-message/"/>
+    <id>http://www.deanwangpro.com/2016/12/01/how-to-handle-dependency-message/</id>
+    <published>2016-11-30T16:00:00.000Z</published>
+    <updated>2016-12-01T16:15:14.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>在项目中踏完一系列坑后总结出来，消息的处理有两个要务：</p>
+<ol>
+<li>消费一定要快，我们喜欢供小于求的市场。生产者生产的消息要满足不了消费者才行。</li>
+<li>任何消息都不能丢，因为这都是数据啊，即使处理不了也得找地方存着。最好每次的消息都存着，之后就变成了event sourcing（另一个大坑）。</li>
+</ol>
+<a id="more"></a>
+<p>要实现上述2点，其实要解决很多问题。一个<strong>快</strong>字就不是那么做到的。业务系统收到消息有可能会触发一连串的，并且包裹着<strong>事务</strong>的逻辑。因为通常我们希望如果这一连串的处理失败的话，可以把ack退回给MQ。一旦业务逻辑过于复杂，work消费消息的速度也会变慢。这就需要开发人员去做权衡了，是不是有些非常heavy的操作可以先记一笔，等业务不繁忙的时候再做。具体实现不在这篇讨论。</p>
+<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>回到主题，有一类消息最让人头疼，就是消息之间有依赖，关系一般为单向的父子关系。举个栗子，Product和SKU的关系，一个Product包含多个SKU。比如我们的业务逻辑是要监听这两个消息组成一颗树放到索引中。可想而知，这棵树肯定是至少两层结构，第一级是Product，下面挂着一个或多个SKU。</p>
+<p>一般来说，子结构如果是个单独的消息肯定会有个字段说明自己的parent id是什么。那么很自然的，我们在某一刻只收到一个SKU的Create事件，会去通过parent id找到索引中对应的Product，然后<strong>挂</strong>上去。问题来了，要是索引中没有对应的Product怎么办，消息是没有顺序的，可能是Product的Create事件还没处理到，或者是生产者出了bug消息没发出来造成的。这时SKU的消息就成了<strong>孤儿消息</strong>。</p>
+<h3 id="解决思路一"><a href="#解决思路一" class="headerlink" title="解决思路一"></a>解决思路一</h3><p>比较近粗暴的方式，就是利用SKU上的parent id虚拟出一个只有id的Product，由处理SKU事件的worker来帮忙创建这个Product。等下次Product的Create消息进来做一次更新就好了。（处理消息应该不要区分这是Create还是Update还是Delete，消费者就都当Update来做比较好，可以想想为什么）。</p>
+<p>当然这个思路一看就有点bad smell，从单一职责的角度上来看，处理SKU的worker应该只关注SKU，不应该关注Product。如果Product也是个<strong>孤儿</strong>怎么办呢？这个worker可能会越写越复杂。</p>
+<p><del>改进的话可以把创建虚拟Product的这个事情放到SKU这个对象中去做，实现以下setProduct这个方法。那么即使Product也有依赖，那Product自己也得有个setParent的方法，这样就可以递归下去了。</del>(之后想了一下无法处理多级关系，因为Product的消息没来，我们不知道它的parent id，父节点根本建不出来。所以思路一只能处理一个层级的依赖。)</p>
+<p>总结一下，<strong>思路一</strong>是一种不管三七二十一，谁也不能阻止我消费的路线，大不了自下而上的创建虚拟父节点。</p>
+<h3 id="解决思路二"><a href="#解决思路二" class="headerlink" title="解决思路二"></a>解决思路二</h3><p>相对思路一而言，这种思路还是比较优雅的，但是优雅不等于性能好。</p>
+<p>既然SKU是个<strong>孤儿</strong>，那么我们先收下来放<strong>孤儿院</strong>好了。新建一张<strong>孤儿院</strong>表：</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>parent_type</th>
+<th>parent_id</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>101010</td>
+<td>Product</td>
+<td>1010</td>
+</tr>
+<tr>
+<td>101011</td>
+<td>Product</td>
+<td>1010</td>
+</tr>
+</tbody>
+</table>
+<p>上面两条数据就是SKU的，然后为了提升一点性能我们得对对象分个类，一类是有依赖的，一类是无依赖的。没有依赖的直接消费就好，像Product，SKU这种有依赖的，都得打上标签（就是对象里写个isDependency）。例如一个SKU(101010)的消息进来，worker发现这是一个有依赖的消息，那么先拿parent id (1010)去找Product, 发现Product找不到就把这个SKU丢到<strong>孤儿院</strong>表里去。如果你是用OO的语言，这里其实可以抽象一下。一个BaseWorker，一个SKUWorker，BaseWork负责写个abstract的findParent()，SKUWorker去实现找Product的逻辑就好了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">BaseWorker</span>&lt;<span class="title">T</span>&gt; </span>&#123;</div><div class="line">	</div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handle</span><span class="params">(T t)</span> </span>&#123;</div><div class="line">        <span class="keyword">if</span> (t.isDependency() &amp;&amp; findParent(t) == <span class="keyword">null</span>) &#123;</div><div class="line">            <span class="comment">// 送到孤儿院</span></div><div class="line">            takeToOrphanage(t);</div><div class="line">            <span class="keyword">return</span>;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">	</div><div class="line">    <span class="function"><span class="keyword">abstract</span> Entity <span class="title">findParent</span><span class="params">(T t)</span></span>;</div><div class="line">	</div><div class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">takeToOrphanage</span><span class="params">(T t)</span> </span>&#123;</div><div class="line">    &#125;</div><div class="line">	</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>消息记录下来以后，Worker的工作就终止，等待下一条消息进来。过了几分钟，Product(1010)的消息过来了，这时候我们需要给BaseWorker再添加一些代码。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handle</span><span class="params">(T t)</span> </span>&#123;</div><div class="line">        <span class="keyword">if</span> (t.isDependency() &amp;&amp; findParent(t) == <span class="keyword">null</span>) &#123;</div><div class="line">            <span class="comment">// 送到孤儿院</span></div><div class="line">            takeToOrphanage(t);</div><div class="line">            <span class="keyword">return</span>;</div><div class="line">        &#125;</div><div class="line">	</div><div class="line">        <span class="comment">// 正常业务...</span></div><div class="line">	</div><div class="line">        <span class="comment">// 正常业务处理之后</span></div><div class="line">        <span class="keyword">if</span> (t.isDependency()) &#123;</div><div class="line">            List&lt;Entity&gt; children = findChildren(t);</div><div class="line">            <span class="keyword">if</span> (children != <span class="keyword">null</span>) &#123;</div><div class="line">                children.forEach(child -&gt; &#123;</div><div class="line">                    sendAsMessage(child);</div><div class="line">                &#125;);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">	</div><div class="line">    &#125;</div><div class="line">	</div><div class="line">    <span class="function"><span class="keyword">abstract</span> List&lt;Entity&gt; <span class="title">findChildren</span><span class="params">(T t)</span></span>;</div></pre></td></tr></table></figure>
+<p>我们增加一个findChildren方法，让ProductWorker去实现具体逻辑。handle()中增加的代码含义是，当Product这个消息消费完了以后，去<strong>孤儿院</strong>转一圈看看是不是有等待认领的孩子，简单的利用<code>parent_type</code>和<code>parent_id</code>就能查到。查到以后别直接处理，仍然是以消息的形式发出，让SKUWorker自己去handle，然后可以delete/soft-delete<strong>孤儿院</strong>中的记录。</p>
+<p>可以看到一个有依赖的消息我们在处理的过程，会多一次查询操作，性能多少会受点影响。之前的那次findParent查询其实思路一也有的，目的就是挂靠。</p>
+<p>再多一个层级看看是不是罩得住，<code>Category --&gt; Product --&gt; SKU</code> 三层。</p>
+<p>如果没有Category的消息进来，孤儿院里是酱紫的。</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>parent_type</th>
+<th>parent_id</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>101010</td>
+<td>Product</td>
+<td>1010</td>
+</tr>
+<tr>
+<td>101011</td>
+<td>Product</td>
+<td>1010</td>
+</tr>
+<tr>
+<td>1010</td>
+<td>Category</td>
+<td>10</td>
+</tr>
+</tbody>
+</table>
+<p>某一时刻Category的消息进来，CategoryWorker会先到表里查到一条1010的Product消息，把它send出来。ProductWorker收到之后再处理，紧接着又找到SKU的2条消息，再send出来，让SKUWorker去处理。可以看到，自带递归，多层级只要是单向依赖的肯定搞的定。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在项目中踏完一系列坑后总结出来，消息的处理有两个要务：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;消费一定要快，我们喜欢供小于求的市场。生产者生产的消息要满足不了消费者才行。&lt;/li&gt;
+&lt;li&gt;任何消息都不能丢，因为这都是数据啊，即使处理不了也得找地方存着。最好每次的消息都存着，之后就变成了event sourcing（另一个大坑）。&lt;/li&gt;
+&lt;/ol&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="http://www.deanwangpro.com/tags/Java/"/>
+    
+      <category term="MQ" scheme="http://www.deanwangpro.com/tags/MQ/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>How to count the number of set bits in ASCII string</title>
+    <link href="http://www.deanwangpro.com/2016/11/14/asc-to-binary/"/>
+    <id>http://www.deanwangpro.com/2016/11/14/asc-to-binary/</id>
+    <published>2016-11-13T16:00:00.000Z</published>
+    <updated>2017-03-22T14:32:51.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有<a href="How to count the number of set bits in ASCII string">答案</a>.第一个高分回答表示各种位操作都看不懂。传说中的<a href="http://en.wikipedia.org/wiki/Hamming_weight" target="_blank" rel="external">Hamming_weight</a>算法。真是给跪了。</p>
+<p>突然想到Java的Integer类本来就有个toBinaryString方法，再加上最近正好研究UUID生成，觉得用现成的方法实现一下。</p>
+<a id="more"></a>
+<p>直接贴源码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ASC2Bin</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> DEFAULT_LENGTH = <span class="number">8</span>;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">asc2bin</span><span class="params">(String str)</span> </span>&#123;</div><div class="line">        StringBuilder binaryString = <span class="keyword">new</span> StringBuilder(<span class="number">8</span> * str.length());</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; str.length(); i++) &#123;</div><div class="line">            <span class="keyword">try</span> &#123;</div><div class="line">                <span class="keyword">int</span> ascInt = (<span class="keyword">int</span>) str.charAt(i);</div><div class="line">                StringBuilder temp = <span class="keyword">new</span> StringBuilder(Integer.toBinaryString(ascInt));</div><div class="line">                String bin = <span class="keyword">null</span>;</div><div class="line">                <span class="keyword">if</span> (temp.length() &lt;= DEFAULT_LENGTH) &#123;</div><div class="line">                    <span class="keyword">while</span> (temp.length() &lt; DEFAULT_LENGTH) &#123;</div><div class="line">                        temp.insert(<span class="number">0</span>, <span class="string">"0"</span>);</div><div class="line">                    &#125;</div><div class="line">                    bin = temp.toString();</div><div class="line">                &#125; <span class="keyword">else</span> <span class="keyword">if</span> (temp.length() &gt; DEFAULT_LENGTH) &#123;</div><div class="line">                    <span class="keyword">continue</span>;</div><div class="line">                &#125;</div><div class="line">                binaryString.append(bin);</div><div class="line">            &#125; <span class="keyword">catch</span> (NumberFormatException nfe) &#123;</div><div class="line">                <span class="keyword">continue</span>;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> binaryString.toString();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">bin2asc</span><span class="params">(String str)</span> </span>&#123;</div><div class="line">        StringBuilder sb = <span class="keyword">new</span> StringBuilder();</div><div class="line"></div><div class="line">        <span class="comment">//10010001100101 split into 8 characters</span></div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; str.length() - <span class="number">1</span>; i += DEFAULT_LENGTH) &#123;</div><div class="line"></div><div class="line">            <span class="comment">//grab the hex in pairs</span></div><div class="line">            String output = str.substring(i, (i + DEFAULT_LENGTH));</div><div class="line">            <span class="comment">//convert hex to decimal</span></div><div class="line">            <span class="keyword">int</span> decimal = Integer.parseInt(output, <span class="number">2</span>);</div><div class="line">            <span class="comment">//convert the decimal to character</span></div><div class="line">            sb.append((<span class="keyword">char</span>) decimal);</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">return</span> sb.toString();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</div><div class="line">        String binary = asc2bin(<span class="string">"Hello world!"</span>);</div><div class="line">        System.out.println(<span class="string">"binary : "</span> + binary);</div><div class="line">        String asc = bin2asc(binary);</div><div class="line">        System.out.println(<span class="string">"ASC : "</span> + asc);</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>其实一开始的时候我并没有强制限定每一个ASCII字符都是8位bits，但是逆操作的时候遇到问题了。一般的ASCII字符在我本机CPU下的是7个bit，但是空格和其他符号都是6个bit。这个就比较麻烦了，不好直接按位数切分做逆操作。索性定死8位前面补0，方法比较土鳖，也没考虑性能（说实话我还真没那个本事），各位随便看看吧。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有&lt;a href=&quot;How to count the number of set bits in ASCII string&quot;&gt;答案&lt;/a&gt;.第一个高分回答表示各种位操作都看不懂。传说中的&lt;a href=&quot;http://en.wikipedia.org/wiki/Hamming_weight&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Hamming_weight&lt;/a&gt;算法。真是给跪了。&lt;/p&gt;
+&lt;p&gt;突然想到Java的Integer类本来就有个toBinaryString方法，再加上最近正好研究UUID生成，觉得用现成的方法实现一下。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="http://www.deanwangpro.com/tags/Java/"/>
+    
+      <category term="algorithm" scheme="http://www.deanwangpro.com/tags/algorithm/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>利用Spring的Conditional注解来实现FeatureToggle</title>
+    <link href="http://www.deanwangpro.com/2016/10/30/spring-featuretoggle/"/>
+    <id>http://www.deanwangpro.com/2016/10/30/spring-featuretoggle/</id>
+    <published>2016-10-29T16:00:00.000Z</published>
+    <updated>2016-10-30T15:57:05.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>最近一个使用Spring的项目中需要进行性能调优。方式基本上是编写新的代码实现原来一样的业务逻辑，只是实现方式有一些调整，例如增加cache，优化算法等等。</p>
+<p>一开始大家希望直接在原有代码基础上修改，但是这样一来，就要跟上每周一次的发布节奏，一周搞定难度太大。于是决定拷贝出的package来重构。在没启用之前这个package下都是dead code。这样做的好处有几点：</p>
+<ul>
+<li>在调优后的code启用前，业务至少不会受影响。</li>
+<li>利用docker的特性，可以实现灰度发布，比如启动两个docker，一个是老的code，一个启用新的code，利用nginx实现分流。</li>
+<li>灰度发布后发现有紧急bug，只需要devOps修改一点配置，重启docker可以再切回老的code。</li>
+</ul>
+<a id="more"></a>
+<h3 id="出发点"><a href="#出发点" class="headerlink" title="出发点"></a>出发点</h3><p>既然要实现上述第三点，也就是利用配置来实现切换，那么这个Enable的flag就不应该写到代码里，甚至是配置文件里，因为项目启动都是在docker中通过spring-boot的cmd直接启动的。DevOps是不允许进入docker进行操作的。</p>
+<h3 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h3><p>想到我们的整个部署架构是基于Kubernetes的，可以通过修改工程的deployment.yaml文件来实现。原理就是deployment里面设置一个docker的Env，Key是<code>FeatureToggle</code>，Value可以是这样<code>FeatureA,FeatureB</code> ,当docker启动时，JVM（Java代码）可以通过<code>System.getenv()</code>来获得环境变量，从来知道这个Feature是需要启用还是不启用。如上的写法表示FeatureA和FeatureB是启用的。</p>
+<p>我们可以写一个简单的接口实现来判断：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">isFeatureEnable</span><span class="params">(String featureName)</span> </span>&#123;</div><div class="line">	<span class="comment">// 用System.getenv("FeatureToggle")读取环境变量判断是否包含参数的featureName</span></div><div class="line">	<span class="comment">// ...</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="进一步使用"><a href="#进一步使用" class="headerlink" title="进一步使用"></a>进一步使用</h3><p>虽然我们有了判断方法，但是因为项目组的人都有洁癖，我们不希望代码中到处都是</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span>(isFeatureEnable(featureA)) &#123;</div><div class="line">	<span class="comment">// new code</span></div><div class="line">&#125; <span class="keyword">else</span> &#123;</div><div class="line">	<span class="comment">// old code</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这样实在是太ugly了。</p>
+<p>我们需要利用spring的IoC特性来切换implementations。Spring从4.0开始提供<a href="http://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/context/annotation/Conditional.html" target="_blank" rel="external">Conditional</a>的注解。结合<code>@Configuration</code>就可以实现app启动时的不同Bean的注入。</p>
+<p><strong>写一个FeatureA的Condition Class</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FeatureACondition</span> <span class="keyword">implements</span> <span class="title">Condition</span></span>&#123;</div><div class="line"> </div><div class="line">  <span class="meta">@Override</span></div><div class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">matches</span><span class="params">(ConditionContext context, AnnotatedTypeMetadata metadata)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> isFeatureEnable(<span class="string">"featureA"</span>)</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><strong>再写一个Spring的Configuration来使用这个Condition</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@Configuration</span></div><div class="line"><span class="meta">@Conditional</span>(FeatureACondition.class)</div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FeatureAConfiguration</span> </span>&#123;</div><div class="line"> </div><div class="line">  <span class="meta">@Bean</span>(name=<span class="string">"bizService"</span>)</div><div class="line">  <span class="function"><span class="keyword">public</span> BizService <span class="title">bizService</span><span class="params">()</span></span>&#123;</div><div class="line">      <span class="keyword">return</span> <span class="keyword">new</span> EnhancedBizService();</div><div class="line">  &#125;</div><div class="line"> </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当然如果要实现互斥的切换，即启用FeatureA另一个Bean就不能加载的话，那么再写一个NotFeatureA的Configuration就可以了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@Configuration</span></div><div class="line"><span class="meta">@Conditional</span>(NotFeatureACondition.class)</div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NotFeatureAConfiguration</span> </span>&#123;</div><div class="line"> </div><div class="line">  <span class="meta">@Bean</span>(name=<span class="string">"bizService"</span>)</div><div class="line">  <span class="function"><span class="keyword">public</span> BizService <span class="title">bizService</span><span class="params">()</span></span>&#123;</div><div class="line">      <span class="keyword">return</span> <span class="keyword">new</span> OldBizService();</div><div class="line">  &#125;</div><div class="line"> </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这样一来，当FeatureA启用时BizService这个interface的实现就是EnhancedBizService，反之它的实现就是OldBizService。<br>当然你在configuration上用<code>@ComponentScan</code>,<code>@Import</code>等等都是没问题的，在启动时都会最先判断Conditional，如果不满足spring根本不会继续下面的扫描或者加载操作。</p>
+<p><strong>最后启用这两个Config</strong><br>在项目启动入口</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@SpringBootApplication</span></div><div class="line"><span class="meta">@Import</span>(&#123;NotFeatureAConfiguration.class, FeatureAConfiguration.class&#125;)</div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Application</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</div><div class="line">        SpringApplication.run(Application.class, args);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>通过上述几步，在spring项目启动时通过conditional注解的条件判断，实现不同Bean的装配，从而启用不同的Feature。<br>对于Devops而言，只需要在deployment里面修改Env的内容，再重启deploy这个app就可以实现Feature Toggle了。即使你不使用Kubernetes，docker-compose也是一样的道理。<br>通过修改<code>docker-compose.yml</code>实现:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">environment:</div><div class="line">  - FeatureToggle=FeatureA,FeatureB</div><div class="line">  - SESSION_SECRET</div></pre></td></tr></table></figure>
+<p>总而言之就是充分利用OO语言的优势，实现可拔插的FeatureToggle。接下来我们还会继续研究如何Runtime的启用Feature，我也发现了一个已有的轮子<a href="https://www.togglz.org/" target="_blank" rel="external">togglz</a>。如果有朋友用过，欢迎反馈使用感受。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;最近一个使用Spring的项目中需要进行性能调优。方式基本上是编写新的代码实现原来一样的业务逻辑，只是实现方式有一些调整，例如增加cache，优化算法等等。&lt;/p&gt;
+&lt;p&gt;一开始大家希望直接在原有代码基础上修改，但是这样一来，就要跟上每周一次的发布节奏，一周搞定难度太大。于是决定拷贝出的package来重构。在没启用之前这个package下都是dead code。这样做的好处有几点：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;在调优后的code启用前，业务至少不会受影响。&lt;/li&gt;
+&lt;li&gt;利用docker的特性，可以实现灰度发布，比如启动两个docker，一个是老的code，一个启用新的code，利用nginx实现分流。&lt;/li&gt;
+&lt;li&gt;灰度发布后发现有紧急bug，只需要devOps修改一点配置，重启docker可以再切回老的code。&lt;/li&gt;
+&lt;/ul&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="http://www.deanwangpro.com/tags/Java/"/>
+    
+      <category term="Spring" scheme="http://www.deanwangpro.com/tags/Spring/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>vuejs前端开发的一些小坑</title>
+    <link href="http://www.deanwangpro.com/2016/09/07/vue-startup/"/>
+    <id>http://www.deanwangpro.com/2016/09/07/vue-startup/</id>
+    <published>2016-09-06T16:00:00.000Z</published>
+    <updated>2016-10-30T14:39:43.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>近一个月拿Vue.JS做一个小项目练手。项目本身的API是现成的，而且都是json格式，所以前端选型自然会选择MV*M的框架。由于做了一段时间的angularJS，感觉对于这个工期很短的项目angular显得有些庞大了。所以尝试了一下Vue.JS。</p>
+<a id="more"></a>
+<p>一开始上手确实极不适应，跟angular的思想有很多不一样的地方。</p>
+<ol>
+<li>最不习惯的就是component的概念，没有了page的概念，所有东西都是component，这个有点像React。</li>
+<li>不像angular管的那么宽，router，http之类的都要自己加library。</li>
+<li>构建用的是webpact，加上less-loader就可以自动build less代码，这一点很赞。安装好vue-cli之后<code>vue init</code>就可以建立一套脚手架。</li>
+</ol>
+<p><img src="/images/14732664332786.jpg" alt="建立后就是如图所见的结构"></p>
+<p>下面列一些遇到的坑</p>
+<h4 id="1-怎么使用第三方的JS，比如moment"><a href="#1-怎么使用第三方的JS，比如moment" class="headerlink" title="1.怎么使用第三方的JS，比如moment"></a>1.怎么使用第三方的JS，比如moment</h4><p>我在项目里面使用了<code>moment</code>做一些时间处理，如果载入这个<code>moment.js</code>，有两个选择</p>
+<ul>
+<li>传统的写法：在index.html</li>
+</ul>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">".."</span>&gt;</span><span class="undefined"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></div></pre></td></tr></table></figure>
+<ul>
+<li>Vue的写法：因为moment也是npm install的，所以在js的入口文件main.js写</li>
+</ul>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">window</span>.moment = <span class="built_in">require</span>(<span class="string">'moment'</span>)</div><div class="line"><span class="comment">// 任何地方都可以</span></div><div class="line"><span class="built_in">window</span>.moment.now()</div></pre></td></tr></table></figure>
+<h4 id="2-如何集成Less"><a href="#2-如何集成Less" class="headerlink" title="2.如何集成Less"></a>2.如何集成Less</h4><p>需要less-loader</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm install less-loader less --save-dev</div></pre></td></tr></table></figure>
+<p>在一个vue文件里可以这样写</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">&lt;style lang=<span class="string">"less"</span>&gt;</div><div class="line">  @<span class="keyword">import</span> <span class="string">'./assets/less/main.less'</span>;</div><div class="line"></div><div class="line">  .header-box &#123;</div><div class="line">    z-index: <span class="number">100</span>;</div><div class="line">    position: absolute;</div><div class="line">    width: <span class="number">100</span>%;</div><div class="line">    left: <span class="number">0</span>;</div><div class="line">    top: <span class="number">0</span>;</div><div class="line">  &#125;</div><div class="line"> &lt;<span class="regexp">/style&gt;</span></div></pre></td></tr></table></figure>
+<p>当然也可以加个scope，表示只在这个vue生效，不会污染到其他的component</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&lt;style scoped lang=<span class="string">"less"</span>&gt;</div></pre></td></tr></table></figure>
+<h4 id="3-图片放在哪儿"><a href="#3-图片放在哪儿" class="headerlink" title="3.图片放在哪儿"></a>3.图片放在哪儿</h4><p>放在static目录下</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">background-image: url("/static/images/slider-business-01.jpg");</div></pre></td></tr></table></figure>
+<p>这样引用就可以。</p>
+<h4 id="4-如果调用需要token的API"><a href="#4-如果调用需要token的API" class="headerlink" title="4.如果调用需要token的API"></a>4.如果调用需要token的API</h4><p>可以使用vue的http.interceptor</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">Vue.http.interceptors.push(<span class="function">(<span class="params">request, next</span>) =&gt;</span> &#123;</div><div class="line">        <span class="comment">// ...</span></div><div class="line">        <span class="comment">// 可以把Token放到Header里</span></div><div class="line">        <span class="comment">// ...</span></div><div class="line">    next(<span class="function">(<span class="params">response</span>) =&gt;</span> &#123;</div><div class="line">        <span class="comment">// ...</span></div><div class="line">        <span class="comment">// 请求发送后的处理逻辑</span></div><div class="line">        <span class="comment">// ...</span></div><div class="line">        <span class="comment">// 根据请求的状态，response参数会返回给successCallback或errorCallback</span></div><div class="line">        <span class="keyword">return</span> response</div><div class="line">    &#125;)</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
+<h4 id="5-登陆超时的调整"><a href="#5-登陆超时的调整" class="headerlink" title="5.登陆超时的调整"></a>5.登陆超时的调整</h4><p>在call一个service API时，如果超时了，一般会返回一个401或者其他的http code，我们可以通过写一个拦截器来统一处理。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">Vue.http.interceptors.push(<span class="function">(<span class="params">request, next</span>) =&gt;</span> &#123;</div><div class="line">next(<span class="function">(<span class="params">response</span>) =&gt;</span> &#123;</div><div class="line">    <span class="keyword">if</span> (response.code === <span class="number">401</span>) &#123;</div><div class="line">      Vue.$vux.alert.show(&#123;</div><div class="line">        <span class="attr">title</span>: <span class="string">'登陆超时'</span>,</div><div class="line">        <span class="attr">content</span>: <span class="string">'点击回到登陆页'</span>,</div><div class="line">        onHide () &#123;</div><div class="line">          <span class="built_in">window</span>.location.href = <span class="string">'/login'</span></div><div class="line">        &#125;</div><div class="line">      &#125;)</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> response</div><div class="line">  &#125;)</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
+<p>通过这样的一个拦截器就不用把这种代码写在每一个http请求方法里了。还有很多细节可以参考我当时学习的<a href="http://www.cnblogs.com/keepfool/p/5657065.html" target="_blank" rel="external">blog</a></p>
+<h4 id="6-调用API时的Loading怎么做"><a href="#6-调用API时的Loading怎么做" class="headerlink" title="6.调用API时的Loading怎么做"></a>6.调用API时的Loading怎么做</h4><p>其实还是用interceptor，通过修改isLoading这个变量的值来控制是否显示菊花图。<br>那么问题来了，isLoading是跨component的，这个时候就需要用到<a href="https://github.com/vuejs/vuex" target="_blank" rel="external">vuex</a>了，这是一个应用级别的状态机。<br>我在<code>App.vue</code>中放置一个loading图标</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="tag">&lt;<span class="name">loading</span> <span class="attr">:show</span>=<span class="string">"isLoading"</span> <span class="attr">position</span>=<span class="string">"absolute"</span>&gt;</span><span class="tag">&lt;/<span class="name">loading</span>&gt;</span></div></pre></td></tr></table></figure>
+<p>这时候isLoading从vuex中获得</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">vuex: &#123;</div><div class="line">      <span class="attr">getters</span>: &#123;</div><div class="line">        <span class="attr">isLoading</span>: <span class="function">(<span class="params">state</span>) =&gt;</span> state.isLoading</div><div class="line">      &#125;</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<p><code>store.js</code>里也定义这个state</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">const</span> state = &#123;</div><div class="line">  <span class="attr">isLoading</span>: <span class="literal">false</span></div><div class="line">&#125;</div><div class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="keyword">new</span> Vuex.Store(&#123;</div><div class="line">  state</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
+<p>剩下的就简单了，在interceptor里控制state.isLoading的值</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">Vue.http.interceptors.push(<span class="function">(<span class="params">request, next</span>) =&gt;</span> &#123;</div><div class="line">  <span class="comment">// 显示loading</span></div><div class="line">  commit(<span class="string">'UPDATE_LOADING'</span>, <span class="literal">true</span>)</div><div class="line">  next(<span class="function">(<span class="params">response</span>) =&gt;</span> &#123;</div><div class="line">    <span class="comment">// 不显示loading</span></div><div class="line">    commit(<span class="string">'UPDATE_LOADING'</span>, <span class="literal">false</span>)</div><div class="line">    <span class="keyword">return</span> response</div><div class="line">  &#125;)</div><div class="line">&#125;)</div></pre></td></tr></table></figure>
+<h4 id="7-route-data-hook-VS-ready"><a href="#7-route-data-hook-VS-ready" class="headerlink" title="7.route data hook VS. ready"></a>7.route data hook VS. ready</h4><p>这个其实有各种各样的讨论，我个人经过实践觉得用route里的data勾子是比较好的，因为从生命周期角度说，data勾子比ready要早。所以一般组件初始化是在data勾子之后，但可能是比ready要早的。某些情况下，组件初始化就需要数据，这种时候大多用data hook。</p>
+<h4 id="8-computed有啥用"><a href="#8-computed有啥用" class="headerlink" title="8.computed有啥用"></a>8.computed有啥用</h4><p>挺有用的，特别是一些情况判断多的场景下，需要自己揣摩。</p>
+<h4 id="9-mount-local-module-vux"><a href="#9-mount-local-module-vux" class="headerlink" title="9.mount local module (vux)"></a>9.mount local module (vux)</h4><p>因为我是用了vux这套组件画UI，而vux是我fork的一个项目，所以就没有用<code>npm install</code>来安装，而是直接用本地的版本。<br>用npm link这个函数</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">cd</span> ~/projects/vux    <span class="comment"># go into the package directory</span></div><div class="line">npm link                    <span class="comment"># creates global link</span></div><div class="line"><span class="built_in">cd</span> ~/projects/myproject   <span class="comment"># go into some other package directory.</span></div><div class="line">npm link vux              <span class="comment"># link-install the package</span></div></pre></td></tr></table></figure>
+<p>这样在myproject就安装了vux了，跟<code>npm install vux</code>的效果一样。</p>
+<h4 id="10-SPA-nginx-404"><a href="#10-SPA-nginx-404" class="headerlink" title="10.SPA nginx 404"></a>10.SPA nginx 404</h4><p>最后写一个部署的问题，因为SPA这个项目其实都是以<code>index.html</code>为入口的，所以如果在nginx配置了一个如 <code>domain/login</code> 这样的URL，是会报404的，因为没有login.html。</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="section">server</span> &#123;</div><div class="line">    <span class="attribute">listen</span>       <span class="number">8000</span>;</div><div class="line">    <span class="attribute">root</span> /h5/dist;</div><div class="line">    <span class="attribute">location</span> / &#123;</div><div class="line">        <span class="attribute">try_files</span> <span class="variable">$uri</span> /index.html =<span class="number">404</span>;</div><div class="line">    &#125;</div><div class="line">    <span class="attribute">location</span><span class="regexp"> ^~</span> /api &#123;</div><div class="line">        <span class="attribute">proxy_pass</span>   http://127.0.0.1:8080;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    <span class="attribute">error_page</span>   <span class="number">500</span> <span class="number">502</span> <span class="number">503</span> <span class="number">504</span>  /50x.html;</div><div class="line">    <span class="attribute">location</span> = /50x.html &#123;</div><div class="line">        <span class="attribute">root</span>   /usr/share/nginx/html;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>所以最重要的就是那一句<code>try_files</code>，一旦找不到相应的文件，就把流量引到<code>index.html</code>。这时候页面跳转其实是通过<code>vue-route</code>实现的，跟nginx就没关系了。就类似WordPress的请求都应该引到<code>index.php</code>一样。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;近一个月拿Vue.JS做一个小项目练手。项目本身的API是现成的，而且都是json格式，所以前端选型自然会选择MV*M的框架。由于做了一段时间的angularJS，感觉对于这个工期很短的项目angular显得有些庞大了。所以尝试了一下Vue.JS。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="JavaScript" scheme="http://www.deanwangpro.com/tags/JavaScript/"/>
+    
+      <category term="Vue" scheme="http://www.deanwangpro.com/tags/Vue/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>使用新版Docker for MAC</title>
+    <link href="http://www.deanwangpro.com/2016/07/19/docker-for-mac/"/>
+    <id>http://www.deanwangpro.com/2016/07/19/docker-for-mac/</id>
+    <published>2016-07-18T16:00:00.000Z</published>
+    <updated>2016-10-30T14:39:49.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>Docker官网出了最新的Docker For Mac.不是以前的基于virtual box的Toolbox了。内心小激动，赶紧下载安装。装完之后，menu bar上会有一个小鲸鱼的图标，可以restart，而且有GUI做一些额外配置，比如最需要的Proxy和文件mount。</p>
+<a id="more"></a>
+<p><img src="/images/14689130500269.png" alt="menu bar"></p>
+<p>阅读<a href="https://docs.docker.com/docker-for-mac/" target="_blank" rel="external">Getting Start</a>发现其实Docker for Mac也不是跟Linux一样使用内核原生的container。而是用了一个Mac内嵌的微型VM（HyperKit）替换了原来臃肿的virtual box。</p>
+<h3 id="Docker-for-MAC-vs-Docker-toolbox"><a href="#Docker-for-MAC-vs-Docker-toolbox" class="headerlink" title="Docker for MAC vs. Docker toolbox"></a>Docker for MAC vs. Docker toolbox</h3><p>看到这儿肯定有人问，机器里怎么有两套docker？<br>确实，就是有两套，如果你装过Toolbox，这两套互不影响都可以work。一个基于virtual box，一个基于HyperKit。可以运行<code>docker-machine</code>看看自己是不是已经有了Toolbox了。官方也发布了一篇<a href="https://docs.docker.com/docker-for-mac/docker-toolbox/" target="_blank" rel="external">《Docker for Mac vs. Docker Toolbox》</a>，来阐述二者的区别。从我看来，Toolbox迟早会被弃用。</p>
+<h3 id="Hello-world"><a href="#Hello-world" class="headerlink" title="Hello world"></a>Hello world</h3><p>装完之后，必须try一把，上docker hub，发现Nginx也有基于alpine的版本了。速度pull。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">docker pull nginx:alpine-stable</div><div class="line">docker run -d -p:43210:80 --name webserver nginx:stable-alpine</div></pre></td></tr></table></figure>
+<p>访问本机的<code>http://localhost:43210</code>,可以看到欢迎页面了。</p>
+<p>继续登录这个docker container。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">docker <span class="built_in">exec</span> -ti 0a41832c61af /bin/sh</div></pre></td></tr></table></figure>
+<p>因为alpine只有shell，我们可以装个bash来玩。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">apk add bash</div></pre></td></tr></table></figure>
+<p>重新用bash进入container</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">docker <span class="built_in">exec</span> -ti 0a41832c61af /bin/bash</div></pre></td></tr></table></figure>
+<p>Enjoy!</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;Docker官网出了最新的Docker For Mac.不是以前的基于virtual box的Toolbox了。内心小激动，赶紧下载安装。装完之后，menu bar上会有一个小鲸鱼的图标，可以restart，而且有GUI做一些额外配置，比如最需要的Proxy和文件mount。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Mac" scheme="http://www.deanwangpro.com/tags/Mac/"/>
+    
+      <category term="Docker" scheme="http://www.deanwangpro.com/tags/Docker/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Mac上安装virtual python环境</title>
+    <link href="http://www.deanwangpro.com/2016/05/22/pyenv-in-mac-for-installing-scrapy/"/>
+    <id>http://www.deanwangpro.com/2016/05/22/pyenv-in-mac-for-installing-scrapy/</id>
+    <published>2016-05-21T16:00:00.000Z</published>
+    <updated>2016-09-13T15:55:05.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>最新升级到最新系统的MAC貌似不能安装Scrapy了，lxml怎么安装都没权限。所以采用安装虚拟python环境的方法来解决吧。Scrapy官方也不建议用MAC自带的python, <a href="http://doc.scrapy.org/en/1.1/intro/install.html#mac-os-x" target="_blank" rel="external">Installation Guide</a>.</p>
+<p><code>~ pyenv install 2.7.1</code></p>
+<p>完成后基于这个版本的python创建一个virtualenv</p>
+<p><code>~ pyenv virtualenv 2.7.11 venv-labs</code></p>
+<p>会自动给这个虚拟env安装pip，wheel等工具，然后我们来使用这个创建出来的env作为我们默认环境</p>
+<p><code>~ pyenv global venv-labs</code></p>
+<p>切到Pycharm里面，在Project Interpreter里面添加一个env，指向<code>~/pyenv/versions/venv-labs/bin/python</code>.大功告成。开始愉快的安装Scrapy吧。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;最新升级到最新系统的MAC貌似不能安装Scrapy了，lxml怎么安装都没权限。所以采用安装虚拟python环境的方法来解决吧。Scrapy官方也不建议用MAC自带的python, &lt;a href=&quot;http://doc.scrapy.org/en/1.1/intro/in
+    
+    </summary>
+    
+    
+      <category term="Angular" scheme="http://www.deanwangpro.com/tags/Angular/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>淘宝旅行的日历控件Angular化</title>
+    <link href="http://www.deanwangpro.com/2016/02/28/angular-datepicker/"/>
+    <id>http://www.deanwangpro.com/2016/02/28/angular-datepicker/</id>
+    <published>2016-02-27T16:00:00.000Z</published>
+    <updated>2016-09-13T15:56:09.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>自己做项目需要一个日历控件，网上搜了半天觉得淘宝旅行的日历最合适</p>
+<ul>
+<li>起始和结束两个日历控件，并且可以联动</li>
+<li>支持国内的节假日显示</li>
+<li>有各类option支持不同的需求，比如三个月时间，结束时间必须在起始时间七天后等等。可定制化程度高。</li>
+</ul>
+<a id="more"></a>
+<p>唯一的问题就是这个控件是基于Kissy的，而我这个练习项目是Angular，那么为了训练下directive的写法，决定把这个控件angular化。</p>
+<p>这是测试的结果<br><img src="https://raw.githubusercontent.com/deanwong/ngDatepicker/master/snapshot1.png" alt="datepicker"></p>
+<p>基本符合要求。</p>
+<p>源码已经上传到<a href="https://github.com/deanwong/ngDatepicker" target="_blank" rel="external">Github</a><br>其中最关键的一点就是directive里的transclusion，我对transclusion的理解还很浅显，看代码:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">&lt;datepicker start-date=&quot;J_CheckIn_List&quot; ng-start-model=&quot;main.arrivalDate&quot; end-date=&quot;J_CheckOut_List&quot;</div><div class="line">               ng-end-model=&quot;main.departureDate&quot;&gt;</div><div class="line">  &lt;div class=&quot;search_item&quot;&gt;</div><div class="line">    &lt;label&gt;FROM&lt;/label&gt;</div><div class="line">    &lt;input type=&quot;text&quot; id=&quot;J_CheckIn_List&quot; placeholder=&quot;yyyy-mm-dd&quot;/&gt;</div><div class="line">  &lt;/div&gt;</div><div class="line">  &lt;div class=&quot;search_item&quot;&gt;</div><div class="line">    &lt;label&gt;TO  &lt;/label&gt;</div><div class="line">    &lt;input type=&quot;text&quot; id=&quot;J_CheckOut_List&quot; placeholder=&quot;yyyy-mm-dd&quot;/&gt;</div><div class="line">  &lt;/div&gt;</div><div class="line">&lt;/datepicker&gt;</div></pre></td></tr></table></figure>
+<p>datapicker标签中间有一坨原始html，这里的transclusion就是让这坨代码直接输出而不被replace掉。</p>
+<p>当然这个控件的核心还是人家<a href="http://fgm.cc/learn/calendar/trip-calendar/demo1.html" target="_blank" rel="external">淘宝旅行的</a></p>
+<p>PS:</p>
+<p>备忘一下JVM导入密匙的代码<br>先通过浏览器下载证书，执行<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo keytool -import -alias &quot;elongAPI&quot; -keystore /Library/Java/JavaVirtualMachines/jdk1.7.0_75.jdk/Contents/Home/jre/lib/security/cacerts -file /Users/wangding/Downloads/api.elong.com.cer</div></pre></td></tr></table></figure></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;自己做项目需要一个日历控件，网上搜了半天觉得淘宝旅行的日历最合适&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;起始和结束两个日历控件，并且可以联动&lt;/li&gt;
+&lt;li&gt;支持国内的节假日显示&lt;/li&gt;
+&lt;li&gt;有各类option支持不同的需求，比如三个月时间，结束时间必须在起始时间七天后等等。可定制化程度高。&lt;/li&gt;
+&lt;/ul&gt;
+    
+    </summary>
+    
+    
+      <category term="Angular" scheme="http://www.deanwangpro.com/tags/Angular/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>如何在multi-module的项目中配置spring</title>
+    <link href="http://www.deanwangpro.com/2015/11/09/2015-11-9-multi-modules-spring/"/>
+    <id>http://www.deanwangpro.com/2015/11/09/2015-11-9-multi-modules-spring/</id>
+    <published>2015-11-09T14:19:39.000Z</published>
+    <updated>2016-09-13T15:56:19.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>小项目也有可能会分很多小的module开发，毕竟Maven早就支持了Aggregator Project。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">project</div><div class="line">|</div><div class="line">|--web module</div><div class="line">|--serviceA module</div><div class="line">|--serviceB module</div></pre></td></tr></table></figure>
+<a id="more"></a>
+<p>在Service比较复杂，比如封装了第三方接口的提供内部服务的情况下，我一般会单开一个module来管理代码。就算哪天这个第三方不用了，也不用去动主要业务代码。而且单独测试也容易的多。</p>
+<p>那么想要利用Spring管理bean，比如在web module中注入一个serviceA module的一个服务，就需要给子module配置spring了。</p>
+<p>原理来讲，就是让容器在加载主工程时(一般指web module)，可以读到每个子module的spring 文件。</p>
+<p>在serviceA module的resources下新建一个<code>serviceAContext.xml</code>，内部配置跟一般的spring一样，在我的工程里采用了aop扫描package，所以我写了一段<code>aop:config</code>的配置，同时web module也有一段<code>aop:config</code>，不同点就是apo扫描的package目录不同，实测下来没有问题。</p>
+<p>最后在web module中加载这个context文件即可。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&lt;import resource=&quot;classpath*:serviceAContext.xml&quot; /&gt;</div></pre></td></tr></table></figure>
+<p>简单吧。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;小项目也有可能会分很多小的module开发，毕竟Maven早就支持了Aggregator Project。&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;1&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;2&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;3&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;4&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;5&lt;/div&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;project&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;|&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;|--web module&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;|--serviceA module&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;|--serviceB module&lt;/div&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="http://www.deanwangpro.com/tags/Java/"/>
+    
+      <category term="Spring" scheme="http://www.deanwangpro.com/tags/Spring/"/>
+    
+      <category term="Maven" scheme="http://www.deanwangpro.com/tags/Maven/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>VPS部署jekyll</title>
+    <link href="http://www.deanwangpro.com/2015/10/31/deploy-jekyll-in-VPS/"/>
+    <id>http://www.deanwangpro.com/2015/10/31/deploy-jekyll-in-VPS/</id>
+    <published>2015-10-30T16:00:00.000Z</published>
+    <updated>2016-09-13T15:56:30.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>经过一天的折腾，终于实现在VPS上搭建一个基于jekyll的博客来替换wordpress。</p>
+<p>Digital Ocean<a href="https://www.digitalocean.com" target="_blank" rel="external">^1</a> 的很多文章帮了大忙了</p>
+<a id="more"></a>
+<h3 id="1-创建用户-optional"><a href="#1-创建用户-optional" class="headerlink" title="1. 创建用户(optional)"></a>1. 创建用户(optional)</h3><p>如果觉得可以一直用root的话可以跳过这一步了。<br>这里是基本的Linux操作，直接贴链接。</p>
+<p><a href="https://www.digitalocean.com/community/tutorials/initial-server-setup-with-centos-6" target="_blank" rel="external">创建用户</a></p>
+<h3 id="2-安装ruby"><a href="#2-安装ruby" class="headerlink" title="2. 安装ruby"></a>2. 安装ruby</h3><p>这一步其实也没啥，用rpm安装的ruby还是1.8的。两年前的东西实在太旧了，建议用rvm安装，可以版本切换。</p>
+<p><a href="https://www.digitalocean.com/community/tutorials/how-to-install-ruby-2-1-0-on-centos-6-5-using-rvm" target="_blank" rel="external">安装ruby</a></p>
+<h3 id="3-安装jekyll"><a href="#3-安装jekyll" class="headerlink" title="3. 安装jekyll"></a>3. 安装jekyll</h3><p>来到最重要的一步了，大家都知道jekyll是用来编译博客的，所以在一篇博客写完后要把md文件放到VPS上，在执行<code>jekyll build</code>生成html的话就太麻烦了。所以得把我们的VPS打造的跟GitHub Pages那样，push之后自动build。<br>Digital Ocean这篇文章实在太赞，小白应该都能看得懂。</p>
+<p><a href="https://www.digitalocean.com/community/tutorials/how-to-deploy-jekyll-blogs-with-git" target="_blank" rel="external">用Git部署jekyll</a></p>
+<p>其中最重要的是那一段脚本，大家仔细研读。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">#!/bin/bash -l</div><div class="line">GIT_REPO=$HOME/repos/awesomeblog.git</div><div class="line">TMP_GIT_CLONE=$HOME/tmp/git/awesomeblog</div><div class="line">PUBLIC_WWW=/var/www/awesomeblog</div><div class="line"></div><div class="line">git clone $GIT_REPO $TMP_GIT_CLONE</div><div class="line">jekyll build --source $TMP_GIT_CLONE --destination $PUBLIC_WWW</div><div class="line">rm -Rf $TMP_GIT_CLONE</div><div class="line">exit</div></pre></td></tr></table></figure>
+<h3 id="4-安装nginx"><a href="#4-安装nginx" class="headerlink" title="4. 安装nginx"></a>4. 安装nginx</h3><p>胜利就在眼前，nginx安装很容易的，而且省资源，博主128mb的lowX的服务器也跑的呼呼地。<br>在Digital Ocean没找到centos6的就拿篇7的看看也一样。</p>
+<p><a href="https://www.digitalocean.com/community/tutorials/how-to-set-up-nginx-server-blocks-on-centos-7" target="_blank" rel="external">安装nginx</a></p>
+<h4 id="其他的一些幺蛾子"><a href="#其他的一些幺蛾子" class="headerlink" title="其他的一些幺蛾子"></a>其他的一些幺蛾子</h4><p>因为jekyll刚刚升级到3.0，所以出了一个幺蛾子。</p>
+<p>最大的坑就是首页<code>paginater</code>的posts出不来，不得已就到VPS上去build，发现<code>jekyll-paginate</code>这个插件需要加入到<code>_config.yml</code>中去了。</p>
+<p>build时会报error</p>
+<blockquote>
+<p>Deprecation: You appear to have pagination turned on, but you haven’t included the <code>jekyll-paginate</code> gem. Ensure you have <code>gems: [jekyll-paginate]</code> in your configuration file.</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">gems :</div><div class="line">  - jekyll-paginate</div></pre></td></tr></table></figure>
+<p>重启build一把，ok。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;经过一天的折腾，终于实现在VPS上搭建一个基于jekyll的博客来替换wordpress。&lt;/p&gt;
+&lt;p&gt;Digital Ocean&lt;a href=&quot;https://www.digitalocean.com&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;^1&lt;/a&gt; 的很多文章帮了大忙了&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="博客" scheme="http://www.deanwangpro.com/tags/%E5%8D%9A%E5%AE%A2/"/>
+    
+      <category term="Blog" scheme="http://www.deanwangpro.com/tags/Blog/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>zsh在Mac上tab补全不work的办法</title>
+    <link href="http://www.deanwangpro.com/2015/10/30/zsh-tab-crash/"/>
+    <id>http://www.deanwangpro.com/2015/10/30/zsh-tab-crash/</id>
+    <published>2015-10-29T16:00:00.000Z</published>
+    <updated>2016-09-15T16:28:19.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>最近被这个问题折磨了两天。</p>
+<p>因为之前装了autojump，后来又卸载了才导致的，这里推荐使用z，因为oh my zsh自带这个插件，编辑<code>~/.zshrc</code>文件，在<code>plugins=(git)</code>这行中加上<code>z</code>变成<code>plugins=(git z)</code>，然后<code>source ~/.zshrc</code>重新加载配置文件，就好了。</p>
+<p>言归正传，对于tab自动补全crash的解决，需要执行以下的命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">autoload -U compinit &amp;&amp; compinit</div></pre></td></tr></table></figure>
+<p>如果重启以后又不工作的话，把这条命令加入到 ~/.zshrc 中。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;最近被这个问题折磨了两天。&lt;/p&gt;
+&lt;p&gt;因为之前装了autojump，后来又卸载了才导致的，这里推荐使用z，因为oh my zsh自带这个插件，编辑&lt;code&gt;~/.zshrc&lt;/code&gt;文件，在&lt;code&gt;plugins=(git)&lt;/code&gt;这行中加上&lt;code&gt;
+    
+    </summary>
+    
+    
+      <category term="Mac" scheme="http://www.deanwangpro.com/tags/Mac/"/>
+    
+  </entry>
+  
+</feed>

@@ -86,6 +86,8 @@
 
 
 
+  <link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml" />
+
 
 
 
@@ -103,6 +105,7 @@
 <meta property="og:url" content="http://www.deanwangpro.com/2016/07/19/docker-for-mac/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="Docker官网出了最新的Docker For Mac.不是以前的基于virtual box的Toolbox了。内心小激动，赶紧下载安装。装完之后，menu bar上会有一个小鲸鱼的图标，可以restart，而且有GUI做一些额外配置，比如最需要的Proxy和文件mount。">
+<meta property="og:locale" content="en">
 <meta property="og:image" content="http://www.deanwangpro.com/images/14689130500269.png">
 <meta property="og:updated_time" content="2016-10-30T14:39:49.000Z">
 <meta name="twitter:card" content="summary">
@@ -274,7 +277,7 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Dean Wang">
       <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar-cartoon.jpg">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -358,7 +361,7 @@
 <p>阅读<a href="https://docs.docker.com/docker-for-mac/" target="_blank" rel="external">Getting Start</a>发现其实Docker for Mac也不是跟Linux一样使用内核原生的container。而是用了一个Mac内嵌的微型VM（HyperKit）替换了原来臃肿的virtual box。</p>
 <h3 id="Docker-for-MAC-vs-Docker-toolbox"><a href="#Docker-for-MAC-vs-Docker-toolbox" class="headerlink" title="Docker for MAC vs. Docker toolbox"></a>Docker for MAC vs. Docker toolbox</h3><p>看到这儿肯定有人问，机器里怎么有两套docker？<br>确实，就是有两套，如果你装过Toolbox，这两套互不影响都可以work。一个基于virtual box，一个基于HyperKit。可以运行<code>docker-machine</code>看看自己是不是已经有了Toolbox了。官方也发布了一篇<a href="https://docs.docker.com/docker-for-mac/docker-toolbox/" target="_blank" rel="external">《Docker for Mac vs. Docker Toolbox》</a>，来阐述二者的区别。从我看来，Toolbox迟早会被弃用。</p>
 <h3 id="Hello-world"><a href="#Hello-world" class="headerlink" title="Hello world"></a>Hello world</h3><p>装完之后，必须try一把，上docker hub，发现Nginx也有基于alpine的版本了。速度pull。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">docker pull nginx:alpine-stable</div><div class="line">docker run <span class="_">-d</span> -p:43210:80 --name webserver nginx:stable-alpine</div></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">docker pull nginx:alpine-stable</div><div class="line">docker run -d -p:43210:80 --name webserver nginx:stable-alpine</div></pre></td></tr></table></figure>
 <p>访问本机的<code>http://localhost:43210</code>,可以看到欢迎页面了。</p>
 <p>继续登录这个docker container。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">docker <span class="built_in">exec</span> -ti 0a41832c61af /bin/sh</div></pre></td></tr></table></figure>
@@ -483,7 +486,7 @@
       <section class="site-overview sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           <img class="site-author-image" itemprop="image"
-               src="/images/avatar.gif"
+               src="/images/avatar-cartoon.jpg"
                alt="Dean Wang" />
           <p class="site-author-name" itemprop="name">Dean Wang</p>
            
@@ -517,8 +520,61 @@
         </nav>
 
         
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
 
         <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/deanwong" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/wongding" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.instagram.com/rockgeek" target="_blank" title="Instagram">
+                  
+                    <i class="fa fa-fw fa-instagram"></i>
+                  
+                    
+                      Instagram
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/wangding85" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
           
         </div>
 
