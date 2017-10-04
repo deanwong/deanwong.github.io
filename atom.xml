@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.deanwangpro.com/"/>
-  <updated>2017-08-20T11:42:31.000Z</updated>
+  <updated>2017-10-04T07:55:50.000Z</updated>
   <id>http://www.deanwangpro.com/</id>
   
   <author>
@@ -16,11 +16,49 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>Activiti系列一之delegate拦截器</title>
+    <link href="http://www.deanwangpro.com/2017/09/12/2017-09-11/"/>
+    <id>http://www.deanwangpro.com/2017/09/12/2017-09-11/</id>
+    <published>2017-09-11T16:14:02.000Z</published>
+    <updated>2017-10-04T07:55:50.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>公司内部的工作流引擎用的是Activiti5, 所以这半年一直在研究这个开源项目，打算针对这个项目做一个系列，说一说使用心得。今天就先做系列一，先说使用场景。</p>
+<a id="more"></a>
+<h3 id="基本原理"><a href="#基本原理" class="headerlink" title="基本原理"></a>基本原理</h3><p>Activiti可以很好的与Spring结合，只需要使用<code>SpringProcessEngineConfiguration</code>配置就可以利用Spring管理Bean，所以在BPMN的标准中Activiti的扩展属性都是可以使用Spring Bean的。</p>
+<p>例如Service Task，</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="tag">&lt;<span class="name">serviceTask</span> <span class="attr">id</span>=<span class="string">"N0db890f126c2"</span> <span class="attr">name</span>=<span class="string">"Service Task"</span> <span class="attr">activiti:delegateExpression</span>=<span class="string">"#&#123;serviceTaskDelegate&#125;"</span>&gt;</span></div><div class="line"><span class="tag">&lt;/<span class="name">serviceTask</span>&gt;</span></div></pre></td></tr></table></figure>
+<p>在<code>activiti:delegateExpression</code>中使用的就是一个Spring Bean，这个Bean实际上是一个JavaDelegate的实现。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@Service</span></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ServiceTaskDelegate</span> <span class="keyword">implements</span> <span class="title">JavaDelegate</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="meta">@Autowired</span></div><div class="line">    <span class="keyword">private</span> ContactGroupService contactGroupService;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">executeDelegate</span><span class="params">(DelegateExecution execution, ContactDTO contactDTO)</span> </span>&#123;</div><div class="line">        LOGGER.info(<span class="string">"start execute action..."</span>);             </div><div class="line">        LOGGER.info(<span class="string">"end execute add group action..."</span>);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这个Bean和其他Spring Bean没有区别，可以注入其他Service，自己也会在Spring上下文中加载。</p>
+<h3 id="场景"><a href="#场景" class="headerlink" title="场景"></a>场景</h3><p>接下来深入的一步讨论就是如何处理复杂的事务，一个工作流中包含若干个上述的Service Task，那么究竟是一个Task失败，整个流程就回滚还是一个失败之后，流程停止在失败的地方然后重试呢？</p>
+<p>这些都需要根据具体的业务场景来处理，Activiti默认采取第一种办法直接全部回滚。在我们的场景中做了一些改动，当出现重试可解决的异常时全部回滚，整个流程等待若干秒后再次重试，当出现重试也无法解决的异常时，例如超出API调用次数之类的，流程直接失败并记录状态。</p>
+<p>另外在单个ServiceTask的运行过程中，我们采取了新开一个事务的办法，避免与Activiti自身事务互相影响，另一方面也可以复用我们系统多租户的拦截器来处理复杂的数据库查询（非框架程序员不用处理租户相关的代码）。</p>
+<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><p>仔细阅读Activiti源码，发现在配置类中有一个<code>processEngineConfiguration.setDelegateInterceptor</code>方法，这个拦截器是在具体的Delegate启动之前调用的，所以就给了我们一个时机切入到业务逻辑之前。</p>
+<p>不含糊，直接贴代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CustomDelegateInterceptor</span> <span class="keyword">implements</span> <span class="title">DelegateInterceptor</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Logger LOGGER = LoggerFactory.getLogger(ActivitiWorkflowManager.class);</div><div class="line"></div><div class="line">    <span class="keyword">private</span> <span class="keyword">final</span> TenantResolver tenantResolver;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="title">CustomDelegateInterceptor</span><span class="params">(TenantResolver tenantResolver)</span> </span>&#123;</div><div class="line">        <span class="keyword">this</span>.tenantResolver = tenantResolver;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handleInvocation</span><span class="params">(DelegateInvocation invocation)</span> <span class="keyword">throws</span> Exception </span>&#123;</div><div class="line">        Object target = invocation.getTarget();</div><div class="line">        <span class="keyword">if</span> (target <span class="keyword">instanceof</span> JavaDelegate) &#123;</div><div class="line">            Field executionField = ReflectionUtils.findField(JavaDelegateInvocation.class, <span class="string">"execution"</span>, DelegateExecution.class);</div><div class="line">            ReflectionUtils.makeAccessible(executionField);</div><div class="line">            DelegateExecution execution = (DelegateExecution) ReflectionUtils.getField(executionField, invocation);</div><div class="line">            <span class="comment">// 异步任务需要设置TenantId</span></div><div class="line">            LOGGER.info(<span class="string">"Executing activiti service task tenantId [&#123;&#125;]"</span>, execution.getTenantId());</div><div class="line">            <span class="keyword">if</span> (StringUtils.isBlank(execution.getTenantId())) &#123;</div><div class="line">                LOGGER.error(<span class="string">"do not have tenantId, skipped"</span>);</div><div class="line">                <span class="keyword">return</span>;</div><div class="line">            &#125;</div><div class="line">            <span class="keyword">try</span> &#123;</div><div class="line">                tenantResolver.setCurrentTenant(Long.valueOf(execution.getTenantId()));</div><div class="line">                String traceId = execution.getProcessBusinessKey() + <span class="string">":"</span> + execution.getProcessInstanceId();</div><div class="line">                LogTraceUtils.beginTrace(traceId);</div><div class="line">                invocation.proceed();</div><div class="line">            &#125; <span class="keyword">finally</span> &#123;</div><div class="line">                tenantResolver.clear();</div><div class="line">                LogTraceUtils.endTrace();</div><div class="line">            &#125;</div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            invocation.proceed();</div><div class="line">        &#125;</div><div class="line"></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在每个Service Task执行前，都会获取当前这个流程的租户ID并且写入到一个专门管理租户ID的ThreadLocal中。并且切入了一段日志逻辑方便排错。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>有些时候就是这样一个不经意的小函数就可以优雅的实现一个类似AOP的拦截。往往这种小函数在文档中是只字不提的，可见对于开源项目源码阅读的重要性。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;公司内部的工作流引擎用的是Activiti5, 所以这半年一直在研究这个开源项目，打算针对这个项目做一个系列，说一说使用心得。今天就先做系列一，先说使用场景。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="BPMN" scheme="http://www.deanwangpro.com/tags/BPMN/"/>
+    
+      <category term="Activiti" scheme="http://www.deanwangpro.com/tags/Activiti/"/>
+    
+  </entry>
+  
+  <entry>
     <title>短链接的简单实现</title>
     <link href="http://www.deanwangpro.com/2017/08/20/dwz/"/>
     <id>http://www.deanwangpro.com/2017/08/20/dwz/</id>
     <published>2017-08-19T16:00:00.000Z</published>
-    <updated>2017-08-20T11:42:31.000Z</updated>
+    <updated>2017-09-11T15:56:56.000Z</updated>
     
     <content type="html"><![CDATA[<p>很久没更新了，加入了创业公司，从无到有的构建一套产品，从一开始的码框架到现在思考如何优化产品架构，适应更多的弹性需求和更大的数据量。时间真的是不够用，几乎快半年没有更新博客。近期产品慢慢走上正轨，又有小伙伴加入，所以抽出点时间总结一下这小半年内遇到的坑和走过的路。<br><a id="more"></a></p>
 <p>说一说最近做的一个短链服务，短链服务其实很简单，其实就是一张表或者说是一个map：<br>+——-+———————–+<br>|  短链  |         长链           |<br>+——-+———————–+<br>| 7Y65s | <a href="https://www.google.com" target="_blank" rel="external">https://www.google.com</a> |<br>+——-+———————–+</p>
