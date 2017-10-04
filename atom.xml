@@ -17,9 +17,9 @@
   
   <entry>
     <title>Activiti系列一之delegate拦截器</title>
-    <link href="http://www.deanwangpro.com/2017/09/12/2017-09-11/"/>
-    <id>http://www.deanwangpro.com/2017/09/12/2017-09-11/</id>
-    <published>2017-09-11T16:14:02.000Z</published>
+    <link href="http://www.deanwangpro.com/2017/09/11/activiti-delegate-interceptor/"/>
+    <id>http://www.deanwangpro.com/2017/09/11/activiti-delegate-interceptor/</id>
+    <published>2017-09-10T16:00:00.000Z</published>
     <updated>2017-10-04T07:55:50.000Z</updated>
     
     <content type="html"><![CDATA[<p>公司内部的工作流引擎用的是Activiti5, 所以这半年一直在研究这个开源项目，打算针对这个项目做一个系列，说一说使用心得。今天就先做系列一，先说使用场景。</p>
