@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.deanwangpro.com/"/>
-  <updated>2017-10-04T07:55:50.000Z</updated>
+  <updated>2017-10-04T09:57:10.000Z</updated>
   <id>http://www.deanwangpro.com/</id>
   
   <author>
@@ -14,6 +14,42 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>List Merge的小算法</title>
+    <link href="http://www.deanwangpro.com/2017/10/04/list-merge/"/>
+    <id>http://www.deanwangpro.com/2017/10/04/list-merge/</id>
+    <published>2017-10-03T16:00:00.000Z</published>
+    <updated>2017-10-04T09:57:10.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>今天说一个算法小甜点，因为对于算法知之甚少，所以完全是自己揣摩出来的一则，写出来只是个记录，如有更学术派的解法欢迎评论。<br><a id="more"></a></p>
+<h3 id="场景"><a href="#场景" class="headerlink" title="场景"></a>场景</h3><p>我们系统有一个去重的需求，但是查重的维度是多方面的，举个例子，若干个用户用了用一个手机号，那么我们就认为他们是同一个人，用手机号码这个条件可以查出一组这样的人。同理用Email也是。</p>
+<p>但是存在一个问题就是用手机号查出了5组人，用Email查出了3组人，最后我们可以认为重复的人是8吗？其实是不行的，因为有可能某几个人的手机号和Email都是一样的，那么在两次查询后都会将这些人纳入到统计中。所以最后统计出的结果应该是&lt;=各次查询结果之和的。</p>
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><p>首先是数据结构，每次查询出来的结构是一个List，那么List里面其实又是一组重复的人。</p>
+<p>为了方便理解，我们可以定义一个最小化结构为Group，</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Group</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> List&lt;Long&gt; duplications = <span class="keyword">new</span> ArrayList&lt;&gt;();</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>里面的duplicates代表原始记录ID列表，举例说就是ID=13和ID=15的两条记录都是用的同一个手机号，那么duplications就是{13,15}。</p>
+<p>每通过一个条件查询可以得到一个List<group>的返回，很好理解，这个List的size就是说明有多少人用了相同的手机号。那么用Email查询的话结果就是代表多少人用了相同的Email。</group></p>
+<p>假设ID=13的这条记录，它已经在用手机号查询的结果中被GroupA收录，如果它又在Email查询的结果中被GroupF收录的话，说明了什么问题？说明其实GroupA和GroupF应该取个合集，他们都是代表了同一个人。有点类似消消乐的意思。我们最后其实不管是通过什么条件查出来的，只要是一个Group的集合就好了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 先定义一个篮子</span></div><div class="line">List&lt;Group&gt; duplicateBucket = <span class="keyword">new</span> ArrayList&lt;&gt;();</div><div class="line"><span class="keyword">for</span> (<span class="comment">// 若干条件) &#123;</span></div><div class="line">    List&lt;Group&gt; duplicates = queryProvider.queryDuplications();</div><div class="line">    duplicateBucket.addAll(duplicates);</div><div class="line">&#125;</div><div class="line"><span class="comment">// 对这个篮子做一次去重</span></div><div class="line">DeduplicationUtils.intersection(duplicateBucket);</div></pre></td></tr></table></figure>
+<p>再看这个去重的逻辑</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">intersection</span><span class="params">(List&lt;Grouop&gt; duplicates)</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = duplicates.size() - <span class="number">2</span>; i &gt;= <span class="number">0</span>; i--) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = duplicates.size() - <span class="number">1</span>; j &gt; i; j--) &#123;</div><div class="line">            Set&lt;Long&gt; setA = duplicates.get(i).toSet();</div><div class="line">            Set&lt;Long&gt; setB = duplicates.get(j).toSet();</div><div class="line">            Set intersection = Sets.intersection(setA, setB);</div><div class="line">            <span class="keyword">if</span> (intersection.size() &gt; <span class="number">0</span>) &#123;</div><div class="line">                <span class="comment">// 找出差集做合并</span></div><div class="line">                List&lt;Long&gt; differences = <span class="keyword">new</span> ArrayList&lt;&gt;();</div><div class="line">                <span class="keyword">for</span> (Long id : duplicates.get(j).getDuplications()) &#123;</div><div class="line">                    <span class="keyword">if</span> (intersection.contains(id)) &#123;</div><div class="line">                        <span class="keyword">continue</span>;</div><div class="line">                    &#125;</div><div class="line">                    differences.add(id);</div><div class="line">                &#125;</div><div class="line">                duplicates.get(i).addAllDuplications(differences);</div><div class="line">                duplicates.remove(j);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这里是关键，实际上就是双层遍历做对比，发现重复条目就做消消乐，让后者融合进前者的集合中去。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>这样就基本解决了去重的问题，但是效率一般，毕竟有双重循环在。如有更好的办法欢迎留言。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;今天说一个算法小甜点，因为对于算法知之甚少，所以完全是自己揣摩出来的一则，写出来只是个记录，如有更学术派的解法欢迎评论。&lt;br&gt;
+    
+    </summary>
+    
+    
+      <category term="算法" scheme="http://www.deanwangpro.com/tags/%E7%AE%97%E6%B3%95/"/>
+    
+      <category term="Collection" scheme="http://www.deanwangpro.com/tags/Collection/"/>
+    
+  </entry>
   
   <entry>
     <title>Activiti系列一之delegate拦截器</title>
