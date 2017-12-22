@@ -80,7 +80,7 @@
 <link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Test," />
+  <meta name="keywords" content="算法,Collection," />
 
 
 
@@ -98,18 +98,18 @@
 
 
 
-<meta name="description" content="这两天抽空使用了一下两款压测工具  wrk Artillery  并且通过两款工具对产品的两个环境进行了测试">
-<meta name="keywords" content="Test">
+<meta name="description" content="今天说一个算法小甜点，因为对于算法知之甚少，所以完全是自己揣摩出来的一则，写出来只是个记录，如有更学术派的解法欢迎评论。">
+<meta name="keywords" content="算法,Collection">
 <meta property="og:type" content="article">
-<meta property="og:title" content="压测工具wrk和Artillery的比较">
+<meta property="og:title" content="List Merge的小算法">
 <meta property="og:url" content="http://www.deanwangpro.com/2017/10/04/list-merge/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
-<meta property="og:description" content="这两天抽空使用了一下两款压测工具  wrk Artillery  并且通过两款工具对产品的两个环境进行了测试">
+<meta property="og:description" content="今天说一个算法小甜点，因为对于算法知之甚少，所以完全是自己揣摩出来的一则，写出来只是个记录，如有更学术派的解法欢迎评论。">
 <meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2017-12-08T07:35:03.328Z">
+<meta property="og:updated_time" content="2017-12-22T06:06:13.185Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="压测工具wrk和Artillery的比较">
-<meta name="twitter:description" content="这两天抽空使用了一下两款压测工具  wrk Artillery  并且通过两款工具对产品的两个环境进行了测试">
+<meta name="twitter:title" content="List Merge的小算法">
+<meta name="twitter:description" content="今天说一个算法小甜点，因为对于算法知之甚少，所以完全是自己揣摩出来的一则，写出来只是个记录，如有更学术派的解法欢迎评论。">
 
 
 
@@ -144,7 +144,7 @@
 
 
 
-  <title>压测工具wrk和Artillery的比较 | 大名Dean鼎</title>
+  <title>List Merge的小算法 | 大名Dean鼎</title>
   
 
 
@@ -287,7 +287,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">压测工具wrk和Artillery的比较</h1>
+          <h1 class="post-title" itemprop="name headline">List Merge的小算法</h1>
         
 
         <div class="post-meta">
@@ -353,39 +353,20 @@
       
 
       
-        <p>这两天抽空使用了一下两款压测工具</p>
-<ul>
-<li>wrk</li>
-<li>Artillery</li>
-</ul>
-<p>并且通过两款工具对产品的两个环境进行了测试<br><a id="more"></a></p>
-<h3 id="工具比较"><a href="#工具比较" class="headerlink" title="工具比较"></a>工具比较</h3><h4 id="wrk"><a href="#wrk" class="headerlink" title="wrk"></a>wrk</h4><p>wrk自身性能就非常惊人，使用epoll这种多路复用技术，所以可以用少量的线程来跟被测服务创建大量连接，进行压测，同时不占用过多的CPU和内存。</p>
-<p>命令非常简单</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">wrk -t8 -c200 -d30s --latency  <span class="string">"http://www.baidu.com"</span></div></pre></td></tr></table></figure>
-<p>这样就可以进行最简单的压测。但是真实使用起来肯定会有复杂的场景，比如先要登录取到token再进行下一步。好在wrk支持lua脚本，提供了几个阶段的hook来让用户自定义逻辑，具体可以看github上的官方提供的script sample。</p>
-<p>我这里举一个获取token的例子</p>
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="comment">-- @Author: wangding</span></div><div class="line"><span class="comment">-- @Date:   2017-12-06 15:13:19</span></div><div class="line"><span class="comment">-- @Last Modified by:   wangding</span></div><div class="line"><span class="comment">-- @Last Modified time: 2017-12-06 23:57:49</span></div><div class="line"><span class="keyword">local</span> cjson = <span class="built_in">require</span> <span class="string">"cjson"</span></div><div class="line"><span class="keyword">local</span> cjson2 = cjson.new()</div><div class="line"><span class="keyword">local</span> cjson_safe = <span class="built_in">require</span> <span class="string">"cjson.safe"</span></div><div class="line"></div><div class="line">token = <span class="literal">nil</span></div><div class="line"><span class="built_in">path</span>  = <span class="string">"/api/auth/login"</span></div><div class="line">method = <span class="string">"POST"</span></div><div class="line"></div><div class="line">wrk.headers[<span class="string">"Content-Type"</span>] = <span class="string">"application/json"</span></div><div class="line"></div><div class="line">request = <span class="function"><span class="keyword">function</span><span class="params">()</span></span></div><div class="line">   <span class="keyword">return</span> wrk.<span class="built_in">format</span>(method, <span class="built_in">path</span>, <span class="literal">nil</span>, <span class="string">'&#123;"username":"demo@demo.com","password":"demo"&#125;'</span>)</div><div class="line"><span class="keyword">end</span></div><div class="line"></div><div class="line">response = <span class="function"><span class="keyword">function</span><span class="params">(status, headers, body)</span></span></div><div class="line">   <span class="keyword">if</span> <span class="keyword">not</span> token <span class="keyword">and</span> <span class="built_in">status</span> == <span class="number">200</span> <span class="keyword">then</span></div><div class="line">      value = cjson.decode(body)</div><div class="line">      token = value[<span class="string">"token"</span>]</div><div class="line">      method = <span class="string">"GET"</span></div><div class="line">      <span class="built_in">path</span>  = <span class="string">"/api/contact?size=20&amp;page=0"</span></div><div class="line">      wrk.headers[<span class="string">"Authorization"</span>] = token</div><div class="line">   <span class="keyword">end</span></div><div class="line"><span class="keyword">end</span></div></pre></td></tr></table></figure>
-<p><code>request</code> 和 <code>response</code> 分别是两个hook，每次请求都会调用，那么这里request的逻辑就是一开始就使用<code>POST</code>请求<code>/api/auth/login</code>并且带有body，请求完成进入response，第一次token肯定是nil，所以把repose的token解析出来付给全局变量<code>token</code>，之后改写全局变量为<code>GET</code>请求地址<code>/api/contact</code>并且设置了header包含<code>Authorization</code>。</p>
-<p>这样实际是变通的实现了一个简单scenario的测试，那么问题来了，如果场景更复杂怎么办？写肯定是可以写的，但是并不直观，所以wrk不太适合一个包含有序场景的压力测试。</p>
-<p>再来看一下wrk的report，这一点是我最喜欢的</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">wrk -t8 -c200 -d30s -H <span class="string">"Authorization: token"</span> --latency <span class="string">"http://10.0.20.2:8080/api/contact?size=20&amp;page=0"</span></div><div class="line">Running 30s <span class="built_in">test</span> @ http://10.0.20.2:8080/api/contact?size=20&amp;page=0</div><div class="line">  8 threads and 200 connections</div><div class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</div><div class="line">    Latency   769.49ms  324.43ms   1.99s    72.08%</div><div class="line">    Req/Sec    33.37     21.58   131.00     62.31%</div><div class="line">  Latency Distribution</div><div class="line">     50%  728.97ms</div><div class="line">     75%  958.69ms</div><div class="line">     90%    1.21s</div><div class="line">     99%    1.74s</div><div class="line">  7606 requests <span class="keyword">in</span> 30.03s, 176.69MB <span class="built_in">read</span></div><div class="line">  Socket errors: connect 0, <span class="built_in">read</span> 0, write 0, timeout 38</div><div class="line">Requests/sec:    253.31</div><div class="line">Transfer/sec:      5.88MB</div></pre></td></tr></table></figure>
-<p>开启8线程，每个线程200个连接，持续30s的调用，可以看到报告中直接给出了最关键的指标QPS，这里的值是253.31。平均响应时间是33.37ms。简单直接，非常易懂。</p>
-<p>但是这里面有个坑就是cjson这个lua module的使用，不可以使用lua5.2，必须使用lua5.1而且需要特定的wrk和cjson。我直接使用docker来封装这个运行环境，坏处是docker使用host模式本身性能可能就有影响。</p>
-<h4 id="Artillery"><a href="#Artillery" class="headerlink" title="Artillery"></a>Artillery</h4><p>一开始看到Artillery主要是因为它支持带场景的测试，也就是带有步骤，看一眼获取token再进行下一步的脚本。</p>
-<figure class="highlight yml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="attr">config:</span></div><div class="line"><span class="attr">  target:</span> <span class="string">"http://10.0.20.2:8080"</span></div><div class="line"><span class="attr">  phases:</span></div><div class="line"><span class="attr">    - duration:</span> <span class="number">30</span></div><div class="line"><span class="attr">      arrivalRate:</span> <span class="number">100</span></div><div class="line"><span class="attr">scenarios:</span></div><div class="line"><span class="attr">  - flow:</span></div><div class="line"><span class="attr">    - post:</span></div><div class="line"><span class="attr">        url:</span> <span class="string">"/api/auth/login"</span></div><div class="line"><span class="attr">        json:</span></div><div class="line"><span class="attr">          username:</span> <span class="string">"demo@demo.com"</span></div><div class="line"><span class="attr">          password:</span> <span class="string">"demo"</span></div><div class="line"><span class="attr">        capture:</span></div><div class="line"><span class="attr">          json:</span> <span class="string">"$.token"</span></div><div class="line"><span class="attr">          as:</span> <span class="string">"token"</span></div><div class="line"><span class="attr">    - log:</span> <span class="string">"Login token: <span class="template-variable">&#123;&#123; token &#125;&#125;</span>"</span></div><div class="line"><span class="attr">    - get:</span></div><div class="line"><span class="attr">        url:</span> <span class="string">"/api/contact?size=20&amp;page=0"</span></div><div class="line"><span class="attr">        headers:</span></div><div class="line"><span class="attr">          Authorization:</span> <span class="string">"<span class="template-variable">&#123;&#123; token &#125;&#125;</span>"</span></div></pre></td></tr></table></figure>
-<p><code>flow</code>就是表示步骤，<code>duration</code>表示持续30s，跟wrk不同的是没有thread的概念，Artillery是nodejs写的，<code>arrivalRate</code>表示每秒模拟100个请求，所以两个参数乘起来就是3000个请求。看一下报告什么样：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">All virtual users finished</div><div class="line">Summary report @ 12:45:41(+0800) 2017-12-08</div><div class="line">  Scenarios launched:  3000</div><div class="line">  Scenarios completed: 3000</div><div class="line">  Requests completed:  3000</div><div class="line">  RPS sent: 98.33</div><div class="line">  Request latency:</div><div class="line">    min: 15.7</div><div class="line">    max: 179.1</div><div class="line">    median: 19</div><div class="line">    p95: 25.8</div><div class="line">    p99: 37.5</div><div class="line">  Scenario duration:</div><div class="line">    min: 16.4</div><div class="line">    max: 191.4</div><div class="line">    median: 19.8</div><div class="line">    p95: 27</div><div class="line">    p99: 44.6</div><div class="line">  Scenario counts:</div><div class="line">    0: 3000 (100%)</div><div class="line">  Codes:</div><div class="line">    200: 3000</div></pre></td></tr></table></figure>
-<p>这里的<code>RPS sent</code>是指前10s平均发送请求数，所以这个和我们常说的QPS还是不一样的。如果想提高request的总数就要增加<code>arrivalRate</code>，比如上文wrk一共发了7606请求，那么这里<code>arrivalRate</code>提高到200一共可以在30s发6000次，但是改完就悲剧了，</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">Warning: High CPU usage warning.</div><div class="line">See https://artillery.io/docs/faq/<span class="comment">#high-cpu-warnings for details.</span></div></pre></td></tr></table></figure>
-<p>Artillery一直在不断的告警，说明这个工具自身的局限性导致想要并发发送大量请求的时候，自己就很占CPU。</p>
-<h4 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h4><p>wrk小巧而且性能非常好，报告直观。但是对于带多个步骤的压测场景无力。<br>Artillery太耗资源，而且报告不直观。<strong>不建议采用</strong>。<br>除此之外唯一带场景的测试工具就是Jmeter了，但是Jmeter本身使用JVM是否可以短时间模拟大量并发，还是需要测试，建议与wrk做对比实验。</p>
-<h3 id="附录：简单的性能调优"><a href="#附录：简单的性能调优" class="headerlink" title="附录：简单的性能调优"></a>附录：简单的性能调优</h3><p>在用wrk测试GET请求的时候，发现无论如何提高连接数，QPS都是在250左右，此时CPU和内存都没有占满。怀疑是有其他瓶颈。最后发现Spring Boot内嵌的tomcat线程无法突破200，所以看了一下文档，发现默认最大线程数就是200，对<code>application.yml</code>进行了调整（同时调整了多个服务，包括gateway）</p>
-<figure class="highlight yml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="attr">server:</span></div><div class="line"><span class="attr">  tomcat:</span></div><div class="line"><span class="attr">    max-threads:</span> <span class="number">1000</span></div><div class="line"><span class="attr">    max-connections:</span> <span class="number">2000</span></div></pre></td></tr></table></figure>
-<p>调整之后开启8线程，每个100个连接测试</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">Running 30s <span class="built_in">test</span> @ http://10.0.10.4:8769/api/contact?size=20&amp;page=0</div><div class="line">  8 threads and 100 connections</div><div class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</div><div class="line">    Latency   235.56ms  267.57ms   1.98s    91.07%</div><div class="line">    Req/Sec    72.12     30.19   190.00     68.17%</div><div class="line">  Latency Distribution</div><div class="line">     50%  166.46ms</div><div class="line">     75%  281.10ms</div><div class="line">     90%  472.03ms</div><div class="line">     99%    1.45s</div><div class="line">  15714 requests <span class="keyword">in</span> 30.03s, 4.77MB <span class="built_in">read</span></div><div class="line">Requests/sec:    523.29</div><div class="line">Transfer/sec:    162.56KB</div></pre></td></tr></table></figure>
-<p>可以看到QPS达到了500以上直接翻倍了，再尝试提高连接数发现瓶颈就在内存了。</p>
-<p>此外之前用公网做了一次压测，QPS只有10左右，看了一下阿里云的监控原来是出口带宽造成的，只有1MB的出口带宽，连接数调多大也没用。</p>
-<p>未来还需要进行场景的细化，再决定是否使用不同的工具进行测试。</p>
+        <p>今天说一个算法小甜点，因为对于算法知之甚少，所以完全是自己揣摩出来的一则，写出来只是个记录，如有更学术派的解法欢迎评论。<br><a id="more"></a></p>
+<h3 id="场景"><a href="#场景" class="headerlink" title="场景"></a>场景</h3><p>我们系统有一个去重的需求，但是查重的维度是多方面的，举个例子，若干个用户用了用一个手机号，那么我们就认为他们是同一个人，用手机号码这个条件可以查出一组这样的人。同理用Email也是。</p>
+<p>但是存在一个问题就是用手机号查出了5组人，用Email查出了3组人，最后我们可以认为重复的人是8吗？其实是不行的，因为有可能某几个人的手机号和Email都是一样的，那么在两次查询后都会将这些人纳入到统计中。所以最后统计出的结果应该是&lt;=各次查询结果之和的。</p>
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><p>首先是数据结构，每次查询出来的结构是一个List，那么List里面其实又是一组重复的人。</p>
+<p>为了方便理解，我们可以定义一个最小化结构为Group，</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Group</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> List&lt;Long&gt; duplications = <span class="keyword">new</span> ArrayList&lt;&gt;();</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>里面的duplicates代表原始记录ID列表，举例说就是ID=13和ID=15的两条记录都是用的同一个手机号，那么duplications就是{13,15}。</p>
+<p>每通过一个条件查询可以得到一个List<group>的返回，很好理解，这个List的size就是说明有多少人用了相同的手机号。那么用Email查询的话结果就是代表多少人用了相同的Email。</group></p>
+<p>假设ID=13的这条记录，它已经在用手机号查询的结果中被GroupA收录，如果它又在Email查询的结果中被GroupF收录的话，说明了什么问题？说明其实GroupA和GroupF应该取个合集，他们都是代表了同一个人。有点类似消消乐的意思。我们最后其实不管是通过什么条件查出来的，只要是一个Group的集合就好了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 先定义一个篮子</span></div><div class="line">List&lt;Group&gt; duplicateBucket = <span class="keyword">new</span> ArrayList&lt;&gt;();</div><div class="line"><span class="keyword">for</span> (<span class="comment">// 若干条件) &#123;</span></div><div class="line">    List&lt;Group&gt; duplicates = queryProvider.queryDuplications();</div><div class="line">    duplicateBucket.addAll(duplicates);</div><div class="line">&#125;</div><div class="line"><span class="comment">// 对这个篮子做一次去重</span></div><div class="line">DeduplicationUtils.intersection(duplicateBucket);</div></pre></td></tr></table></figure>
+<p>再看这个去重的逻辑</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">intersection</span><span class="params">(List&lt;Grouop&gt; duplicates)</span> </span>&#123;</div><div class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = duplicates.size() - <span class="number">2</span>; i &gt;= <span class="number">0</span>; i--) &#123;</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = duplicates.size() - <span class="number">1</span>; j &gt; i; j--) &#123;</div><div class="line">            Set&lt;Long&gt; setA = duplicates.get(i).toSet();</div><div class="line">            Set&lt;Long&gt; setB = duplicates.get(j).toSet();</div><div class="line">            Set intersection = Sets.intersection(setA, setB);</div><div class="line">            <span class="keyword">if</span> (intersection.size() &gt; <span class="number">0</span>) &#123;</div><div class="line">                <span class="comment">// 找出差集做合并</span></div><div class="line">                List&lt;Long&gt; differences = <span class="keyword">new</span> ArrayList&lt;&gt;();</div><div class="line">                <span class="keyword">for</span> (Long id : duplicates.get(j).getDuplications()) &#123;</div><div class="line">                    <span class="keyword">if</span> (intersection.contains(id)) &#123;</div><div class="line">                        <span class="keyword">continue</span>;</div><div class="line">                    &#125;</div><div class="line">                    differences.add(id);</div><div class="line">                &#125;</div><div class="line">                duplicates.get(i).addAllDuplications(differences);</div><div class="line">                duplicates.remove(j);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>这里是关键，实际上就是双层遍历做对比，发现重复条目就做消消乐，让后者融合进前者的集合中去。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>这样就基本解决了去重的问题，但是效率一般，毕竟有双重循环在。如有更好的办法欢迎留言。</p>
 
       
     </div>
@@ -403,7 +384,9 @@
       
         <div class="post-tags">
           
-            <a href="/tags/Test/" rel="tag"># Test</a>
+            <a href="/tags/算法/" rel="tag"># 算法</a>
+          
+            <a href="/tags/Collection/" rel="tag"># Collection</a>
           
         </div>
       
@@ -425,6 +408,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/12/09/wrk-and-artillery/" rel="prev" title="压测工具wrk和Artillery的比较">
+                压测工具wrk和Artillery的比较 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -508,7 +495,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">20</span>
+                <span class="site-state-item-count">21</span>
                 <span class="site-state-item-name">posts</span>
               </a>
             </div>
@@ -609,7 +596,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#工具比较"><span class="nav-number">1.</span> <span class="nav-text">工具比较</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#wrk"><span class="nav-number">1.1.</span> <span class="nav-text">wrk</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Artillery"><span class="nav-number">1.2.</span> <span class="nav-text">Artillery</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#小结"><span class="nav-number">1.3.</span> <span class="nav-text">小结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#附录：简单的性能调优"><span class="nav-number">2.</span> <span class="nav-text">附录：简单的性能调优</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#场景"><span class="nav-number">1.</span> <span class="nav-text">场景</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解决方案"><span class="nav-number">2.</span> <span class="nav-text">解决方案</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#小结"><span class="nav-number">3.</span> <span class="nav-text">小结</span></a></li></ol></div>
             
 
           </div>
@@ -784,7 +771,7 @@
         var disqus_config = function () {
           this.page.url = 'http://www.deanwangpro.com/2017/10/04/list-merge/';
           this.page.identifier = '2017/10/04/list-merge/';
-          this.page.title = '压测工具wrk和Artillery的比较';
+          this.page.title = 'List Merge的小算法';
         };
         var d = document, s = d.createElement('script');
         s.src = 'https://wangdean.disqus.com/embed.js';
