@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.deanwangpro.com/"/>
-  <updated>2017-12-22T06:06:05.393Z</updated>
+  <updated>2018-03-10T15:21:53.084Z</updated>
   <id>http://www.deanwangpro.com/</id>
   
   <author>
@@ -14,6 +14,64 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>坑系列之阿里SLB上使用Webscoket</title>
+    <link href="http://www.deanwangpro.com/2018/03/10/Ali-SLB-for-Websocket/"/>
+    <id>http://www.deanwangpro.com/2018/03/10/Ali-SLB-for-Websocket/</id>
+    <published>2018-03-09T16:00:00.000Z</published>
+    <updated>2018-03-10T15:21:53.084Z</updated>
+    
+    <content type="html"><![CDATA[<p>Websocket是HTML5之后的一个新事物，可以方便的实现客户端到服务端的长会话，特别适合用于客户端需要接收服务端推送的场景。例如在线客服聊天，提醒推送等等。改变了以往客户端只能通过轮询或者long poll来获取服务端状态的限制。</p>
+<a id="more"></a>
+<h3 id="和HTTP协议有什么关系"><a href="#和HTTP协议有什么关系" class="headerlink" title="和HTTP协议有什么关系"></a>和HTTP协议有什么关系</h3><p>首先我们来看一下Websocket协议和HTTP有什么关系呢？<br>本质上说，Websocket和HTTP就不是一个协议，层级不一样。但是为了兼容现有浏览器的握手规范，必须借助HTTP协议建立连接。</p>
+<p>这是一个Websocket的握手请求</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">GET wss://server.example.com/ HTTP/1.1</div><div class="line">Host: server.example.com</div><div class="line">Pragma: no-cache</div><div class="line">Cache-Control: no-cache</div><div class="line">Connection: Upgrade</div><div class="line">Upgrade: websocket</div><div class="line">Origin: https://server.example.com</div><div class="line">Accept-Encoding: gzip, deflate, br</div><div class="line">Sec-WebSocket-Version: 13</div><div class="line">Sec-WebSocket-Key: fFFIlFcwULSAmQacRAbS2A==</div><div class="line">Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits</div></pre></td></tr></table></figure>
+<p>这里面有几个和一般HTTP Request不一样的地方，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">Connection: Upgrade</div><div class="line">Upgrade: websocket</div><div class="line">Sec-WebSocket-Version: 13</div><div class="line">Sec-WebSocket-Key: fFFIlFcwULSAmQacRAbS2A==</div><div class="line">Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits</div></pre></td></tr></table></figure>
+<p>这是告诉服务端这不是一个普通的请求，而是Websocket协议。Sec-WebSocket-Key 是一个Base64 encode的值，是浏览器随机生成的，用于让服务端知道这是一个全新的socket客户端。</p>
+<p>服务端如果开启了Socket监听，那么就会返回这样的Response</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">HTTP/1.1 101 Switching Protocols</div><div class="line">Date: Fri, 09 Mar 2018 16:24:45 GMT</div><div class="line">Connection: upgrade</div><div class="line">upgrade: websocket</div><div class="line">sec-websocket-accept: i/tCy92JmOXIoZwGi8ROh6CgUwk=</div></pre></td></tr></table></figure>
+<p>表示接收了请求，并且即将切换到Websocket协议，所以code是101。Sec-WebSocket-Accept 这个则是经过服务器确认，并且加密过后的 Sec-WebSocket-Key。到这里HTTP协议的任务就已经完成，之后的通信都是基于Websocket协议了。</p>
+<h3 id="怎么通过nginx转发Websocket的握手请求"><a href="#怎么通过nginx转发Websocket的握手请求" class="headerlink" title="怎么通过nginx转发Websocket的握手请求"></a>怎么通过nginx转发Websocket的握手请求</h3><p>本质上说握手请求就是一个特殊的HTTP Request，只是需要加一些上文提到的特殊内容，从<a href="https://www.nginx.com/blog/websocket-nginx/" target="_blank" rel="external">Nignx官方介绍</a>可以看到</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">location /wsapp/ &#123;</div><div class="line">    proxy_pass http://wsbackend;</div><div class="line">    proxy_http_version 1.1;</div><div class="line">    proxy_set_header Upgrade $http_upgrade;</div><div class="line">    proxy_set_header Connection &quot;Upgrade&quot;;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>只是在Request header加了两个属性，并且强制升级到HTTP 1.1，原因是HTTP 1.0不支持keep alive。如果使用HTTP 1.0发握手请求，服务端返回101以后就会直接结束这次HTTP会话了。这一点也为之后的坑埋下了伏笔。</p>
+<h3 id="坑从何来"><a href="#坑从何来" class="headerlink" title="坑从何来"></a>坑从何来</h3><p>自从上线了Websocket服务之后，就会经常发现socket无法建立，获得504的超时响应。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">HTTP/1.1 504 Gateway Time-out</div><div class="line">Date: Fri, 09 Mar 2018 03:34:54 GMT</div><div class="line">Content-Type: text/html</div><div class="line">Content-Length: 272</div><div class="line">Connection: keep-alive</div></pre></td></tr></table></figure>
+<p>而且这一响应只有在经过SLB（负载均衡）时才有，如果直接请求到我们自己的nginx是没有问题的。但是基于对阿里的信任，还是觉得问题应该还是我们自己这儿。从code review到nginx配置，折腾了五六个小时。</p>
+<p>最后只有自己搭建的nginx access log上寻找蛛丝马迹，一开始抓到一些响应都是499的返回，并且request_time时间都在60s上下。</p>
+<blockquote>
+<p>[09/Mar/2018:15:04:51 +0800] 100.97.89.10 - - - 10.0.21.11  to: 10.0.20.11:8011: GET /ws/?id=168451&amp;url=<a href="http://server.example.com/" target="_blank" rel="external">http://server.example.com/</a> HTTP/1.0 upstream_response_time - msec 1520579091.139 request_time <strong>60.000</strong> status 499 client - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36</p>
+</blockquote>
+<p>就考虑是不是socket服务端建立连接后响应不及时，让SLB发现60s没有报文交互直接就切断请求了。</p>
+<p>但是因为我们在前端是做了心跳的，即使服务端不响应，只要socket建立通过心跳肯定也会在60s内进行交互。不应该出现上面的场景。<br>之后我们把access log中socket建立成功的请求和不成功的请求分开放到一起对比，发现不成功的都是HTTP 1.0的协议。</p>
+<blockquote>
+<p>[09/Mar/2018:15:03:51 +0800] 100.97.88.238 - - - 10.0.20.11  to: 127.0.0.1:8011: GET /ws/?id=168451&amp;url=<a href="http://server.example.com" target="_blank" rel="external">http://server.example.com</a> <strong>HTTP/1.1</strong> upstream_response_time 11.069 msec 1520579031.198 request_time 11.|<br>069 status 101 client - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36                     |<br>[09/Mar/2018:15:04:32 +0800] 100.97.88.254 - - - 10.0.20.11  to: 127.0.0.1:8011: GET /ws/?id=168451&amp;url=<a href="http://server.example.com" target="_blank" rel="external">http://server.example.com</a> <strong>HTTP/1.0</strong> upstream_response_time - msec 1520579072.716 request_time 36.755 s|<br>tatus 499 client - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36</p>
+</blockquote>
+<p>就好像这两个请求，同一个页面发出的，但是一个成功一个失败。失败的正好就是HTTP/1.0，为什么会有两个版本的协议呢，<br>为了证据更加“确凿”，我们对请求进行了抓包分析，并将Sec-WebSocket-Key打印到Nginx的access log中方便trace同一个请求。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">GET http://server.example.com/ws/ HTTP/1.1</div><div class="line">Host: app.linkflowtech.com</div><div class="line">Connection: Upgrade</div><div class="line">Pragma: no-cache</div><div class="line">Cache-Control: no-cache</div><div class="line">Upgrade: websocket</div><div class="line">Origin: http://server.example.com</div><div class="line">Sec-WebSocket-Key: 8+qDYeKJGFTWKB2ov4p5TA==</div><div class="line">Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits</div></pre></td></tr></table></figure>
+<blockquote>
+<p>[09/Mar/2018:17:07:07 +0800] 100.97.88.252 - - - 10.0.21.11  to: 10.0.20.11:8011: GET /ws/ HTTP/1.0 upstream_response_time - msec 1520586427.537 request_time 59.999 status 499 client - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36 <strong>8+qDYeKJGFTWKB2ov4p5TA==</strong><br>2018-03-09 17:12:04</p>
+</blockquote>
+<p>可以看到都是 <strong>8+qDYeKJGFTWKB2ov4p5TA==</strong> 的请求，但是在经过SLB进入nginx时候协议降级到了1.0.这叫一个酸爽，赶紧给阿里云开了工单，经过大概3~4个小时的交流。最终获得一个链接，里面有这样的描述</p>
+<blockquote>
+<p>如何在阿里云负载均衡上启用WS/WSS支持？<br>无需配置，当选用HTTP监听时，默认支持无加密版本WebSocket协议（WS协议）；当选择HTTPS监听时，默认支持加密版本的WebSocket协议（WSS协议）。<br>注意：需要将实例升级为<strong>性能保障型实例</strong>。详细参见如何使用负载均衡性能保障型实例。</p>
+</blockquote>
+<p>这个大坑就在”注意”那一段，我们的SLB是性能共享型而不是性能保障型。看来也不是阿里云的问题，是我们的SLB档次不够高啊。知道原因后，立刻付费升级了保障型。实测一下所有问题都解决了。</p>
+<p>虽然问题解决了，但是其实很难理解厂商的逻辑，为什么性能共享型中某些SLB节点就会降级HTTP协议版本呢，要知道1.0版本已经是一个相当落后的版本了。</p>
+<p>在此记录一下心路历程，为了让其他使用阿里云的同学不要重蹈覆辙。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;Websocket是HTML5之后的一个新事物，可以方便的实现客户端到服务端的长会话，特别适合用于客户端需要接收服务端推送的场景。例如在线客服聊天，提醒推送等等。改变了以往客户端只能通过轮询或者long poll来获取服务端状态的限制。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="DevOps" scheme="http://www.deanwangpro.com/tags/DevOps/"/>
+    
+  </entry>
   
   <entry>
     <title>压测工具wrk和Artillery的比较</title>
@@ -948,50 +1006,6 @@
       <category term="Spring" scheme="http://www.deanwangpro.com/tags/Spring/"/>
     
       <category term="Maven" scheme="http://www.deanwangpro.com/tags/Maven/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>VPS部署jekyll</title>
-    <link href="http://www.deanwangpro.com/2015/10/31/deploy-jekyll-in-VPS/"/>
-    <id>http://www.deanwangpro.com/2015/10/31/deploy-jekyll-in-VPS/</id>
-    <published>2015-10-30T16:00:00.000Z</published>
-    <updated>2016-09-13T15:56:30.000Z</updated>
-    
-    <content type="html"><![CDATA[<p>经过一天的折腾，终于实现在VPS上搭建一个基于jekyll的博客来替换wordpress。</p>
-<p>Digital Ocean<a href="https://www.digitalocean.com" target="_blank" rel="external">^1</a> 的很多文章帮了大忙了</p>
-<a id="more"></a>
-<h3 id="1-创建用户-optional"><a href="#1-创建用户-optional" class="headerlink" title="1. 创建用户(optional)"></a>1. 创建用户(optional)</h3><p>如果觉得可以一直用root的话可以跳过这一步了。<br>这里是基本的Linux操作，直接贴链接。</p>
-<p><a href="https://www.digitalocean.com/community/tutorials/initial-server-setup-with-centos-6" target="_blank" rel="external">创建用户</a></p>
-<h3 id="2-安装ruby"><a href="#2-安装ruby" class="headerlink" title="2. 安装ruby"></a>2. 安装ruby</h3><p>这一步其实也没啥，用rpm安装的ruby还是1.8的。两年前的东西实在太旧了，建议用rvm安装，可以版本切换。</p>
-<p><a href="https://www.digitalocean.com/community/tutorials/how-to-install-ruby-2-1-0-on-centos-6-5-using-rvm" target="_blank" rel="external">安装ruby</a></p>
-<h3 id="3-安装jekyll"><a href="#3-安装jekyll" class="headerlink" title="3. 安装jekyll"></a>3. 安装jekyll</h3><p>来到最重要的一步了，大家都知道jekyll是用来编译博客的，所以在一篇博客写完后要把md文件放到VPS上，在执行<code>jekyll build</code>生成html的话就太麻烦了。所以得把我们的VPS打造的跟GitHub Pages那样，push之后自动build。<br>Digital Ocean这篇文章实在太赞，小白应该都能看得懂。</p>
-<p><a href="https://www.digitalocean.com/community/tutorials/how-to-deploy-jekyll-blogs-with-git" target="_blank" rel="external">用Git部署jekyll</a></p>
-<p>其中最重要的是那一段脚本，大家仔细研读。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">#!/bin/bash -l</div><div class="line">GIT_REPO=$HOME/repos/awesomeblog.git</div><div class="line">TMP_GIT_CLONE=$HOME/tmp/git/awesomeblog</div><div class="line">PUBLIC_WWW=/var/www/awesomeblog</div><div class="line"></div><div class="line">git clone $GIT_REPO $TMP_GIT_CLONE</div><div class="line">jekyll build --source $TMP_GIT_CLONE --destination $PUBLIC_WWW</div><div class="line">rm -Rf $TMP_GIT_CLONE</div><div class="line">exit</div></pre></td></tr></table></figure>
-<h3 id="4-安装nginx"><a href="#4-安装nginx" class="headerlink" title="4. 安装nginx"></a>4. 安装nginx</h3><p>胜利就在眼前，nginx安装很容易的，而且省资源，博主128mb的lowX的服务器也跑的呼呼地。<br>在Digital Ocean没找到centos6的就拿篇7的看看也一样。</p>
-<p><a href="https://www.digitalocean.com/community/tutorials/how-to-set-up-nginx-server-blocks-on-centos-7" target="_blank" rel="external">安装nginx</a></p>
-<h4 id="其他的一些幺蛾子"><a href="#其他的一些幺蛾子" class="headerlink" title="其他的一些幺蛾子"></a>其他的一些幺蛾子</h4><p>因为jekyll刚刚升级到3.0，所以出了一个幺蛾子。</p>
-<p>最大的坑就是首页<code>paginater</code>的posts出不来，不得已就到VPS上去build，发现<code>jekyll-paginate</code>这个插件需要加入到<code>_config.yml</code>中去了。</p>
-<p>build时会报error</p>
-<blockquote>
-<p>Deprecation: You appear to have pagination turned on, but you haven’t included the <code>jekyll-paginate</code> gem. Ensure you have <code>gems: [jekyll-paginate]</code> in your configuration file.</p>
-</blockquote>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">gems :</div><div class="line">  - jekyll-paginate</div></pre></td></tr></table></figure>
-<p>重启build一把，ok。</p>
-]]></content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;经过一天的折腾，终于实现在VPS上搭建一个基于jekyll的博客来替换wordpress。&lt;/p&gt;
-&lt;p&gt;Digital Ocean&lt;a href=&quot;https://www.digitalocean.com&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;^1&lt;/a&gt; 的很多文章帮了大忙了&lt;/p&gt;
-    
-    </summary>
-    
-    
-      <category term="博客" scheme="http://www.deanwangpro.com/tags/%E5%8D%9A%E5%AE%A2/"/>
-    
-      <category term="Blog" scheme="http://www.deanwangpro.com/tags/Blog/"/>
     
   </entry>
   
