@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.deanwangpro.com/"/>
-  <updated>2018-03-10T15:21:53.084Z</updated>
+  <updated>2018-03-22T09:51:58.541Z</updated>
   <id>http://www.deanwangpro.com/</id>
   
   <author>
@@ -14,6 +14,56 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>spring-boot系列之集成测试</title>
+    <link href="http://www.deanwangpro.com/2018/03/22/spring-boot-integration-test/"/>
+    <id>http://www.deanwangpro.com/2018/03/22/spring-boot-integration-test/</id>
+    <published>2018-03-21T16:00:00.000Z</published>
+    <updated>2018-03-22T09:51:58.541Z</updated>
+    
+    <content type="html"><![CDATA[<p>如果希望很方便针对API进行测试，并且方便的集成到CI中验证每次的提交，那么spring boot自带的IT绝对是不二选择。</p>
+<a id="more"></a>
+<h3 id="迅速编写一个测试Case"><a href="#迅速编写一个测试Case" class="headerlink" title="迅速编写一个测试Case"></a>迅速编写一个测试Case</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@RunWith</span>(SpringRunner.class)</div><div class="line"><span class="meta">@SpringBootTest</span>(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)</div><div class="line"><span class="meta">@ActiveProfiles</span>(&#123;Profiles.ENV_IT&#125;)</div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DemoIntegrationTest</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="meta">@Autowired</span></div><div class="line">    <span class="keyword">private</span> FooService fooService;</div><div class="line"></div><div class="line">    <span class="meta">@Test</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test</span><span class="params">()</span> </span>&#123;</div><div class="line">        System.out.println(<span class="string">"tested"</span>);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>其中<code>SpringBootTest</code>定义了跑IT时的一些配置，上述代码是用了随机端口，当然也可以预定义端口，像这样</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = &#123;&quot;server.port=9990&quot;&#125;)</div></pre></td></tr></table></figure>
+<p><code>ActiveProfiles</code>强制使用了IT的Profile，从最佳实践上来说IT Profile所配置的数据库或者其他资源组件的地址，应该是与开发或者Staging环境隔离的。因为当一个IT跑完之后很多情况下我们需要清除测试数据。</p>
+<p>你能够发现这样的Case可以使用<code>Autowired</code>注入任何想要的Service。这是因为spring将整个上下文都加载了起来，与实际运行的环境是一样的，包含了数据库，缓存等等组件。如果觉得测试时不需要全部的资源，那么在profile删除对应的配置就可以了。这就是一个完整的运行环境，唯一的区别是当用例跑完会自动shutdown。</p>
+<h3 id="测试一个Rest-API"><a href="#测试一个Rest-API" class="headerlink" title="测试一个Rest API"></a>测试一个Rest API</h3><p>强烈推荐一个库，加入到gradle中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">testCompile &apos;io.rest-assured:rest-assured:3.0.3&apos;</div></pre></td></tr></table></figure>
+<p>支持JsonPath，十分好用，具体文档戳<a href="https://github.com/rest-assured/rest-assured/wiki/GettingStarted" target="_blank" rel="external">这里</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">@Sql(scripts = &quot;/testdata/users.sql&quot;)</div><div class="line">@Test</div><div class="line">public void test001Login() &#123;</div><div class="line">    String username = &quot;demo@demo.com&quot;;</div><div class="line">    String password = &quot;demo&quot;;</div><div class="line"></div><div class="line">    JwtAuthenticationRequest request = new JwtAuthenticationRequest(username, password);</div><div class="line"></div><div class="line">    Response response = given().contentType(ContentType.JSON).body(request)</div><div class="line">            .when().post(&quot;/auth/login&quot;).then()</div><div class="line">            .statusCode(HttpStatus.OK.value())</div><div class="line">            .extract()</div><div class="line">            .response();</div><div class="line"></div><div class="line">    assertThat(response.path(&quot;token&quot;), is(IsNull.notNullValue()));</div><div class="line">    assertThat(response.path(&quot;expiration&quot;), is(IsNull.notNullValue()));</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><code>@Sql</code>用于在测试前执行sql插入测试数据。注意<code>given().body()</code>中传入的是一个java对象<code>JwtAuthenticationRequest</code>，因为rest-assured会自动帮你用<code>jackson</code>将对象序列化成json字符串。当然也可以将转换好的json放到body，效果是一样的。</p>
+<p>返回结果被一个Response接住，之后就可以用JsonPath获取其中数据进行验证。当然还有一种更直观的办法，可以通过<code>response.asString()</code>获取完整的response，再反序列化成java对象进行验证。</p>
+<p>至此，最基本的IT就完成了。 在Jenkins增加一个step<code>gradle test</code>就可以实现每次提交代码都进行一次测试。</p>
+<h3 id="一些复杂的情况"><a href="#一些复杂的情况" class="headerlink" title="一些复杂的情况"></a>一些复杂的情况</h3><h4 id="数据混杂"><a href="#数据混杂" class="headerlink" title="数据混杂"></a>数据混杂</h4><p>这是最容易发生，一个项目有很多dev，每个dev都会写自己的IT case，那么如果数据之间产生了影响怎么办。很容易理解，比如一个测试批量写的场景，最后验证方式是看写的数据量是不是10w行。那么另外一个dev写了其他的case恰好也新增了一条数据到这张表，结果变成了10w+1行，那么批量写的case就跑不过了。</p>
+<p>为了杜绝这种情况，我们采用每次跑完一个测试Class就将数据清空。既然是基于类的操作，可以写一个基类解决。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div></pre></td><td class="code"><pre><div class="line">@RunWith(SpringRunner.class)</div><div class="line">@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)</div><div class="line">@ActiveProfiles(&#123;Profiles.ENV_IT&#125;)</div><div class="line">public abstract class BaseIntegrationTest &#123;</div><div class="line"></div><div class="line">    private static JdbcTemplate jdbcTemplate;</div><div class="line"></div><div class="line">    @Autowired</div><div class="line">    public void setDataSource(DataSource dataSource) &#123;</div><div class="line">        jdbcTemplate = new JdbcTemplate(dataSource);</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    @Value(&quot;$&#123;local.server.port&#125;&quot;)</div><div class="line">    protected int port;</div><div class="line"></div><div class="line">    @Before</div><div class="line">    public void setupEnv() &#123;</div><div class="line">        RestAssured.port = port;</div><div class="line">        RestAssured.basePath = &quot;/api&quot;;</div><div class="line">        RestAssured.baseURI = &quot;http://localhost&quot;;</div><div class="line">        RestAssured.config = RestAssured.config().httpClient(HttpClientConfig.httpClientConfig().httpMultipartMode(HttpMultipartMode.BROWSER_COMPATIBLE));</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void tearDownEnv() &#123;</div><div class="line">        given().contentType(ContentType.JSON)</div><div class="line">                .when().post(&quot;/auth/logout&quot;);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    @AfterClass</div><div class="line">    public static void cleanDB() throws SQLException &#123;</div><div class="line">        Resource resource = new ClassPathResource(&quot;/testdata/CleanDB.sql&quot;);</div><div class="line">        Connection connection = jdbcTemplate.getDataSource().getConnection();</div><div class="line">        ScriptUtils.executeSqlScript(connection, resource);</div><div class="line">        connection.close();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><code>@AfterClass</code>中使用了jdbcTemplate执行了一个CleanDB.sql，通过这种方式清除所有测试数据。</p>
+<p><code>@Value(&quot;${local.server.port}&quot;)</code>也要提一下，因为端口是随机的，那么Rest-Assured不知道请求要发到losthost的哪个端口上，这里使用<code>@Value</code>获取当前的端口号并设置到<code>RestAssured.port</code>就解决了这个问题。</p>
+<h4 id="共有数据怎么处理"><a href="#共有数据怎么处理" class="headerlink" title="共有数据怎么处理"></a>共有数据怎么处理</h4><p>跑一次完整的IT，可能需要经历数十个Class，数百个method，那么如果一些数据是所有case都需要的，只有在所有case都跑完才需要清除怎么办？换句话说，这种数据清理不是基于<strong>类</strong>的，而是基于一次<strong>运行</strong>。比如初始用户数据，城市库等等</p>
+<p>我们耍了个小聪明，借助了<code>flyway</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">@Configuration</div><div class="line">@ConditionalOnClass(&#123;DataSource.class&#125;)</div><div class="line">public class UpgradeAutoConfiguration &#123;</div><div class="line"></div><div class="line">    public static final String FLYWAY = &quot;flyway&quot;;</div><div class="line"></div><div class="line">    @Bean(name = FLYWAY)</div><div class="line">    @Profile(&#123;ENV_IT&#125;)</div><div class="line">    public UpgradeService cleanAndUpgradeService(DataSource dataSource) &#123;</div><div class="line">        UpgradeService upgradeService = new FlywayUpgradeService(dataSource);</div><div class="line">        try &#123;</div><div class="line">            upgradeService.cleanAndUpgrade();</div><div class="line">        &#125; catch (Exception ex) &#123;</div><div class="line">            LOGGER.error(&quot;Flyway failed!&quot;, ex);</div><div class="line">        &#125;</div><div class="line">        return upgradeService;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>可以看到当Profile是IT的情况下，<code>flyway</code>会drop掉所有表并重新依次执行每次的upgrade脚本，由此创建完整的数据表，当然都是空的。在项目的test路径下，增加一个版本极大的sql，这样就可以让<code>flyway</code>在最后插入共用的测试数据，例如<code>src/test/resources/db/migration/V999.0.1__Insert_Users.sql</code> ，完美的解决各种数据问题。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>用Spring boot内置的测试服务可以很快速的验证API，我现在都不用把服务启动再通过人工页面点击来测试自己的API，直接与前端同事沟通好Request的格式，写个Case就可以验证。</p>
+<p>当然这种方式也有一个不足就是不方便对系统进行压力测试，之前在公司的API测试用例都是Jmeter写的，做性能测试的时候会方便很多。</p>
+<p>仍在寻找合适的跑性能的工具，如有推荐欢迎留言。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;如果希望很方便针对API进行测试，并且方便的集成到CI中验证每次的提交，那么spring boot自带的IT绝对是不二选择。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="spring" scheme="http://www.deanwangpro.com/tags/spring/"/>
+    
+      <category term="spring-boot" scheme="http://www.deanwangpro.com/tags/spring-boot/"/>
+    
+      <category term="test" scheme="http://www.deanwangpro.com/tags/test/"/>
+    
+  </entry>
   
   <entry>
     <title>坑系列之阿里SLB上使用Webscoket</title>
@@ -971,41 +1021,6 @@
     
     
       <category term="Angular" scheme="http://www.deanwangpro.com/tags/Angular/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>如何在multi-module的项目中配置spring</title>
-    <link href="http://www.deanwangpro.com/2015/11/09/2015-11-9-multi-modules-spring/"/>
-    <id>http://www.deanwangpro.com/2015/11/09/2015-11-9-multi-modules-spring/</id>
-    <published>2015-11-09T14:19:39.000Z</published>
-    <updated>2016-09-13T15:56:19.000Z</updated>
-    
-    <content type="html"><![CDATA[<p>小项目也有可能会分很多小的module开发，毕竟Maven早就支持了Aggregator Project。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">project</div><div class="line">|</div><div class="line">|--web module</div><div class="line">|--serviceA module</div><div class="line">|--serviceB module</div></pre></td></tr></table></figure>
-<a id="more"></a>
-<p>在Service比较复杂，比如封装了第三方接口的提供内部服务的情况下，我一般会单开一个module来管理代码。就算哪天这个第三方不用了，也不用去动主要业务代码。而且单独测试也容易的多。</p>
-<p>那么想要利用Spring管理bean，比如在web module中注入一个serviceA module的一个服务，就需要给子module配置spring了。</p>
-<p>原理来讲，就是让容器在加载主工程时(一般指web module)，可以读到每个子module的spring 文件。</p>
-<p>在serviceA module的resources下新建一个<code>serviceAContext.xml</code>，内部配置跟一般的spring一样，在我的工程里采用了aop扫描package，所以我写了一段<code>aop:config</code>的配置，同时web module也有一段<code>aop:config</code>，不同点就是apo扫描的package目录不同，实测下来没有问题。</p>
-<p>最后在web module中加载这个context文件即可。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&lt;import resource=&quot;classpath*:serviceAContext.xml&quot; /&gt;</div></pre></td></tr></table></figure>
-<p>简单吧。</p>
-]]></content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;小项目也有可能会分很多小的module开发，毕竟Maven早就支持了Aggregator Project。&lt;/p&gt;
-&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;1&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;2&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;3&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;4&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;5&lt;/div&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;project&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;|&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;|--web module&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;|--serviceA module&lt;/div&gt;&lt;div class=&quot;line&quot;&gt;|--serviceB module&lt;/div&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-    
-    </summary>
-    
-    
-      <category term="Java" scheme="http://www.deanwangpro.com/tags/Java/"/>
-    
-      <category term="Spring" scheme="http://www.deanwangpro.com/tags/Spring/"/>
-    
-      <category term="Maven" scheme="http://www.deanwangpro.com/tags/Maven/"/>
     
   </entry>
   
