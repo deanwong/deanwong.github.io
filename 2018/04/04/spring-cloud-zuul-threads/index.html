@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="google-site-verification" content="6I4nQGwB4yLqPannMFWvXqWhKoRXMlOOaa5jtowR9Y0" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="spring,test,spring-cloud," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="ZuulException REJECTED_SEMAPHORE_EXECUTION 是一个最近在性能测试中经常遇到的异常。查询资料发现是因为zuul默认每个路由直接用信号量做隔离，并且默认值是100，也就是当一个路由请求的信号量高于100那么就拒绝服务了，返回500。">
+<meta name="keywords" content="spring,test,spring-cloud">
+<meta property="og:type" content="article">
+<meta property="og:title" content="spring-cloud中zuul的两种隔离机制实验">
+<meta property="og:url" content="http://www.deanwangpro.com/2018/04/04/spring-cloud-zuul-threads/index.html">
+<meta property="og:site_name" content="大名Dean鼎">
+<meta property="og:description" content="ZuulException REJECTED_SEMAPHORE_EXECUTION 是一个最近在性能测试中经常遇到的异常。查询资料发现是因为zuul默认每个路由直接用信号量做隔离，并且默认值是100，也就是当一个路由请求的信号量高于100那么就拒绝服务了，返回500。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://www.deanwangpro.com/images/15228346573506.jpg">
+<meta property="og:image" content="http://www.deanwangpro.com/images/15228360753126.jpg">
+<meta property="og:image" content="http://www.deanwangpro.com/images/15228364522331.jpg">
+<meta property="og:image" content="http://www.deanwangpro.com/images/15228364349973.jpg">
+<meta property="og:image" content="http://www.deanwangpro.com/images/15228368284029.jpg">
+<meta property="og:image" content="http://www.deanwangpro.com/images/15228368551165.jpg">
+<meta property="og:updated_time" content="2018-04-04T10:39:13.231Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="spring-cloud中zuul的两种隔离机制实验">
+<meta name="twitter:description" content="ZuulException REJECTED_SEMAPHORE_EXECUTION 是一个最近在性能测试中经常遇到的异常。查询资料发现是因为zuul默认每个路由直接用信号量做隔离，并且默认值是100，也就是当一个路由请求的信号量高于100那么就拒绝服务了，返回500。">
+<meta name="twitter:image" content="http://www.deanwangpro.com/images/15228346573506.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '384049',
+      author: 'Dean'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.deanwangpro.com/2018/04/04/spring-cloud-zuul-threads/"/>
+
+
+
+
+
+  <title>spring-cloud中zuul的两种隔离机制实验 | 大名Dean鼎</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69554053-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">大名Dean鼎</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2018/04/04/spring-cloud-zuul-threads/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Dean Wang">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar-cartoon.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="大名Dean鼎">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">spring-cloud中zuul的两种隔离机制实验</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-04-04T00:00:00+08:00">
+                2018-04-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/04/04/spring-cloud-zuul-threads/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count"
+                        data-disqus-identifier="2018/04/04/spring-cloud-zuul-threads/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>ZuulException REJECTED_SEMAPHORE_EXECUTION 是一个最近在性能测试中经常遇到的异常。查询资料发现是因为zuul默认每个路由直接用信号量做隔离，并且默认值是100，也就是当一个路由请求的信号量高于100那么就拒绝服务了，返回500。</p>
+<a id="more"></a>
+<h3 id="信号量隔离"><a href="#信号量隔离" class="headerlink" title="信号量隔离"></a>信号量隔离</h3><p>既然默认值太小，那么就在gateway的配置提高各个路由的信号量再实验。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">routes:</div><div class="line">    linkflow:</div><div class="line">      path: /api1/**</div><div class="line">      serviceId: lf</div><div class="line">      stripPrefix: false</div><div class="line">      semaphore:</div><div class="line">        maxSemaphores: 2000</div><div class="line">    oauth:</div><div class="line">      path: /api2/**</div><div class="line">      serviceId: lf</div><div class="line">      stripPrefix: false</div><div class="line">      semaphore:</div><div class="line">        maxSemaphores: 1000</div></pre></td></tr></table></figure>
+<p>两个路由的信号量分开提高到2000和1000。我们再用gatling测试一下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">setUp(scn.inject(rampUsers(200) over (3 seconds)).protocols(httpConf))</div></pre></td></tr></table></figure>
+<p>这是我们的模型，3s内启动200个用户，顺序访问5个API。所以会有1000个request。机器配置只有2核16G，并且是docker化的数据库。所以整体性能不高。</p>
+<p><img src="/images/15228346573506.jpg" alt="信号量统计"></p>
+<p>看结果仍然有57个KO，但是比之前1000个Request有900个KO的比例好很多了。</p>
+<h3 id="线程隔离"><a href="#线程隔离" class="headerlink" title="线程隔离"></a>线程隔离</h3><p><code>Edgware</code>版本的spring cloud提供了另一种基于线程池的隔离机制。实现起来也非常简单，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">zuul:</div><div class="line">  ribbon-isolation-strategy: THREAD</div><div class="line">  thread-pool:</div><div class="line">    use-separate-thread-pools: true</div><div class="line">    thread-pool-key-prefix: zuulgw</div><div class="line">    </div><div class="line">hystrix:</div><div class="line">  threadpool:</div><div class="line">    default:</div><div class="line">      coreSize: 50</div><div class="line">      maximumSize: 10000</div><div class="line">      allowMaximumSizeToDivergeFromCoreSize: true</div><div class="line">      maxQueueSize: -1</div><div class="line">      execution:</div><div class="line">        isolation:</div><div class="line">          thread:</div><div class="line">            timeoutInMilliseconds: 60000</div></pre></td></tr></table></figure>
+<p><code>use-separate-thread-pools</code>的意思是每个路由都有自己的线程池，而不是共享一个。<br><code>thread-pool-key-prefix</code>会指定一个线程池前缀方便调试。<br><code>hystrix</code>的部分主要设置线程池的大小，这里设置了10000，其实并不是越大越好。线程池越大削峰填谷的效果越显著，也就是时间换空间。系统的整体负载会上升，导致响应时间越来越长，那么当响应时间超过某个限度，其实系统也算是不可用了。后面可以看到数据。</p>
+<p><img src="/images/15228360753126.jpg" alt="线程池统计"></p>
+<p>这次没有500的情况了，1000个Request都正常返回了。</p>
+<h3 id="比较"><a href="#比较" class="headerlink" title="比较"></a>比较</h3><p>从几张图对比下两种隔离的效果，上图是信号量隔离，下图是线程隔离。</p>
+<h4 id="响应时间分布"><a href="#响应时间分布" class="headerlink" title="响应时间分布"></a>响应时间分布</h4><p><img src="/images/15228364522331.jpg" alt="信号量隔离响应时间分布"></p>
+<p><img src="/images/15228364349973.jpg" alt="线程隔离响应时间分布"></p>
+<p>直观上能发现使用线程隔离的分布更好看一些，600ms内的响应会更多一些。</p>
+<h4 id="QPS"><a href="#QPS" class="headerlink" title="QPS"></a>QPS</h4><p><img src="/images/15228368284029.jpg" alt="信号量隔离QPS"></p>
+<p><img src="/images/15228368551165.jpg" alt="线程隔离QPS"></p>
+<p>两张图展示的是同一时刻的Request和Response的数量。</p>
+<p>先看信号量隔离的场景，Response per second是逐步提升的，但是达到一个量级后，gateway开始拒绝服务。猜测是超过了信号量的限制或是超时？</p>
+<p>线程隔离的这张就比较有意思了，可以看到Request per second上升的速度要比上面的快，说明系统是试图接收更多的请求然后分发给线程池。再看在某个时间点Response per second反而开始下降，因为线程不断的创建消耗了大量的系统资源，响应变慢。之后因为请求少了，负载降低，Response又开始抬升。所以线程池也并非越大越好，需要不断调试寻找一个平衡点。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>线程池提供了比信号量更好的隔离机制，并且从实际测试发现高吞吐场景下可以完成更多的请求。但是信号量隔离的开销更小，对于本身就是10ms以内的系统，显然信号量更合适。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/spring/" rel="tag"># spring</a>
+          
+            <a href="/tags/test/" rel="tag"># test</a>
+          
+            <a href="/tags/spring-cloud/" rel="tag"># spring-cloud</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/22/spring-boot-integration-test/" rel="next" title="spring-boot系列之集成测试">
+                <i class="fa fa-chevron-left"></i> spring-boot系列之集成测试
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar-cartoon.jpg"
+               alt="Dean Wang" />
+          <p class="site-author-name" itemprop="name">Dean Wang</p>
+           
+              <p class="site-description motion-element" itemprop="description">理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">24</span>
+                <span class="site-state-item-name">posts</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">29</span>
+                <span class="site-state-item-name">tags</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/deanwong" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/wongding" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.instagram.com/rockgeek" target="_blank" title="Instagram">
+                  
+                    <i class="fa fa-fw fa-instagram"></i>
+                  
+                    
+                      Instagram
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/wangding85" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#信号量隔离"><span class="nav-number">1.</span> <span class="nav-text">信号量隔离</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#线程隔离"><span class="nav-number">2.</span> <span class="nav-text">线程隔离</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#比较"><span class="nav-number">3.</span> <span class="nav-text">比较</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#响应时间分布"><span class="nav-number">3.1.</span> <span class="nav-text">响应时间分布</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#QPS"><span class="nav-number">3.2.</span> <span class="nav-text">QPS</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#小结"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Dean Wang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">
+    Powered by <a class="theme-link" href="https://hexo.io">Hexo</a>
+  </div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">
+    Theme &mdash;
+    <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+      NexT.Mist
+    </a>
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://wangdean.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://www.deanwangpro.com/2018/04/04/spring-cloud-zuul-threads/';
+          this.page.identifier = '2018/04/04/spring-cloud-zuul-threads/';
+          this.page.title = 'spring-cloud中zuul的两种隔离机制实验';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://wangdean.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
