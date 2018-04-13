@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.deanwangpro.com/"/>
-  <updated>2018-04-13T08:53:20.063Z</updated>
+  <updated>2018-04-13T08:59:51.051Z</updated>
   <id>http://www.deanwangpro.com/</id>
   
   <author>
@@ -16,11 +16,11 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>spring-cloud中的几个Timeout</title>
+    <title>spring-cloud服务网关中的Timeout设置</title>
     <link href="http://www.deanwangpro.com/2018/04/13/zuul-hytrix-ribbon-timeout/"/>
     <id>http://www.deanwangpro.com/2018/04/13/zuul-hytrix-ribbon-timeout/</id>
     <published>2018-04-12T16:00:00.000Z</published>
-    <updated>2018-04-13T08:53:20.063Z</updated>
+    <updated>2018-04-13T08:59:51.051Z</updated>
     
     <content type="html"><![CDATA[<p>大家在初次使用spring-cloud的gateway的时候，肯定会被里面各种的Timeout搞得晕头转向。hytrix有设置，ribbon也有。我们一开始也是乱设一桶，Github上各种项目里也没几个设置正确的。对Timeout的研究源于一次log中的warning</p>
 <blockquote>
