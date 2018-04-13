@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.deanwangpro.com/"/>
-  <updated>2018-04-04T10:39:13.231Z</updated>
+  <updated>2018-04-13T08:53:20.063Z</updated>
   <id>http://www.deanwangpro.com/</id>
   
   <author>
@@ -14,6 +14,59 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>spring-cloud中的几个Timeout</title>
+    <link href="http://www.deanwangpro.com/2018/04/13/zuul-hytrix-ribbon-timeout/"/>
+    <id>http://www.deanwangpro.com/2018/04/13/zuul-hytrix-ribbon-timeout/</id>
+    <published>2018-04-12T16:00:00.000Z</published>
+    <updated>2018-04-13T08:53:20.063Z</updated>
+    
+    <content type="html"><![CDATA[<p>大家在初次使用spring-cloud的gateway的时候，肯定会被里面各种的Timeout搞得晕头转向。hytrix有设置，ribbon也有。我们一开始也是乱设一桶，Github上各种项目里也没几个设置正确的。对Timeout的研究源于一次log中的warning</p>
+<blockquote>
+<p>The Hystrix timeout of 60000 ms for the command “foo” is set lower than the combination of the Ribbon read and connect timeout, 200000ms.</p>
+</blockquote>
+<a id="more"></a>
+<h3 id="hytrix超时时间"><a href="#hytrix超时时间" class="headerlink" title="hytrix超时时间"></a>hytrix超时时间</h3><p>log出自<code>AbstractRibbonCommand.java</code>，那么索性研究一下源码。</p>
+<p>假设：</p>
+<ul>
+<li>这里gateway会请求一个serviceName=foo的服务</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="title">getHystrixTimeout</span><span class="params">(IClientConfig config, String commandKey)</span> </span>&#123;</div><div class="line">	<span class="keyword">int</span> ribbonTimeout = getRibbonTimeout(config, commandKey);</div><div class="line">	DynamicPropertyFactory dynamicPropertyFactory = DynamicPropertyFactory.getInstance();</div><div class="line">	</div><div class="line">	<span class="comment">// 获取默认的hytrix超时时间</span></div><div class="line">	<span class="keyword">int</span> defaultHystrixTimeout = dynamicPropertyFactory.getIntProperty(<span class="string">"hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds"</span>,</div><div class="line">		<span class="number">0</span>).get();</div><div class="line">	<span class="comment">// 获取具体服务的hytrix超时时间，这里应该是hystrix.command.foo.execution.isolation.thread.timeoutInMilliseconds</span></div><div class="line">	<span class="keyword">int</span> commandHystrixTimeout = dynamicPropertyFactory.getIntProperty(<span class="string">"hystrix.command."</span> + commandKey + <span class="string">".execution.isolation.thread.timeoutInMilliseconds"</span>,</div><div class="line">		<span class="number">0</span>).get();</div><div class="line">	<span class="keyword">int</span> hystrixTimeout;</div><div class="line">	<span class="comment">// hystrixTimeout的优先级是 具体服务的hytrix超时时间 &gt; 默认的hytrix超时时间 &gt; ribbon超时时间</span></div><div class="line">	<span class="keyword">if</span>(commandHystrixTimeout &gt; <span class="number">0</span>) &#123;</div><div class="line">		hystrixTimeout = commandHystrixTimeout;</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">else</span> <span class="keyword">if</span>(defaultHystrixTimeout &gt; <span class="number">0</span>) &#123;</div><div class="line">		hystrixTimeout = defaultHystrixTimeout;</div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">		hystrixTimeout = ribbonTimeout;</div><div class="line">	&#125;</div><div class="line">	<span class="comment">// 如果默认的或者具体服务的hytrix超时时间小于ribbon超时时间就会警告</span></div><div class="line">	<span class="keyword">if</span>(hystrixTimeout &lt; ribbonTimeout) &#123;</div><div class="line">		LOGGER.warn(<span class="string">"The Hystrix timeout of "</span> + hystrixTimeout + <span class="string">"ms for the command "</span> + commandKey +</div><div class="line">			<span class="string">" is set lower than the combination of the Ribbon read and connect timeout, "</span> + ribbonTimeout + <span class="string">"ms."</span>);</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">return</span> hystrixTimeout;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>紧接着，看一下我们的配置是什么</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">hystrix:</div><div class="line">  command:</div><div class="line">    default:</div><div class="line">      execution:</div><div class="line">        isolation:</div><div class="line">          thread:</div><div class="line">            timeoutInMilliseconds: 60000</div><div class="line">            </div><div class="line">ribbon:</div><div class="line">  ReadTimeout: 50000</div><div class="line">  ConnectTimeout: 50000</div><div class="line">  MaxAutoRetries: 0</div><div class="line">  MaxAutoRetriesNextServer: 1</div></pre></td></tr></table></figure>
+<h3 id="ribbon超时时间"><a href="#ribbon超时时间" class="headerlink" title="ribbon超时时间"></a>ribbon超时时间</h3><p>这里ribbon的超时时间是50000ms，那么为什么log中写的ribbon时间是200000ms?</p>
+<p>继续分析源码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="title">getRibbonTimeout</span><span class="params">(IClientConfig config, String commandKey)</span> </span>&#123;</div><div class="line">	<span class="keyword">int</span> ribbonTimeout;</div><div class="line">	<span class="comment">// 这是比较异常的情况，不说</span></div><div class="line">	<span class="keyword">if</span> (config == <span class="keyword">null</span>) &#123;</div><div class="line">		ribbonTimeout = RibbonClientConfiguration.DEFAULT_READ_TIMEOUT + RibbonClientConfiguration.DEFAULT_CONNECT_TIMEOUT;</div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">	   <span class="comment">// 这里获取了四个参数，ReadTimeout，ConnectTimeout，MaxAutoRetries， MaxAutoRetriesNextServer</span></div><div class="line">		<span class="keyword">int</span> ribbonReadTimeout = getTimeout(config, commandKey, <span class="string">"ReadTimeout"</span>,</div><div class="line">			IClientConfigKey.Keys.ReadTimeout, RibbonClientConfiguration.DEFAULT_READ_TIMEOUT);</div><div class="line">		<span class="keyword">int</span> ribbonConnectTimeout = getTimeout(config, commandKey, <span class="string">"ConnectTimeout"</span>,</div><div class="line">			IClientConfigKey.Keys.ConnectTimeout, RibbonClientConfiguration.DEFAULT_CONNECT_TIMEOUT);</div><div class="line">		<span class="keyword">int</span> maxAutoRetries = getTimeout(config, commandKey, <span class="string">"MaxAutoRetries"</span>,</div><div class="line">			IClientConfigKey.Keys.MaxAutoRetries, DefaultClientConfigImpl.DEFAULT_MAX_AUTO_RETRIES);</div><div class="line">		<span class="keyword">int</span> maxAutoRetriesNextServer = getTimeout(config, commandKey, <span class="string">"MaxAutoRetriesNextServer"</span>,</div><div class="line">			IClientConfigKey.Keys.MaxAutoRetriesNextServer, DefaultClientConfigImpl.DEFAULT_MAX_AUTO_RETRIES_NEXT_SERVER);</div><div class="line">		<span class="comment">// 原来ribbonTimeout的计算方法在这里，以上文的设置为例</span></div><div class="line">		<span class="comment">// ribbonTimeout = (50000 + 50000) * (0 + 1) * (1 + 1) = 200000</span></div><div class="line">		ribbonTimeout = (ribbonReadTimeout + ribbonConnectTimeout) * (maxAutoRetries + <span class="number">1</span>) * (maxAutoRetriesNextServer + <span class="number">1</span>);</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">return</span> ribbonTimeout;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>可以看到ribbonTimeout是一个总时间，所以从逻辑上来讲，作者希望hystrixTimeout要大于ribbonTimeout，否则hystrix熔断了以后，ribbon的重试就都没有意义了。</p>
+<h3 id="ribbon单服务设置"><a href="#ribbon单服务设置" class="headerlink" title="ribbon单服务设置"></a>ribbon单服务设置</h3><p>到这里最前面的疑问已经解开了，但是hytrix可以分服务设置timeout，ribbon可不可以? 源码走起，这里看的文件是<code>DefaultClientConfigImpl.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 这是获取配置的入口方法，如果是null，那么用默认值</span></div><div class="line"><span class="comment">// 所有ribbon的默认值的都在该类中设置了，可以自己看一下</span></div><div class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">get</span><span class="params">(IClientConfigKey&lt;T&gt; key, T defaultValue)</span> </span>&#123;</div><div class="line">    T value = get(key);</div><div class="line">    <span class="keyword">if</span> (value == <span class="keyword">null</span>) &#123;</div><div class="line">        value = defaultValue;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> value;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 这是核心方法   </span></div><div class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">getProperty</span><span class="params">(String key)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (enableDynamicProperties) &#123;</div><div class="line">        String dynamicValue = <span class="keyword">null</span>;</div><div class="line">        DynamicStringProperty dynamicProperty = dynamicProperties.get(key);</div><div class="line">        <span class="comment">// dynamicProperties其实是一个缓存，首次访问foo服务的时候会加载</span></div><div class="line">        <span class="keyword">if</span> (dynamicProperty != <span class="keyword">null</span>) &#123;</div><div class="line">            dynamicValue = dynamicProperty.get();</div><div class="line">        &#125;</div><div class="line">        <span class="comment">// 如果缓存没有，那么就再获取一次，注意这里的getConfigKey(key)是生成key的方法</span></div><div class="line">        <span class="keyword">if</span> (dynamicValue == <span class="keyword">null</span>) &#123;</div><div class="line">            dynamicValue = DynamicProperty.getInstance(getConfigKey(key)).getString();</div><div class="line">            <span class="comment">// 如果还是没有取默认值，getDefaultPropName(key)生成key的方法</span></div><div class="line">            <span class="keyword">if</span> (dynamicValue == <span class="keyword">null</span>) &#123;</div><div class="line">                dynamicValue = DynamicProperty.getInstance(getDefaultPropName(key)).getString();</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span> (dynamicValue != <span class="keyword">null</span>) &#123;</div><div class="line">            <span class="keyword">return</span> dynamicValue;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> properties.get(key);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>以我们的服务为例：<br><code>getConfigKey(key)</code> returns <code>foo.ribbon.ReadTimeout</code><br><code>getDefaultPropName(key)</code> returns <code>ribbon.ReadTimeout</code></p>
+<p>一目了然，<code>{serviceName}.ribbon.{propertyName}</code>就可以了。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>感觉ribbon和hytrix的配置获取源码略微有点乱，所以也导致大家在设置的时候有些无所适从。<code>spring-cloud</code>的代码一直在迭代，无论github上还是文档可能都相对滞后，这时候阅读源码并且动手debug一下是最能接近事实真相的了。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;大家在初次使用spring-cloud的gateway的时候，肯定会被里面各种的Timeout搞得晕头转向。hytrix有设置，ribbon也有。我们一开始也是乱设一桶，Github上各种项目里也没几个设置正确的。对Timeout的研究源于一次log中的warning&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;The Hystrix timeout of 60000 ms for the command “foo” is set lower than the combination of the Ribbon read and connect timeout, 200000ms.&lt;/p&gt;
+&lt;/blockquote&gt;
+    
+    </summary>
+    
+    
+      <category term="spring" scheme="http://www.deanwangpro.com/tags/spring/"/>
+    
+      <category term="spring-cloud" scheme="http://www.deanwangpro.com/tags/spring-cloud/"/>
+    
+      <category term="timeout" scheme="http://www.deanwangpro.com/tags/timeout/"/>
+    
+      <category term="ribbon" scheme="http://www.deanwangpro.com/tags/ribbon/"/>
+    
+      <category term="hytrix" scheme="http://www.deanwangpro.com/tags/hytrix/"/>
+    
+  </entry>
   
   <entry>
     <title>spring-cloud中zuul的两种隔离机制实验</title>
@@ -1001,33 +1054,6 @@
       <category term="Mac" scheme="http://www.deanwangpro.com/tags/Mac/"/>
     
       <category term="Docker" scheme="http://www.deanwangpro.com/tags/Docker/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Mac上安装virtual python环境</title>
-    <link href="http://www.deanwangpro.com/2016/05/22/pyenv-in-mac-for-installing-scrapy/"/>
-    <id>http://www.deanwangpro.com/2016/05/22/pyenv-in-mac-for-installing-scrapy/</id>
-    <published>2016-05-21T16:00:00.000Z</published>
-    <updated>2016-09-13T15:55:05.000Z</updated>
-    
-    <content type="html"><![CDATA[<p>最新升级到最新系统的MAC貌似不能安装Scrapy了，lxml怎么安装都没权限。所以采用安装虚拟python环境的方法来解决吧。Scrapy官方也不建议用MAC自带的python, <a href="http://doc.scrapy.org/en/1.1/intro/install.html#mac-os-x" target="_blank" rel="external">Installation Guide</a>.</p>
-<p><code>~ pyenv install 2.7.1</code></p>
-<p>完成后基于这个版本的python创建一个virtualenv</p>
-<p><code>~ pyenv virtualenv 2.7.11 venv-labs</code></p>
-<p>会自动给这个虚拟env安装pip，wheel等工具，然后我们来使用这个创建出来的env作为我们默认环境</p>
-<p><code>~ pyenv global venv-labs</code></p>
-<p>切到Pycharm里面，在Project Interpreter里面添加一个env，指向<code>~/pyenv/versions/venv-labs/bin/python</code>.大功告成。开始愉快的安装Scrapy吧。</p>
-]]></content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;最新升级到最新系统的MAC貌似不能安装Scrapy了，lxml怎么安装都没权限。所以采用安装虚拟python环境的方法来解决吧。Scrapy官方也不建议用MAC自带的python, &lt;a href=&quot;http://doc.scrapy.org/en/1.1/intro/in
-    
-    </summary>
-    
-    
-      <category term="Angular" scheme="http://www.deanwangpro.com/tags/Angular/"/>
     
   </entry>
   
