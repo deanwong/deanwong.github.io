@@ -2,6 +2,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
   
 
 
@@ -9,8 +18,11 @@
 <head>
   <meta charset="UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
 <meta name="theme-color" content="#222">
+
+
+
 
 
 
@@ -39,36 +51,7 @@
 
 
 
-  
-  
-  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
 
-
-
-
-  
-  
-  
-  
-
-  
-    
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    
-    
-    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
-  
 
 
 
@@ -77,39 +60,25 @@
 
 <link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
 
-<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+<link href="/css/main.css?v=6.4.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Java,algorithm," />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.2">
 
 
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.2">
 
 
-
-  <link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml" />
-
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.2">
 
 
-
-  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.2" color="#222">
 
 
 
 
 
 
-<meta name="description" content="这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有答案.第一个高分回答表示各种位操作都看不懂。传说中的Hamming_weight算法。真是给跪了。 突然想到Java的Inte">
-<meta name="keywords" content="Java,algorithm">
-<meta property="og:type" content="article">
-<meta property="og:title" content="How to count the number of set bits in ASCII string">
-<meta property="og:url" content="http://www.deanwangpro.com/2016/11/14/asc-to-binary/index.html">
-<meta property="og:site_name" content="大名Dean鼎">
-<meta property="og:description" content="这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有答案.第一个高分回答表示各种位操作都看不懂。传说中的Hamming_weight算法。真是给跪了。 突然想到Java的Inte">
-<meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2017-03-22T14:32:51.000Z">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="How to count the number of set bits in ASCII string">
-<meta name="twitter:description" content="这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有答案.第一个高分回答表示各种位操作都看不懂。传说中的Hamming_weight算法。真是给跪了。 突然想到Java的Inte">
 
 
 
@@ -118,14 +87,13 @@
   var CONFIG = {
     root: '/',
     scheme: 'Mist',
-    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
-    fancybox: true,
+    version: '6.4.2',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
     tabs: true,
-    motion: true,
-    duoshuo: {
-      userId: '384049',
-      author: 'Dean'
-    },
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
     algolia: {
       applicationID: '',
       apiKey: '',
@@ -137,12 +105,40 @@
 </script>
 
 
+  
+
+
+
+
+  <meta name="description" content="这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有答案.第一个高分回答表示各种位操作都看不懂。传说中的Hamming_weight算法。真是给跪了。 突然想到Java的Inte">
+<meta name="keywords" content="Java,algorithm">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to count the number of set bits in ASCII string">
+<meta property="og:url" content="http://www.deanwangpro.com/2016/11/14/asc-to-binary/index.html">
+<meta property="og:site_name" content="大名Dean鼎">
+<meta property="og:description" content="这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有答案.第一个高分回答表示各种位操作都看不懂。传说中的Hamming_weight算法。真是给跪了。 突然想到Java的Inte">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2017-03-22T14:32:52.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="How to count the number of set bits in ASCII string">
+<meta name="twitter:description" content="这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有答案.第一个高分回答表示各种位操作都看不懂。传说中的Hamming_weight算法。真是给跪了。 突然想到Java的Inte">
+
+
+
+  <link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml" />
+
+
+
 
   <link rel="canonical" href="http://www.deanwangpro.com/2016/11/14/asc-to-binary/"/>
 
 
 
-
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
 
   <title>How to count the number of set bits in ASCII string | 大名Dean鼎</title>
   
@@ -150,18 +146,46 @@
 
 
 
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-69554053-1"></script>
 <script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-  ga('create', 'UA-69554053-1', 'auto');
-  ga('send', 'pageview');
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-69554053-1');
 </script>
 
 
 
 
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
 
 </head>
 
@@ -172,7 +196,7 @@
     
   
 
-  <div class="container sidebar-position-left page-post-detail ">
+  <div class="container sidebar-position-left page-post-detail">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -181,19 +205,17 @@
     
 
     <div class="custom-logo-site-title">
-      <a href="/"  class="brand" rel="start">
+      <a href="/" class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
         <span class="site-title">大名Dean鼎</span>
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
-      
-        <p class="site-subtitle"></p>
-      
+    
   </div>
 
   <div class="site-nav-toggle">
-    <button>
+    <button aria-label="Toggle navigation bar">
       <span class="btn-bar"></span>
       <span class="btn-bar"></span>
       <span class="btn-bar"></span>
@@ -201,45 +223,37 @@
   </div>
 </div>
 
-<nav class="site-nav">
-  
 
+
+<nav class="site-nav">
   
     <ul id="menu" class="menu">
       
         
-        <li class="menu-item menu-item-home">
-          <a href="/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
-            
-            Home
-          </a>
-        </li>
-      
         
-        <li class="menu-item menu-item-archives">
-          <a href="/archives/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
-            
-            Archives
-          </a>
-        </li>
-      
         
-        <li class="menu-item menu-item-tags">
-          <a href="/tags/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
-            
-            Tags
-          </a>
-        </li>
-      
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
 
       
+      
     </ul>
+  
+
+  
+    
+
   
 
   
@@ -247,12 +261,20 @@
 
 
 
- </div>
+  
+
+
+
+</div>
     </header>
+
+    
+
 
     <main id="main" class="main">
       <div class="main-inner">
         <div class="content-wrap">
+          
           <div id="content" class="content">
             
 
@@ -265,6 +287,8 @@
   
   
 
+  
+
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
   
@@ -274,7 +298,7 @@
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Dean Wang">
-      <meta itemprop="description" content="">
+      <meta itemprop="description" content="理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover">
       <meta itemprop="image" content="/images/avatar-cartoon.jpg">
     </span>
 
@@ -287,11 +311,19 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">How to count the number of set bits in ASCII string</h1>
+          <h1 class="post-title" itemprop="name headline">How to count the number of set bits in ASCII string
+              
+            
+          </h1>
         
 
         <div class="post-meta">
           <span class="post-time">
+
+            
+            
+            
+
             
               <span class="post-meta-item-icon">
                 <i class="fa fa-calendar-o"></i>
@@ -299,13 +331,30 @@
               
                 <span class="post-meta-item-text">Posted on</span>
               
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2016-11-14T00:00:00+08:00">
-                2016-11-14
-              </time>
+
+              
+                
+              
+
+              <time title="Created: 2016-11-14 00:00:00" itemprop="dateCreated datePublished" datetime="2016-11-14T00:00:00+08:00">2016-11-14</time>
             
 
             
+              
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2017-03-22 22:32:52" itemprop="dateModified" datetime="2017-03-22T22:32:52+08:00">2017-03-22</time>
+              
             
           </span>
 
@@ -319,6 +368,7 @@
                   <i class="fa fa-comment-o"></i>
                 </span>
                 <a href="/2016/11/14/asc-to-binary/#comments" itemprop="discussionUrl">
+                
                   <span class="post-comments-count disqus-comment-count"
                         data-disqus-identifier="2016/11/14/asc-to-binary/" itemprop="commentCount"></span>
                 </a>
@@ -331,7 +381,10 @@
 
           
             <span class="post-meta-divider">|</span>
-            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="post-meta-item-icon"
+            >
+            <i class="fa fa-eye"></i>
+             Views:  
             <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
             </span>
           
@@ -353,15 +406,18 @@
       
 
       
-        <p>这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有<a href="How to count the number of set bits in ASCII string">答案</a>.第一个高分回答表示各种位操作都看不懂。传说中的<a href="http://en.wikipedia.org/wiki/Hamming_weight" target="_blank" rel="external">Hamming_weight</a>算法。真是给跪了。</p>
+        <p>这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有<a href="How to count the number of set bits in ASCII string">答案</a>.第一个高分回答表示各种位操作都看不懂。传说中的<a href="http://en.wikipedia.org/wiki/Hamming_weight" target="_blank" rel="noopener">Hamming_weight</a>算法。真是给跪了。</p>
 <p>突然想到Java的Integer类本来就有个toBinaryString方法，再加上最近正好研究UUID生成，觉得用现成的方法实现一下。</p>
 <a id="more"></a>
 <p>直接贴源码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ASC2Bin</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> DEFAULT_LENGTH = <span class="number">8</span>;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">asc2bin</span><span class="params">(String str)</span> </span>&#123;</div><div class="line">        StringBuilder binaryString = <span class="keyword">new</span> StringBuilder(<span class="number">8</span> * str.length());</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; str.length(); i++) &#123;</div><div class="line">            <span class="keyword">try</span> &#123;</div><div class="line">                <span class="keyword">int</span> ascInt = (<span class="keyword">int</span>) str.charAt(i);</div><div class="line">                StringBuilder temp = <span class="keyword">new</span> StringBuilder(Integer.toBinaryString(ascInt));</div><div class="line">                String bin = <span class="keyword">null</span>;</div><div class="line">                <span class="keyword">if</span> (temp.length() &lt;= DEFAULT_LENGTH) &#123;</div><div class="line">                    <span class="keyword">while</span> (temp.length() &lt; DEFAULT_LENGTH) &#123;</div><div class="line">                        temp.insert(<span class="number">0</span>, <span class="string">"0"</span>);</div><div class="line">                    &#125;</div><div class="line">                    bin = temp.toString();</div><div class="line">                &#125; <span class="keyword">else</span> <span class="keyword">if</span> (temp.length() &gt; DEFAULT_LENGTH) &#123;</div><div class="line">                    <span class="keyword">continue</span>;</div><div class="line">                &#125;</div><div class="line">                binaryString.append(bin);</div><div class="line">            &#125; <span class="keyword">catch</span> (NumberFormatException nfe) &#123;</div><div class="line">                <span class="keyword">continue</span>;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> binaryString.toString();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">bin2asc</span><span class="params">(String str)</span> </span>&#123;</div><div class="line">        StringBuilder sb = <span class="keyword">new</span> StringBuilder();</div><div class="line"></div><div class="line">        <span class="comment">//10010001100101 split into 8 characters</span></div><div class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; str.length() - <span class="number">1</span>; i += DEFAULT_LENGTH) &#123;</div><div class="line"></div><div class="line">            <span class="comment">//grab the hex in pairs</span></div><div class="line">            String output = str.substring(i, (i + DEFAULT_LENGTH));</div><div class="line">            <span class="comment">//convert hex to decimal</span></div><div class="line">            <span class="keyword">int</span> decimal = Integer.parseInt(output, <span class="number">2</span>);</div><div class="line">            <span class="comment">//convert the decimal to character</span></div><div class="line">            sb.append((<span class="keyword">char</span>) decimal);</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">return</span> sb.toString();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</div><div class="line">        String binary = asc2bin(<span class="string">"Hello world!"</span>);</div><div class="line">        System.out.println(<span class="string">"binary : "</span> + binary);</div><div class="line">        String asc = bin2asc(binary);</div><div class="line">        System.out.println(<span class="string">"ASC : "</span> + asc);</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ASC2Bin</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> DEFAULT_LENGTH = <span class="number">8</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">asc2bin</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">        StringBuilder binaryString = <span class="keyword">new</span> StringBuilder(<span class="number">8</span> * str.length());</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; str.length(); i++) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">int</span> ascInt = (<span class="keyword">int</span>) str.charAt(i);</span><br><span class="line">                StringBuilder temp = <span class="keyword">new</span> StringBuilder(Integer.toBinaryString(ascInt));</span><br><span class="line">                String bin = <span class="keyword">null</span>;</span><br><span class="line">                <span class="keyword">if</span> (temp.length() &lt;= DEFAULT_LENGTH) &#123;</span><br><span class="line">                    <span class="keyword">while</span> (temp.length() &lt; DEFAULT_LENGTH) &#123;</span><br><span class="line">                        temp.insert(<span class="number">0</span>, <span class="string">"0"</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">                    bin = temp.toString();</span><br><span class="line">                &#125; <span class="keyword">else</span> <span class="keyword">if</span> (temp.length() &gt; DEFAULT_LENGTH) &#123;</span><br><span class="line">                    <span class="keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                binaryString.append(bin);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (NumberFormatException nfe) &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> binaryString.toString();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">bin2asc</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">        StringBuilder sb = <span class="keyword">new</span> StringBuilder();</span><br><span class="line"></span><br><span class="line">        <span class="comment">//10010001100101 split into 8 characters</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; str.length() - <span class="number">1</span>; i += DEFAULT_LENGTH) &#123;</span><br><span class="line"></span><br><span class="line">            <span class="comment">//grab the hex in pairs</span></span><br><span class="line">            String output = str.substring(i, (i + DEFAULT_LENGTH));</span><br><span class="line">            <span class="comment">//convert hex to decimal</span></span><br><span class="line">            <span class="keyword">int</span> decimal = Integer.parseInt(output, <span class="number">2</span>);</span><br><span class="line">            <span class="comment">//convert the decimal to character</span></span><br><span class="line">            sb.append((<span class="keyword">char</span>) decimal);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> sb.toString();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        String binary = asc2bin(<span class="string">"Hello world!"</span>);</span><br><span class="line">        System.out.println(<span class="string">"binary : "</span> + binary);</span><br><span class="line">        String asc = bin2asc(binary);</span><br><span class="line">        System.out.println(<span class="string">"ASC : "</span> + asc);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>其实一开始的时候我并没有强制限定每一个ASCII字符都是8位bits，但是逆操作的时候遇到问题了。一般的ASCII字符在我本机CPU下的是7个bit，但是空格和其他符号都是6个bit。这个就比较麻烦了，不好直接按位数切分做逆操作。索性定死8位前面补0，方法比较土鳖，也没考虑性能（说实话我还真没那个本事），各位随便看看吧。</p>
 
       
     </div>
+
+    
+
     
     
     
@@ -419,28 +475,24 @@
   </article>
 
 
-
-    <div class="post-spread">
-      
-    </div>
   </div>
 
 
           </div>
           
 
-
-          
-  <div class="comments" id="comments">
-    
+  
+    <div class="comments" id="comments">
       <div id="disqus_thread">
         <noscript>
           Please enable JavaScript to view the
           <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
         </noscript>
       </div>
-    
-  </div>
+    </div>
+
+  
+
 
 
         </div>
@@ -463,110 +515,165 @@
 
       
 
-      <section class="site-overview sidebar-panel sidebar-panel-active">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-          <img class="site-author-image" itemprop="image"
-               src="/images/avatar-cartoon.jpg"
-               alt="Dean Wang" />
-          <p class="site-author-name" itemprop="name">Dean Wang</p>
-           
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar-cartoon.jpg"
+                alt="Dean Wang" />
+            
+              <p class="site-author-name" itemprop="name">Dean Wang</p>
               <p class="site-description motion-element" itemprop="description">理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover</p>
-          
-        </div>
-        <nav class="site-state motion-element">
-
-          
-            <div class="site-state-item site-state-posts">
-              <a href="/archives/">
-                <span class="site-state-item-count">26</span>
-                <span class="site-state-item-name">posts</span>
-              </a>
-            </div>
-          
-
-          
-
-          
-            
-            
-            <div class="site-state-item site-state-tags">
-              <a href="/tags/index.html">
-                <span class="site-state-item-count">35</span>
-                <span class="site-state-item-name">tags</span>
-              </a>
-            </div>
-          
-
-        </nav>
-
-        
-          <div class="feed-link motion-element">
-            <a href="/atom.xml" rel="alternate">
-              <i class="fa fa-rss"></i>
-              RSS
-            </a>
           </div>
-        
 
-        <div class="links-of-author motion-element">
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">26</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">35</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/deanwong" target="_blank" title="GitHub"><i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://twitter.com/wongding" target="_blank" title="Twitter"><i class="fa fa-fw fa-globe"></i>Twitter</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.instagram.com/rockgeek" target="_blank" title="Instagram"><i class="fa fa-fw fa-globe"></i>Instagram</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="http://weibo.com/wangding85" target="_blank" title="Weibo"><i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
           
             
-              <span class="links-of-author-item">
-                <a href="https://github.com/deanwong" target="_blank" title="GitHub">
-                  
-                    <i class="fa fa-fw fa-github"></i>
-                  
-                    
-                      GitHub
-                    
-                </a>
-              </span>
-            
-              <span class="links-of-author-item">
-                <a href="https://twitter.com/wongding" target="_blank" title="Twitter">
-                  
-                    <i class="fa fa-fw fa-twitter"></i>
-                  
-                    
-                      Twitter
-                    
-                </a>
-              </span>
-            
-              <span class="links-of-author-item">
-                <a href="https://www.instagram.com/rockgeek" target="_blank" title="Instagram">
-                  
-                    <i class="fa fa-fw fa-instagram"></i>
-                  
-                    
-                      Instagram
-                    
-                </a>
-              </span>
-            
-              <span class="links-of-author-item">
-                <a href="http://weibo.com/wangding85" target="_blank" title="Weibo">
-                  
-                    <i class="fa fa-fw fa-weibo"></i>
-                  
-                    
-                      Weibo
-                    
-                </a>
-              </span>
-            
           
+          
+
         </div>
-
-        
-        
-
-        
-        
-
-        
-
-
       </section>
 
       
@@ -583,53 +690,52 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright" >
-  
-  &copy; 
-  <span itemprop="copyrightYear">2018</span>
-  <span class="with-love">
-    <i class="fa fa-heart"></i>
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 
   
+
+  
 </div>
 
 
-  <div class="powered-by">
-    Powered by <a class="theme-link" href="https://hexo.io">Hexo</a>
-  </div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
 
   <span class="post-meta-divider">|</span>
 
-  <div class="theme-info">
-    Theme &mdash;
-    <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
-      NexT.Mist
-    </a>
-  </div>
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Mist</a> v6.4.2</div>
+
+
 
 
         
 <div class="busuanzi-count">
-  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
   
-    <span class="site-uv">
+    <span class="site-uv" title="Total Visitors">
       <i class="fa fa-user"></i>
       <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
-      
     </span>
   
 
   
-    <span class="site-pv">
+    <span class="site-pv" title="Total Views">
       <i class="fa fa-eye"></i>
       <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
-      
     </span>
   
 </div>
+
 
 
 
@@ -649,6 +755,11 @@
       </div>
     
 
+    
+	
+    
+
+    
   </div>
 
   
@@ -667,7 +778,6 @@
 
 
 
-  
 
 
 
@@ -680,85 +790,78 @@
 
 
 
-  
-  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
-
-  
-  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
-
-  
-  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
-
-  
-  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
-
-  
-  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
-
-  
-  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
 
 
-  
-
-
-  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
-
-  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
 
 
 
   
   
-
-  
-  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
-<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
-
-
-
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
   
 
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
 
-  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.2"></script>
 
 
 
   
 
 
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.2"></script>
+
+
+
   
 
-    
-      <script id="dsq-count-scr" src="https://wangdean.disqus.com/count.js" async></script>
-    
+  
+    <script id="dsq-count-scr" src="https://wangdean.disqus.com/count.js" async></script>
+  
 
-    
-      <script type="text/javascript">
-        var disqus_config = function () {
-          this.page.url = 'http://www.deanwangpro.com/2016/11/14/asc-to-binary/';
-          this.page.identifier = '2016/11/14/asc-to-binary/';
-          this.page.title = 'How to count the number of set bits in ASCII string';
+  
+    <script type="text/javascript">
+      var disqus_config = function () {
+        this.page.url = 'http://www.deanwangpro.com/2016/11/14/asc-to-binary/';
+        this.page.identifier = '2016/11/14/asc-to-binary/';
+        this.page.title = 'How to count the number of set bits in ASCII string';
         };
+      function loadComments () {
         var d = document, s = d.createElement('script');
         s.src = 'https://wangdean.disqus.com/embed.js';
         s.setAttribute('data-timestamp', '' + +new Date());
         (d.head || d.body).appendChild(s);
-      </script>
-    
-
+      }
+      
+        loadComments();
+      
+    </script>
   
 
 
-
-
-	
-
-
-
-
-
-  
 
 
 
@@ -775,6 +878,15 @@
 
 
 
+  
+
+  
+
+  
+
+  
+
+  
   
 
   

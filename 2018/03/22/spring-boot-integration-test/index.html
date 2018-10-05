@@ -2,6 +2,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
   
 
 
@@ -9,8 +18,11 @@
 <head>
   <meta charset="UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
 <meta name="theme-color" content="#222">
+
+
+
 
 
 
@@ -39,36 +51,7 @@
 
 
 
-  
-  
-  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
 
-
-
-
-  
-  
-  
-  
-
-  
-    
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    
-    
-    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
-  
 
 
 
@@ -77,29 +60,58 @@
 
 <link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
 
-<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+<link href="/css/main.css?v=6.4.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="spring,spring-boot,test," />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.2">
 
 
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.2">
 
 
-
-  <link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml" />
-
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.2">
 
 
-
-  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
-
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.2" color="#222">
 
 
 
 
 
-<meta name="description" content="如果希望很方便针对API进行测试，并且方便的集成到CI中验证每次的提交，那么spring boot自带的IT绝对是不二选择。">
-<meta name="keywords" content="spring,spring-boot,test">
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '6.4.2',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="如果希望很方便针对API进行测试，并且方便的集成到CI中验证每次的提交，那么spring boot自带的IT绝对是不二选择。">
+<meta name="keywords" content="spring,test,spring-boot">
 <meta property="og:type" content="article">
 <meta property="og:title" content="spring-boot系列之集成测试">
 <meta property="og:url" content="http://www.deanwangpro.com/2018/03/22/spring-boot-integration-test/index.html">
@@ -113,28 +125,8 @@
 
 
 
-<script type="text/javascript" id="hexo.configurations">
-  var NexT = window.NexT || {};
-  var CONFIG = {
-    root: '/',
-    scheme: 'Mist',
-    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
-    fancybox: true,
-    tabs: true,
-    motion: true,
-    duoshuo: {
-      userId: '384049',
-      author: 'Dean'
-    },
-    algolia: {
-      applicationID: '',
-      apiKey: '',
-      indexName: '',
-      hits: {"per_page":10},
-      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
-    }
-  };
-</script>
+  <link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml" />
+
 
 
 
@@ -142,7 +134,11 @@
 
 
 
-
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
 
   <title>spring-boot系列之集成测试 | 大名Dean鼎</title>
   
@@ -150,18 +146,46 @@
 
 
 
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-69554053-1"></script>
 <script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-  ga('create', 'UA-69554053-1', 'auto');
-  ga('send', 'pageview');
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-69554053-1');
 </script>
 
 
 
 
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
 
 </head>
 
@@ -172,7 +196,7 @@
     
   
 
-  <div class="container sidebar-position-left page-post-detail ">
+  <div class="container sidebar-position-left page-post-detail">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -181,19 +205,17 @@
     
 
     <div class="custom-logo-site-title">
-      <a href="/"  class="brand" rel="start">
+      <a href="/" class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
         <span class="site-title">大名Dean鼎</span>
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
-      
-        <p class="site-subtitle"></p>
-      
+    
   </div>
 
   <div class="site-nav-toggle">
-    <button>
+    <button aria-label="Toggle navigation bar">
       <span class="btn-bar"></span>
       <span class="btn-bar"></span>
       <span class="btn-bar"></span>
@@ -201,45 +223,37 @@
   </div>
 </div>
 
-<nav class="site-nav">
-  
 
+
+<nav class="site-nav">
   
     <ul id="menu" class="menu">
       
         
-        <li class="menu-item menu-item-home">
-          <a href="/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
-            
-            Home
-          </a>
-        </li>
-      
         
-        <li class="menu-item menu-item-archives">
-          <a href="/archives/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
-            
-            Archives
-          </a>
-        </li>
-      
         
-        <li class="menu-item menu-item-tags">
-          <a href="/tags/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
-            
-            Tags
-          </a>
-        </li>
-      
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
 
       
+      
     </ul>
+  
+
+  
+    
+
   
 
   
@@ -247,12 +261,20 @@
 
 
 
- </div>
+  
+
+
+
+</div>
     </header>
+
+    
+
 
     <main id="main" class="main">
       <div class="main-inner">
         <div class="content-wrap">
+          
           <div id="content" class="content">
             
 
@@ -265,6 +287,8 @@
   
   
 
+  
+
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
   
@@ -274,7 +298,7 @@
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Dean Wang">
-      <meta itemprop="description" content="">
+      <meta itemprop="description" content="理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover">
       <meta itemprop="image" content="/images/avatar-cartoon.jpg">
     </span>
 
@@ -287,11 +311,19 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">spring-boot系列之集成测试</h1>
+          <h1 class="post-title" itemprop="name headline">spring-boot系列之集成测试
+              
+            
+          </h1>
         
 
         <div class="post-meta">
           <span class="post-time">
+
+            
+            
+            
+
             
               <span class="post-meta-item-icon">
                 <i class="fa fa-calendar-o"></i>
@@ -299,13 +331,18 @@
               
                 <span class="post-meta-item-text">Posted on</span>
               
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-03-22T00:00:00+08:00">
-                2018-03-22
-              </time>
+
+              
+                
+              
+
+              <time title="Created: 2018-03-22 00:00:00 / Modified: 17:51:58" itemprop="dateCreated datePublished" datetime="2018-03-22T00:00:00+08:00">2018-03-22</time>
             
 
             
+              
 
+              
             
           </span>
 
@@ -319,6 +356,7 @@
                   <i class="fa fa-comment-o"></i>
                 </span>
                 <a href="/2018/03/22/spring-boot-integration-test/#comments" itemprop="discussionUrl">
+                
                   <span class="post-comments-count disqus-comment-count"
                         data-disqus-identifier="2018/03/22/spring-boot-integration-test/" itemprop="commentCount"></span>
                 </a>
@@ -331,7 +369,10 @@
 
           
             <span class="post-meta-divider">|</span>
-            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="post-meta-item-icon"
+            >
+            <i class="fa fa-eye"></i>
+             Views:  
             <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
             </span>
           
@@ -355,26 +396,26 @@
       
         <p>如果希望很方便针对API进行测试，并且方便的集成到CI中验证每次的提交，那么spring boot自带的IT绝对是不二选择。</p>
 <a id="more"></a>
-<h3 id="迅速编写一个测试Case"><a href="#迅速编写一个测试Case" class="headerlink" title="迅速编写一个测试Case"></a>迅速编写一个测试Case</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@RunWith</span>(SpringRunner.class)</div><div class="line"><span class="meta">@SpringBootTest</span>(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)</div><div class="line"><span class="meta">@ActiveProfiles</span>(&#123;Profiles.ENV_IT&#125;)</div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DemoIntegrationTest</span> </span>&#123;</div><div class="line"></div><div class="line">    <span class="meta">@Autowired</span></div><div class="line">    <span class="keyword">private</span> FooService fooService;</div><div class="line"></div><div class="line">    <span class="meta">@Test</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test</span><span class="params">()</span> </span>&#123;</div><div class="line">        System.out.println(<span class="string">"tested"</span>);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="迅速编写一个测试Case"><a href="#迅速编写一个测试Case" class="headerlink" title="迅速编写一个测试Case"></a>迅速编写一个测试Case</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RunWith</span>(SpringRunner.class)</span><br><span class="line"><span class="meta">@SpringBootTest</span>(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)</span><br><span class="line"><span class="meta">@ActiveProfiles</span>(&#123;Profiles.ENV_IT&#125;)</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DemoIntegrationTest</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> FooService fooService;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"tested"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>其中<code>SpringBootTest</code>定义了跑IT时的一些配置，上述代码是用了随机端口，当然也可以预定义端口，像这样</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = &#123;&quot;server.port=9990&quot;&#125;)</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = &#123;&quot;server.port=9990&quot;&#125;)</span><br></pre></td></tr></table></figure>
 <p><code>ActiveProfiles</code>强制使用了IT的Profile，从最佳实践上来说IT Profile所配置的数据库或者其他资源组件的地址，应该是与开发或者Staging环境隔离的。因为当一个IT跑完之后很多情况下我们需要清除测试数据。</p>
 <p>你能够发现这样的Case可以使用<code>Autowired</code>注入任何想要的Service。这是因为spring将整个上下文都加载了起来，与实际运行的环境是一样的，包含了数据库，缓存等等组件。如果觉得测试时不需要全部的资源，那么在profile删除对应的配置就可以了。这就是一个完整的运行环境，唯一的区别是当用例跑完会自动shutdown。</p>
 <h3 id="测试一个Rest-API"><a href="#测试一个Rest-API" class="headerlink" title="测试一个Rest API"></a>测试一个Rest API</h3><p>强烈推荐一个库，加入到gradle中</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">testCompile &apos;io.rest-assured:rest-assured:3.0.3&apos;</div></pre></td></tr></table></figure>
-<p>支持JsonPath，十分好用，具体文档戳<a href="https://github.com/rest-assured/rest-assured/wiki/GettingStarted" target="_blank" rel="external">这里</a></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line">@Sql(scripts = &quot;/testdata/users.sql&quot;)</div><div class="line">@Test</div><div class="line">public void test001Login() &#123;</div><div class="line">    String username = &quot;demo@demo.com&quot;;</div><div class="line">    String password = &quot;demo&quot;;</div><div class="line"></div><div class="line">    JwtAuthenticationRequest request = new JwtAuthenticationRequest(username, password);</div><div class="line"></div><div class="line">    Response response = given().contentType(ContentType.JSON).body(request)</div><div class="line">            .when().post(&quot;/auth/login&quot;).then()</div><div class="line">            .statusCode(HttpStatus.OK.value())</div><div class="line">            .extract()</div><div class="line">            .response();</div><div class="line"></div><div class="line">    assertThat(response.path(&quot;token&quot;), is(IsNull.notNullValue()));</div><div class="line">    assertThat(response.path(&quot;expiration&quot;), is(IsNull.notNullValue()));</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">testCompile &apos;io.rest-assured:rest-assured:3.0.3&apos;</span><br></pre></td></tr></table></figure>
+<p>支持JsonPath，十分好用，具体文档戳<a href="https://github.com/rest-assured/rest-assured/wiki/GettingStarted" target="_blank" rel="noopener">这里</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">@Sql(scripts = &quot;/testdata/users.sql&quot;)</span><br><span class="line">@Test</span><br><span class="line">public void test001Login() &#123;</span><br><span class="line">    String username = &quot;demo@demo.com&quot;;</span><br><span class="line">    String password = &quot;demo&quot;;</span><br><span class="line"></span><br><span class="line">    JwtAuthenticationRequest request = new JwtAuthenticationRequest(username, password);</span><br><span class="line"></span><br><span class="line">    Response response = given().contentType(ContentType.JSON).body(request)</span><br><span class="line">            .when().post(&quot;/auth/login&quot;).then()</span><br><span class="line">            .statusCode(HttpStatus.OK.value())</span><br><span class="line">            .extract()</span><br><span class="line">            .response();</span><br><span class="line"></span><br><span class="line">    assertThat(response.path(&quot;token&quot;), is(IsNull.notNullValue()));</span><br><span class="line">    assertThat(response.path(&quot;expiration&quot;), is(IsNull.notNullValue()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p><code>@Sql</code>用于在测试前执行sql插入测试数据。注意<code>given().body()</code>中传入的是一个java对象<code>JwtAuthenticationRequest</code>，因为rest-assured会自动帮你用<code>jackson</code>将对象序列化成json字符串。当然也可以将转换好的json放到body，效果是一样的。</p>
 <p>返回结果被一个Response接住，之后就可以用JsonPath获取其中数据进行验证。当然还有一种更直观的办法，可以通过<code>response.asString()</code>获取完整的response，再反序列化成java对象进行验证。</p>
 <p>至此，最基本的IT就完成了。 在Jenkins增加一个step<code>gradle test</code>就可以实现每次提交代码都进行一次测试。</p>
 <h3 id="一些复杂的情况"><a href="#一些复杂的情况" class="headerlink" title="一些复杂的情况"></a>一些复杂的情况</h3><h4 id="数据混杂"><a href="#数据混杂" class="headerlink" title="数据混杂"></a>数据混杂</h4><p>这是最容易发生，一个项目有很多dev，每个dev都会写自己的IT case，那么如果数据之间产生了影响怎么办。很容易理解，比如一个测试批量写的场景，最后验证方式是看写的数据量是不是10w行。那么另外一个dev写了其他的case恰好也新增了一条数据到这张表，结果变成了10w+1行，那么批量写的case就跑不过了。</p>
 <p>为了杜绝这种情况，我们采用每次跑完一个测试Class就将数据清空。既然是基于类的操作，可以写一个基类解决。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div></pre></td><td class="code"><pre><div class="line">@RunWith(SpringRunner.class)</div><div class="line">@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)</div><div class="line">@ActiveProfiles(&#123;Profiles.ENV_IT&#125;)</div><div class="line">public abstract class BaseIntegrationTest &#123;</div><div class="line"></div><div class="line">    private static JdbcTemplate jdbcTemplate;</div><div class="line"></div><div class="line">    @Autowired</div><div class="line">    public void setDataSource(DataSource dataSource) &#123;</div><div class="line">        jdbcTemplate = new JdbcTemplate(dataSource);</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    @Value(&quot;$&#123;local.server.port&#125;&quot;)</div><div class="line">    protected int port;</div><div class="line"></div><div class="line">    @Before</div><div class="line">    public void setupEnv() &#123;</div><div class="line">        RestAssured.port = port;</div><div class="line">        RestAssured.basePath = &quot;/api&quot;;</div><div class="line">        RestAssured.baseURI = &quot;http://localhost&quot;;</div><div class="line">        RestAssured.config = RestAssured.config().httpClient(HttpClientConfig.httpClientConfig().httpMultipartMode(HttpMultipartMode.BROWSER_COMPATIBLE));</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void tearDownEnv() &#123;</div><div class="line">        given().contentType(ContentType.JSON)</div><div class="line">                .when().post(&quot;/auth/logout&quot;);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    @AfterClass</div><div class="line">    public static void cleanDB() throws SQLException &#123;</div><div class="line">        Resource resource = new ClassPathResource(&quot;/testdata/CleanDB.sql&quot;);</div><div class="line">        Connection connection = jdbcTemplate.getDataSource().getConnection();</div><div class="line">        ScriptUtils.executeSqlScript(connection, resource);</div><div class="line">        connection.close();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">@RunWith(SpringRunner.class)</span><br><span class="line">@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)</span><br><span class="line">@ActiveProfiles(&#123;Profiles.ENV_IT&#125;)</span><br><span class="line">public abstract class BaseIntegrationTest &#123;</span><br><span class="line"></span><br><span class="line">    private static JdbcTemplate jdbcTemplate;</span><br><span class="line"></span><br><span class="line">    @Autowired</span><br><span class="line">    public void setDataSource(DataSource dataSource) &#123;</span><br><span class="line">        jdbcTemplate = new JdbcTemplate(dataSource);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    @Value(&quot;$&#123;local.server.port&#125;&quot;)</span><br><span class="line">    protected int port;</span><br><span class="line"></span><br><span class="line">    @Before</span><br><span class="line">    public void setupEnv() &#123;</span><br><span class="line">        RestAssured.port = port;</span><br><span class="line">        RestAssured.basePath = &quot;/api&quot;;</span><br><span class="line">        RestAssured.baseURI = &quot;http://localhost&quot;;</span><br><span class="line">        RestAssured.config = RestAssured.config().httpClient(HttpClientConfig.httpClientConfig().httpMultipartMode(HttpMultipartMode.BROWSER_COMPATIBLE));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void tearDownEnv() &#123;</span><br><span class="line">        given().contentType(ContentType.JSON)</span><br><span class="line">                .when().post(&quot;/auth/logout&quot;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @AfterClass</span><br><span class="line">    public static void cleanDB() throws SQLException &#123;</span><br><span class="line">        Resource resource = new ClassPathResource(&quot;/testdata/CleanDB.sql&quot;);</span><br><span class="line">        Connection connection = jdbcTemplate.getDataSource().getConnection();</span><br><span class="line">        ScriptUtils.executeSqlScript(connection, resource);</span><br><span class="line">        connection.close();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p><code>@AfterClass</code>中使用了jdbcTemplate执行了一个CleanDB.sql，通过这种方式清除所有测试数据。</p>
 <p><code>@Value(&quot;${local.server.port}&quot;)</code>也要提一下，因为端口是随机的，那么Rest-Assured不知道请求要发到losthost的哪个端口上，这里使用<code>@Value</code>获取当前的端口号并设置到<code>RestAssured.port</code>就解决了这个问题。</p>
 <h4 id="共有数据怎么处理"><a href="#共有数据怎么处理" class="headerlink" title="共有数据怎么处理"></a>共有数据怎么处理</h4><p>跑一次完整的IT，可能需要经历数十个Class，数百个method，那么如果一些数据是所有case都需要的，只有在所有case都跑完才需要清除怎么办？换句话说，这种数据清理不是基于<strong>类</strong>的，而是基于一次<strong>运行</strong>。比如初始用户数据，城市库等等</p>
 <p>我们耍了个小聪明，借助了<code>flyway</code></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">@Configuration</div><div class="line">@ConditionalOnClass(&#123;DataSource.class&#125;)</div><div class="line">public class UpgradeAutoConfiguration &#123;</div><div class="line"></div><div class="line">    public static final String FLYWAY = &quot;flyway&quot;;</div><div class="line"></div><div class="line">    @Bean(name = FLYWAY)</div><div class="line">    @Profile(&#123;ENV_IT&#125;)</div><div class="line">    public UpgradeService cleanAndUpgradeService(DataSource dataSource) &#123;</div><div class="line">        UpgradeService upgradeService = new FlywayUpgradeService(dataSource);</div><div class="line">        try &#123;</div><div class="line">            upgradeService.cleanAndUpgrade();</div><div class="line">        &#125; catch (Exception ex) &#123;</div><div class="line">            LOGGER.error(&quot;Flyway failed!&quot;, ex);</div><div class="line">        &#125;</div><div class="line">        return upgradeService;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">@Configuration</span><br><span class="line">@ConditionalOnClass(&#123;DataSource.class&#125;)</span><br><span class="line">public class UpgradeAutoConfiguration &#123;</span><br><span class="line"></span><br><span class="line">    public static final String FLYWAY = &quot;flyway&quot;;</span><br><span class="line"></span><br><span class="line">    @Bean(name = FLYWAY)</span><br><span class="line">    @Profile(&#123;ENV_IT&#125;)</span><br><span class="line">    public UpgradeService cleanAndUpgradeService(DataSource dataSource) &#123;</span><br><span class="line">        UpgradeService upgradeService = new FlywayUpgradeService(dataSource);</span><br><span class="line">        try &#123;</span><br><span class="line">            upgradeService.cleanAndUpgrade();</span><br><span class="line">        &#125; catch (Exception ex) &#123;</span><br><span class="line">            LOGGER.error(&quot;Flyway failed!&quot;, ex);</span><br><span class="line">        &#125;</span><br><span class="line">        return upgradeService;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>可以看到当Profile是IT的情况下，<code>flyway</code>会drop掉所有表并重新依次执行每次的upgrade脚本，由此创建完整的数据表，当然都是空的。在项目的test路径下，增加一个版本极大的sql，这样就可以让<code>flyway</code>在最后插入共用的测试数据，例如<code>src/test/resources/db/migration/V999.0.1__Insert_Users.sql</code> ，完美的解决各种数据问题。</p>
 <h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>用Spring boot内置的测试服务可以很快速的验证API，我现在都不用把服务启动再通过人工页面点击来测试自己的API，直接与前端同事沟通好Request的格式，写个Case就可以验证。</p>
 <p>当然这种方式也有一个不足就是不方便对系统进行压力测试，之前在公司的API测试用例都是Jmeter写的，做性能测试的时候会方便很多。</p>
@@ -382,6 +423,9 @@
 
       
     </div>
+
+    
+
     
     
     
@@ -398,9 +442,9 @@
           
             <a href="/tags/spring/" rel="tag"># spring</a>
           
-            <a href="/tags/spring-boot/" rel="tag"># spring-boot</a>
-          
             <a href="/tags/test/" rel="tag"># test</a>
+          
+            <a href="/tags/spring-boot/" rel="tag"># spring-boot</a>
           
         </div>
       
@@ -441,28 +485,24 @@
   </article>
 
 
-
-    <div class="post-spread">
-      
-    </div>
   </div>
 
 
           </div>
           
 
-
-          
-  <div class="comments" id="comments">
-    
+  
+    <div class="comments" id="comments">
       <div id="disqus_thread">
         <noscript>
           Please enable JavaScript to view the
           <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
         </noscript>
       </div>
-    
-  </div>
+    </div>
+
+  
+
 
 
         </div>
@@ -485,119 +525,174 @@
 
       
         <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
             Table of Contents
           </li>
-          <li class="sidebar-nav-overview" data-target="site-overview">
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
             Overview
           </li>
         </ul>
       
 
-      <section class="site-overview sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-          <img class="site-author-image" itemprop="image"
-               src="/images/avatar-cartoon.jpg"
-               alt="Dean Wang" />
-          <p class="site-author-name" itemprop="name">Dean Wang</p>
-           
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar-cartoon.jpg"
+                alt="Dean Wang" />
+            
+              <p class="site-author-name" itemprop="name">Dean Wang</p>
               <p class="site-description motion-element" itemprop="description">理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover</p>
-          
-        </div>
-        <nav class="site-state motion-element">
-
-          
-            <div class="site-state-item site-state-posts">
-              <a href="/archives/">
-                <span class="site-state-item-count">26</span>
-                <span class="site-state-item-name">posts</span>
-              </a>
-            </div>
-          
-
-          
-
-          
-            
-            
-            <div class="site-state-item site-state-tags">
-              <a href="/tags/index.html">
-                <span class="site-state-item-count">35</span>
-                <span class="site-state-item-name">tags</span>
-              </a>
-            </div>
-          
-
-        </nav>
-
-        
-          <div class="feed-link motion-element">
-            <a href="/atom.xml" rel="alternate">
-              <i class="fa fa-rss"></i>
-              RSS
-            </a>
           </div>
-        
 
-        <div class="links-of-author motion-element">
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">26</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">35</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/deanwong" target="_blank" title="GitHub"><i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://twitter.com/wongding" target="_blank" title="Twitter"><i class="fa fa-fw fa-globe"></i>Twitter</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.instagram.com/rockgeek" target="_blank" title="Instagram"><i class="fa fa-fw fa-globe"></i>Instagram</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="http://weibo.com/wangding85" target="_blank" title="Weibo"><i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
           
             
-              <span class="links-of-author-item">
-                <a href="https://github.com/deanwong" target="_blank" title="GitHub">
-                  
-                    <i class="fa fa-fw fa-github"></i>
-                  
-                    
-                      GitHub
-                    
-                </a>
-              </span>
-            
-              <span class="links-of-author-item">
-                <a href="https://twitter.com/wongding" target="_blank" title="Twitter">
-                  
-                    <i class="fa fa-fw fa-twitter"></i>
-                  
-                    
-                      Twitter
-                    
-                </a>
-              </span>
-            
-              <span class="links-of-author-item">
-                <a href="https://www.instagram.com/rockgeek" target="_blank" title="Instagram">
-                  
-                    <i class="fa fa-fw fa-instagram"></i>
-                  
-                    
-                      Instagram
-                    
-                </a>
-              </span>
-            
-              <span class="links-of-author-item">
-                <a href="http://weibo.com/wangding85" target="_blank" title="Weibo">
-                  
-                    <i class="fa fa-fw fa-weibo"></i>
-                  
-                    
-                      Weibo
-                    
-                </a>
-              </span>
-            
           
+          
+
         </div>
-
-        
-        
-
-        
-        
-
-        
-
-
       </section>
 
       
@@ -630,53 +725,52 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright" >
-  
-  &copy; 
-  <span itemprop="copyrightYear">2018</span>
-  <span class="with-love">
-    <i class="fa fa-heart"></i>
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 
   
+
+  
 </div>
 
 
-  <div class="powered-by">
-    Powered by <a class="theme-link" href="https://hexo.io">Hexo</a>
-  </div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
 
   <span class="post-meta-divider">|</span>
 
-  <div class="theme-info">
-    Theme &mdash;
-    <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
-      NexT.Mist
-    </a>
-  </div>
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Mist</a> v6.4.2</div>
+
+
 
 
         
 <div class="busuanzi-count">
-  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
   
-    <span class="site-uv">
+    <span class="site-uv" title="Total Visitors">
       <i class="fa fa-user"></i>
       <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
-      
     </span>
   
 
   
-    <span class="site-pv">
+    <span class="site-pv" title="Total Views">
       <i class="fa fa-eye"></i>
       <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
-      
     </span>
   
 </div>
+
 
 
 
@@ -696,6 +790,11 @@
       </div>
     
 
+    
+	
+    
+
+    
   </div>
 
   
@@ -714,7 +813,6 @@
 
 
 
-  
 
 
 
@@ -727,85 +825,78 @@
 
 
 
-  
-  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
-
-  
-  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
-
-  
-  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
-
-  
-  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
-
-  
-  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
-
-  
-  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
 
 
-  
-
-
-  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
-
-  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
 
 
 
   
   
-
-  
-  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
-<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
-
-
-
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
   
 
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
 
-  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.2"></script>
 
 
 
   
 
 
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.2"></script>
+
+
+
   
 
-    
-      <script id="dsq-count-scr" src="https://wangdean.disqus.com/count.js" async></script>
-    
+  
+    <script id="dsq-count-scr" src="https://wangdean.disqus.com/count.js" async></script>
+  
 
-    
-      <script type="text/javascript">
-        var disqus_config = function () {
-          this.page.url = 'http://www.deanwangpro.com/2018/03/22/spring-boot-integration-test/';
-          this.page.identifier = '2018/03/22/spring-boot-integration-test/';
-          this.page.title = 'spring-boot系列之集成测试';
+  
+    <script type="text/javascript">
+      var disqus_config = function () {
+        this.page.url = 'http://www.deanwangpro.com/2018/03/22/spring-boot-integration-test/';
+        this.page.identifier = '2018/03/22/spring-boot-integration-test/';
+        this.page.title = 'spring-boot系列之集成测试';
         };
+      function loadComments () {
         var d = document, s = d.createElement('script');
         s.src = 'https://wangdean.disqus.com/embed.js';
         s.setAttribute('data-timestamp', '' + +new Date());
         (d.head || d.body).appendChild(s);
-      </script>
-    
-
+      }
+      
+        loadComments();
+      
+    </script>
   
 
 
-
-
-	
-
-
-
-
-
-  
 
 
 
@@ -822,6 +913,15 @@
 
 
 
+  
+
+  
+
+  
+
+  
+
+  
   
 
   

@@ -2,6 +2,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
   
 
 
@@ -9,8 +18,11 @@
 <head>
   <meta charset="UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
 <meta name="theme-color" content="#222">
+
+
+
 
 
 
@@ -39,36 +51,7 @@
 
 
 
-  
-  
-  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
 
-
-
-
-  
-  
-  
-  
-
-  
-    
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    
-    
-    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
-  
 
 
 
@@ -77,28 +60,57 @@
 
 <link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
 
-<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+<link href="/css/main.css?v=6.4.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="spring,spring-cloud,timeout,ribbon,hytrix," />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.4.2">
 
 
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.4.2">
 
 
-
-  <link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml" />
-
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.4.2">
 
 
-
-  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
-
+  <link rel="mask-icon" href="/images/logo.svg?v=6.4.2" color="#222">
 
 
 
 
 
-<meta name="description" content="大家在初次使用spring-cloud的gateway的时候，肯定会被里面各种的Timeout搞得晕头转向。hytrix有设置，ribbon也有。我们一开始也是乱设一桶，Github上各种项目里也没几个设置正确的。对Timeout的研究源于一次log中的warning  The Hystrix timeout of 60000 ms for the command “foo” is set low">
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '6.4.2',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="大家在初次使用spring-cloud的gateway的时候，肯定会被里面各种的Timeout搞得晕头转向。hytrix有设置，ribbon也有。我们一开始也是乱设一桶，Github上各种项目里也没几个设置正确的。对Timeout的研究源于一次log中的warning  The Hystrix timeout of 60000 ms for the command “foo” is set low">
 <meta name="keywords" content="spring,spring-cloud,timeout,ribbon,hytrix">
 <meta property="og:type" content="article">
 <meta property="og:title" content="spring-cloud服务网关中的Timeout设置">
@@ -113,28 +125,8 @@
 
 
 
-<script type="text/javascript" id="hexo.configurations">
-  var NexT = window.NexT || {};
-  var CONFIG = {
-    root: '/',
-    scheme: 'Mist',
-    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
-    fancybox: true,
-    tabs: true,
-    motion: true,
-    duoshuo: {
-      userId: '384049',
-      author: 'Dean'
-    },
-    algolia: {
-      applicationID: '',
-      apiKey: '',
-      indexName: '',
-      hits: {"per_page":10},
-      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
-    }
-  };
-</script>
+  <link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml" />
+
 
 
 
@@ -142,7 +134,11 @@
 
 
 
-
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
 
   <title>spring-cloud服务网关中的Timeout设置 | 大名Dean鼎</title>
   
@@ -150,18 +146,46 @@
 
 
 
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-69554053-1"></script>
 <script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-  ga('create', 'UA-69554053-1', 'auto');
-  ga('send', 'pageview');
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-69554053-1');
 </script>
 
 
 
 
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
 
 </head>
 
@@ -172,7 +196,7 @@
     
   
 
-  <div class="container sidebar-position-left page-post-detail ">
+  <div class="container sidebar-position-left page-post-detail">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -181,19 +205,17 @@
     
 
     <div class="custom-logo-site-title">
-      <a href="/"  class="brand" rel="start">
+      <a href="/" class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
         <span class="site-title">大名Dean鼎</span>
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
-      
-        <p class="site-subtitle"></p>
-      
+    
   </div>
 
   <div class="site-nav-toggle">
-    <button>
+    <button aria-label="Toggle navigation bar">
       <span class="btn-bar"></span>
       <span class="btn-bar"></span>
       <span class="btn-bar"></span>
@@ -201,45 +223,37 @@
   </div>
 </div>
 
-<nav class="site-nav">
-  
 
+
+<nav class="site-nav">
   
     <ul id="menu" class="menu">
       
         
-        <li class="menu-item menu-item-home">
-          <a href="/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
-            
-            Home
-          </a>
-        </li>
-      
         
-        <li class="menu-item menu-item-archives">
-          <a href="/archives/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
-            
-            Archives
-          </a>
-        </li>
-      
         
-        <li class="menu-item menu-item-tags">
-          <a href="/tags/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
-            
-            Tags
-          </a>
-        </li>
-      
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />Home</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />Archives</a>
+  </li>
 
       
+      
     </ul>
+  
+
+  
+    
+
   
 
   
@@ -247,12 +261,20 @@
 
 
 
- </div>
+  
+
+
+
+</div>
     </header>
+
+    
+
 
     <main id="main" class="main">
       <div class="main-inner">
         <div class="content-wrap">
+          
           <div id="content" class="content">
             
 
@@ -265,6 +287,8 @@
   
   
 
+  
+
   <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
   
   
@@ -274,7 +298,7 @@
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Dean Wang">
-      <meta itemprop="description" content="">
+      <meta itemprop="description" content="理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover">
       <meta itemprop="image" content="/images/avatar-cartoon.jpg">
     </span>
 
@@ -287,11 +311,19 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">spring-cloud服务网关中的Timeout设置</h1>
+          <h1 class="post-title" itemprop="name headline">spring-cloud服务网关中的Timeout设置
+              
+            
+          </h1>
         
 
         <div class="post-meta">
           <span class="post-time">
+
+            
+            
+            
+
             
               <span class="post-meta-item-icon">
                 <i class="fa fa-calendar-o"></i>
@@ -299,13 +331,18 @@
               
                 <span class="post-meta-item-text">Posted on</span>
               
-              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-04-13T00:00:00+08:00">
-                2018-04-13
-              </time>
+
+              
+                
+              
+
+              <time title="Created: 2018-04-13 00:00:00 / Modified: 16:59:51" itemprop="dateCreated datePublished" datetime="2018-04-13T00:00:00+08:00">2018-04-13</time>
             
 
             
+              
 
+              
             
           </span>
 
@@ -319,6 +356,7 @@
                   <i class="fa fa-comment-o"></i>
                 </span>
                 <a href="/2018/04/13/zuul-hytrix-ribbon-timeout/#comments" itemprop="discussionUrl">
+                
                   <span class="post-comments-count disqus-comment-count"
                         data-disqus-identifier="2018/04/13/zuul-hytrix-ribbon-timeout/" itemprop="commentCount"></span>
                 </a>
@@ -331,7 +369,10 @@
 
           
             <span class="post-meta-divider">|</span>
-            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="post-meta-item-icon"
+            >
+            <i class="fa fa-eye"></i>
+             Views:  
             <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
             </span>
           
@@ -363,21 +404,24 @@
 <ul>
 <li>这里gateway会请求一个serviceName=foo的服务</li>
 </ul>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="title">getHystrixTimeout</span><span class="params">(IClientConfig config, String commandKey)</span> </span>&#123;</div><div class="line">	<span class="keyword">int</span> ribbonTimeout = getRibbonTimeout(config, commandKey);</div><div class="line">	DynamicPropertyFactory dynamicPropertyFactory = DynamicPropertyFactory.getInstance();</div><div class="line">	</div><div class="line">	<span class="comment">// 获取默认的hytrix超时时间</span></div><div class="line">	<span class="keyword">int</span> defaultHystrixTimeout = dynamicPropertyFactory.getIntProperty(<span class="string">"hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds"</span>,</div><div class="line">		<span class="number">0</span>).get();</div><div class="line">	<span class="comment">// 获取具体服务的hytrix超时时间，这里应该是hystrix.command.foo.execution.isolation.thread.timeoutInMilliseconds</span></div><div class="line">	<span class="keyword">int</span> commandHystrixTimeout = dynamicPropertyFactory.getIntProperty(<span class="string">"hystrix.command."</span> + commandKey + <span class="string">".execution.isolation.thread.timeoutInMilliseconds"</span>,</div><div class="line">		<span class="number">0</span>).get();</div><div class="line">	<span class="keyword">int</span> hystrixTimeout;</div><div class="line">	<span class="comment">// hystrixTimeout的优先级是 具体服务的hytrix超时时间 &gt; 默认的hytrix超时时间 &gt; ribbon超时时间</span></div><div class="line">	<span class="keyword">if</span>(commandHystrixTimeout &gt; <span class="number">0</span>) &#123;</div><div class="line">		hystrixTimeout = commandHystrixTimeout;</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">else</span> <span class="keyword">if</span>(defaultHystrixTimeout &gt; <span class="number">0</span>) &#123;</div><div class="line">		hystrixTimeout = defaultHystrixTimeout;</div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">		hystrixTimeout = ribbonTimeout;</div><div class="line">	&#125;</div><div class="line">	<span class="comment">// 如果默认的或者具体服务的hytrix超时时间小于ribbon超时时间就会警告</span></div><div class="line">	<span class="keyword">if</span>(hystrixTimeout &lt; ribbonTimeout) &#123;</div><div class="line">		LOGGER.warn(<span class="string">"The Hystrix timeout of "</span> + hystrixTimeout + <span class="string">"ms for the command "</span> + commandKey +</div><div class="line">			<span class="string">" is set lower than the combination of the Ribbon read and connect timeout, "</span> + ribbonTimeout + <span class="string">"ms."</span>);</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">return</span> hystrixTimeout;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="title">getHystrixTimeout</span><span class="params">(IClientConfig config, String commandKey)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> ribbonTimeout = getRibbonTimeout(config, commandKey);</span><br><span class="line">	DynamicPropertyFactory dynamicPropertyFactory = DynamicPropertyFactory.getInstance();</span><br><span class="line">	</span><br><span class="line">	<span class="comment">// 获取默认的hytrix超时时间</span></span><br><span class="line">	<span class="keyword">int</span> defaultHystrixTimeout = dynamicPropertyFactory.getIntProperty(<span class="string">"hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds"</span>,</span><br><span class="line">		<span class="number">0</span>).get();</span><br><span class="line">	<span class="comment">// 获取具体服务的hytrix超时时间，这里应该是hystrix.command.foo.execution.isolation.thread.timeoutInMilliseconds</span></span><br><span class="line">	<span class="keyword">int</span> commandHystrixTimeout = dynamicPropertyFactory.getIntProperty(<span class="string">"hystrix.command."</span> + commandKey + <span class="string">".execution.isolation.thread.timeoutInMilliseconds"</span>,</span><br><span class="line">		<span class="number">0</span>).get();</span><br><span class="line">	<span class="keyword">int</span> hystrixTimeout;</span><br><span class="line">	<span class="comment">// hystrixTimeout的优先级是 具体服务的hytrix超时时间 &gt; 默认的hytrix超时时间 &gt; ribbon超时时间</span></span><br><span class="line">	<span class="keyword">if</span>(commandHystrixTimeout &gt; <span class="number">0</span>) &#123;</span><br><span class="line">		hystrixTimeout = commandHystrixTimeout;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span> <span class="keyword">if</span>(defaultHystrixTimeout &gt; <span class="number">0</span>) &#123;</span><br><span class="line">		hystrixTimeout = defaultHystrixTimeout;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		hystrixTimeout = ribbonTimeout;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 如果默认的或者具体服务的hytrix超时时间小于ribbon超时时间就会警告</span></span><br><span class="line">	<span class="keyword">if</span>(hystrixTimeout &lt; ribbonTimeout) &#123;</span><br><span class="line">		LOGGER.warn(<span class="string">"The Hystrix timeout of "</span> + hystrixTimeout + <span class="string">"ms for the command "</span> + commandKey +</span><br><span class="line">			<span class="string">" is set lower than the combination of the Ribbon read and connect timeout, "</span> + ribbonTimeout + <span class="string">"ms."</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> hystrixTimeout;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>紧接着，看一下我们的配置是什么</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">hystrix:</div><div class="line">  command:</div><div class="line">    default:</div><div class="line">      execution:</div><div class="line">        isolation:</div><div class="line">          thread:</div><div class="line">            timeoutInMilliseconds: 60000</div><div class="line">            </div><div class="line">ribbon:</div><div class="line">  ReadTimeout: 50000</div><div class="line">  ConnectTimeout: 50000</div><div class="line">  MaxAutoRetries: 0</div><div class="line">  MaxAutoRetriesNextServer: 1</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">hystrix:</span><br><span class="line">  command:</span><br><span class="line">    default:</span><br><span class="line">      execution:</span><br><span class="line">        isolation:</span><br><span class="line">          thread:</span><br><span class="line">            timeoutInMilliseconds: 60000</span><br><span class="line">            </span><br><span class="line">ribbon:</span><br><span class="line">  ReadTimeout: 50000</span><br><span class="line">  ConnectTimeout: 50000</span><br><span class="line">  MaxAutoRetries: 0</span><br><span class="line">  MaxAutoRetriesNextServer: 1</span><br></pre></td></tr></table></figure>
 <h3 id="ribbon超时时间"><a href="#ribbon超时时间" class="headerlink" title="ribbon超时时间"></a>ribbon超时时间</h3><p>这里ribbon的超时时间是50000ms，那么为什么log中写的ribbon时间是200000ms?</p>
 <p>继续分析源码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="title">getRibbonTimeout</span><span class="params">(IClientConfig config, String commandKey)</span> </span>&#123;</div><div class="line">	<span class="keyword">int</span> ribbonTimeout;</div><div class="line">	<span class="comment">// 这是比较异常的情况，不说</span></div><div class="line">	<span class="keyword">if</span> (config == <span class="keyword">null</span>) &#123;</div><div class="line">		ribbonTimeout = RibbonClientConfiguration.DEFAULT_READ_TIMEOUT + RibbonClientConfiguration.DEFAULT_CONNECT_TIMEOUT;</div><div class="line">	&#125; <span class="keyword">else</span> &#123;</div><div class="line">	   <span class="comment">// 这里获取了四个参数，ReadTimeout，ConnectTimeout，MaxAutoRetries， MaxAutoRetriesNextServer</span></div><div class="line">		<span class="keyword">int</span> ribbonReadTimeout = getTimeout(config, commandKey, <span class="string">"ReadTimeout"</span>,</div><div class="line">			IClientConfigKey.Keys.ReadTimeout, RibbonClientConfiguration.DEFAULT_READ_TIMEOUT);</div><div class="line">		<span class="keyword">int</span> ribbonConnectTimeout = getTimeout(config, commandKey, <span class="string">"ConnectTimeout"</span>,</div><div class="line">			IClientConfigKey.Keys.ConnectTimeout, RibbonClientConfiguration.DEFAULT_CONNECT_TIMEOUT);</div><div class="line">		<span class="keyword">int</span> maxAutoRetries = getTimeout(config, commandKey, <span class="string">"MaxAutoRetries"</span>,</div><div class="line">			IClientConfigKey.Keys.MaxAutoRetries, DefaultClientConfigImpl.DEFAULT_MAX_AUTO_RETRIES);</div><div class="line">		<span class="keyword">int</span> maxAutoRetriesNextServer = getTimeout(config, commandKey, <span class="string">"MaxAutoRetriesNextServer"</span>,</div><div class="line">			IClientConfigKey.Keys.MaxAutoRetriesNextServer, DefaultClientConfigImpl.DEFAULT_MAX_AUTO_RETRIES_NEXT_SERVER);</div><div class="line">		<span class="comment">// 原来ribbonTimeout的计算方法在这里，以上文的设置为例</span></div><div class="line">		<span class="comment">// ribbonTimeout = (50000 + 50000) * (0 + 1) * (1 + 1) = 200000</span></div><div class="line">		ribbonTimeout = (ribbonReadTimeout + ribbonConnectTimeout) * (maxAutoRetries + <span class="number">1</span>) * (maxAutoRetriesNextServer + <span class="number">1</span>);</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">return</span> ribbonTimeout;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="title">getRibbonTimeout</span><span class="params">(IClientConfig config, String commandKey)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> ribbonTimeout;</span><br><span class="line">	<span class="comment">// 这是比较异常的情况，不说</span></span><br><span class="line">	<span class="keyword">if</span> (config == <span class="keyword">null</span>) &#123;</span><br><span class="line">		ribbonTimeout = RibbonClientConfiguration.DEFAULT_READ_TIMEOUT + RibbonClientConfiguration.DEFAULT_CONNECT_TIMEOUT;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	   <span class="comment">// 这里获取了四个参数，ReadTimeout，ConnectTimeout，MaxAutoRetries， MaxAutoRetriesNextServer</span></span><br><span class="line">		<span class="keyword">int</span> ribbonReadTimeout = getTimeout(config, commandKey, <span class="string">"ReadTimeout"</span>,</span><br><span class="line">			IClientConfigKey.Keys.ReadTimeout, RibbonClientConfiguration.DEFAULT_READ_TIMEOUT);</span><br><span class="line">		<span class="keyword">int</span> ribbonConnectTimeout = getTimeout(config, commandKey, <span class="string">"ConnectTimeout"</span>,</span><br><span class="line">			IClientConfigKey.Keys.ConnectTimeout, RibbonClientConfiguration.DEFAULT_CONNECT_TIMEOUT);</span><br><span class="line">		<span class="keyword">int</span> maxAutoRetries = getTimeout(config, commandKey, <span class="string">"MaxAutoRetries"</span>,</span><br><span class="line">			IClientConfigKey.Keys.MaxAutoRetries, DefaultClientConfigImpl.DEFAULT_MAX_AUTO_RETRIES);</span><br><span class="line">		<span class="keyword">int</span> maxAutoRetriesNextServer = getTimeout(config, commandKey, <span class="string">"MaxAutoRetriesNextServer"</span>,</span><br><span class="line">			IClientConfigKey.Keys.MaxAutoRetriesNextServer, DefaultClientConfigImpl.DEFAULT_MAX_AUTO_RETRIES_NEXT_SERVER);</span><br><span class="line">		<span class="comment">// 原来ribbonTimeout的计算方法在这里，以上文的设置为例</span></span><br><span class="line">		<span class="comment">// ribbonTimeout = (50000 + 50000) * (0 + 1) * (1 + 1) = 200000</span></span><br><span class="line">		ribbonTimeout = (ribbonReadTimeout + ribbonConnectTimeout) * (maxAutoRetries + <span class="number">1</span>) * (maxAutoRetriesNextServer + <span class="number">1</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> ribbonTimeout;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>可以看到ribbonTimeout是一个总时间，所以从逻辑上来讲，作者希望hystrixTimeout要大于ribbonTimeout，否则hystrix熔断了以后，ribbon的重试就都没有意义了。</p>
 <h3 id="ribbon单服务设置"><a href="#ribbon单服务设置" class="headerlink" title="ribbon单服务设置"></a>ribbon单服务设置</h3><p>到这里最前面的疑问已经解开了，但是hytrix可以分服务设置timeout，ribbon可不可以? 源码走起，这里看的文件是<code>DefaultClientConfigImpl.java</code></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 这是获取配置的入口方法，如果是null，那么用默认值</span></div><div class="line"><span class="comment">// 所有ribbon的默认值的都在该类中设置了，可以自己看一下</span></div><div class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">get</span><span class="params">(IClientConfigKey&lt;T&gt; key, T defaultValue)</span> </span>&#123;</div><div class="line">    T value = get(key);</div><div class="line">    <span class="keyword">if</span> (value == <span class="keyword">null</span>) &#123;</div><div class="line">        value = defaultValue;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> value;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// 这是核心方法   </span></div><div class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">getProperty</span><span class="params">(String key)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (enableDynamicProperties) &#123;</div><div class="line">        String dynamicValue = <span class="keyword">null</span>;</div><div class="line">        DynamicStringProperty dynamicProperty = dynamicProperties.get(key);</div><div class="line">        <span class="comment">// dynamicProperties其实是一个缓存，首次访问foo服务的时候会加载</span></div><div class="line">        <span class="keyword">if</span> (dynamicProperty != <span class="keyword">null</span>) &#123;</div><div class="line">            dynamicValue = dynamicProperty.get();</div><div class="line">        &#125;</div><div class="line">        <span class="comment">// 如果缓存没有，那么就再获取一次，注意这里的getConfigKey(key)是生成key的方法</span></div><div class="line">        <span class="keyword">if</span> (dynamicValue == <span class="keyword">null</span>) &#123;</div><div class="line">            dynamicValue = DynamicProperty.getInstance(getConfigKey(key)).getString();</div><div class="line">            <span class="comment">// 如果还是没有取默认值，getDefaultPropName(key)生成key的方法</span></div><div class="line">            <span class="keyword">if</span> (dynamicValue == <span class="keyword">null</span>) &#123;</div><div class="line">                dynamicValue = DynamicProperty.getInstance(getDefaultPropName(key)).getString();</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">if</span> (dynamicValue != <span class="keyword">null</span>) &#123;</div><div class="line">            <span class="keyword">return</span> dynamicValue;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> properties.get(key);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 这是获取配置的入口方法，如果是null，那么用默认值</span></span><br><span class="line"><span class="comment">// 所有ribbon的默认值的都在该类中设置了，可以自己看一下</span></span><br><span class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">get</span><span class="params">(IClientConfigKey&lt;T&gt; key, T defaultValue)</span> </span>&#123;</span><br><span class="line">    T value = get(key);</span><br><span class="line">    <span class="keyword">if</span> (value == <span class="keyword">null</span>) &#123;</span><br><span class="line">        value = defaultValue;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> value;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 这是核心方法   </span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> Object <span class="title">getProperty</span><span class="params">(String key)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (enableDynamicProperties) &#123;</span><br><span class="line">        String dynamicValue = <span class="keyword">null</span>;</span><br><span class="line">        DynamicStringProperty dynamicProperty = dynamicProperties.get(key);</span><br><span class="line">        <span class="comment">// dynamicProperties其实是一个缓存，首次访问foo服务的时候会加载</span></span><br><span class="line">        <span class="keyword">if</span> (dynamicProperty != <span class="keyword">null</span>) &#123;</span><br><span class="line">            dynamicValue = dynamicProperty.get();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 如果缓存没有，那么就再获取一次，注意这里的getConfigKey(key)是生成key的方法</span></span><br><span class="line">        <span class="keyword">if</span> (dynamicValue == <span class="keyword">null</span>) &#123;</span><br><span class="line">            dynamicValue = DynamicProperty.getInstance(getConfigKey(key)).getString();</span><br><span class="line">            <span class="comment">// 如果还是没有取默认值，getDefaultPropName(key)生成key的方法</span></span><br><span class="line">            <span class="keyword">if</span> (dynamicValue == <span class="keyword">null</span>) &#123;</span><br><span class="line">                dynamicValue = DynamicProperty.getInstance(getDefaultPropName(key)).getString();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (dynamicValue != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> dynamicValue;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> properties.get(key);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>以我们的服务为例：<br><code>getConfigKey(key)</code> returns <code>foo.ribbon.ReadTimeout</code><br><code>getDefaultPropName(key)</code> returns <code>ribbon.ReadTimeout</code></p>
 <p>一目了然，<code>{serviceName}.ribbon.{propertyName}</code>就可以了。</p>
 <h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>感觉ribbon和hytrix的配置获取源码略微有点乱，所以也导致大家在设置的时候有些无所适从。<code>spring-cloud</code>的代码一直在迭代，无论github上还是文档可能都相对滞后，这时候阅读源码并且动手debug一下是最能接近事实真相的了。</p>
 
       
     </div>
+
+    
+
     
     
     
@@ -441,28 +485,24 @@
   </article>
 
 
-
-    <div class="post-spread">
-      
-    </div>
   </div>
 
 
           </div>
           
 
-
-          
-  <div class="comments" id="comments">
-    
+  
+    <div class="comments" id="comments">
       <div id="disqus_thread">
         <noscript>
           Please enable JavaScript to view the
           <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
         </noscript>
       </div>
-    
-  </div>
+    </div>
+
+  
+
 
 
         </div>
@@ -485,119 +525,174 @@
 
       
         <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
             Table of Contents
           </li>
-          <li class="sidebar-nav-overview" data-target="site-overview">
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
             Overview
           </li>
         </ul>
       
 
-      <section class="site-overview sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-          <img class="site-author-image" itemprop="image"
-               src="/images/avatar-cartoon.jpg"
-               alt="Dean Wang" />
-          <p class="site-author-name" itemprop="name">Dean Wang</p>
-           
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar-cartoon.jpg"
+                alt="Dean Wang" />
+            
+              <p class="site-author-name" itemprop="name">Dean Wang</p>
               <p class="site-description motion-element" itemprop="description">理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover</p>
-          
-        </div>
-        <nav class="site-state motion-element">
-
-          
-            <div class="site-state-item site-state-posts">
-              <a href="/archives/">
-                <span class="site-state-item-count">26</span>
-                <span class="site-state-item-name">posts</span>
-              </a>
-            </div>
-          
-
-          
-
-          
-            
-            
-            <div class="site-state-item site-state-tags">
-              <a href="/tags/index.html">
-                <span class="site-state-item-count">35</span>
-                <span class="site-state-item-name">tags</span>
-              </a>
-            </div>
-          
-
-        </nav>
-
-        
-          <div class="feed-link motion-element">
-            <a href="/atom.xml" rel="alternate">
-              <i class="fa fa-rss"></i>
-              RSS
-            </a>
           </div>
-        
 
-        <div class="links-of-author motion-element">
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">26</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">35</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/deanwong" target="_blank" title="GitHub"><i class="fa fa-fw fa-globe"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://twitter.com/wongding" target="_blank" title="Twitter"><i class="fa fa-fw fa-globe"></i>Twitter</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.instagram.com/rockgeek" target="_blank" title="Instagram"><i class="fa fa-fw fa-globe"></i>Instagram</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="http://weibo.com/wangding85" target="_blank" title="Weibo"><i class="fa fa-fw fa-globe"></i>Weibo</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
           
             
-              <span class="links-of-author-item">
-                <a href="https://github.com/deanwong" target="_blank" title="GitHub">
-                  
-                    <i class="fa fa-fw fa-github"></i>
-                  
-                    
-                      GitHub
-                    
-                </a>
-              </span>
-            
-              <span class="links-of-author-item">
-                <a href="https://twitter.com/wongding" target="_blank" title="Twitter">
-                  
-                    <i class="fa fa-fw fa-twitter"></i>
-                  
-                    
-                      Twitter
-                    
-                </a>
-              </span>
-            
-              <span class="links-of-author-item">
-                <a href="https://www.instagram.com/rockgeek" target="_blank" title="Instagram">
-                  
-                    <i class="fa fa-fw fa-instagram"></i>
-                  
-                    
-                      Instagram
-                    
-                </a>
-              </span>
-            
-              <span class="links-of-author-item">
-                <a href="http://weibo.com/wangding85" target="_blank" title="Weibo">
-                  
-                    <i class="fa fa-fw fa-weibo"></i>
-                  
-                    
-                      Weibo
-                    
-                </a>
-              </span>
-            
           
+          
+
         </div>
-
-        
-        
-
-        
-        
-
-        
-
-
       </section>
 
       
@@ -630,53 +725,52 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright" >
-  
-  &copy; 
-  <span itemprop="copyrightYear">2018</span>
-  <span class="with-love">
-    <i class="fa fa-heart"></i>
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 
   
+
+  
 </div>
 
 
-  <div class="powered-by">
-    Powered by <a class="theme-link" href="https://hexo.io">Hexo</a>
-  </div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.7.1</div>
+
+
 
   <span class="post-meta-divider">|</span>
 
-  <div class="theme-info">
-    Theme &mdash;
-    <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
-      NexT.Mist
-    </a>
-  </div>
+
+
+  <div class="theme-info">Theme – <a class="theme-link" target="_blank" href="https://theme-next.org">NexT.Mist</a> v6.4.2</div>
+
+
 
 
         
 <div class="busuanzi-count">
-  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
   
-    <span class="site-uv">
+    <span class="site-uv" title="Total Visitors">
       <i class="fa fa-user"></i>
       <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
-      
     </span>
   
 
   
-    <span class="site-pv">
+    <span class="site-pv" title="Total Views">
       <i class="fa fa-eye"></i>
       <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
-      
     </span>
   
 </div>
+
 
 
 
@@ -696,6 +790,11 @@
       </div>
     
 
+    
+	
+    
+
+    
   </div>
 
   
@@ -714,7 +813,6 @@
 
 
 
-  
 
 
 
@@ -727,85 +825,78 @@
 
 
 
-  
-  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
-
-  
-  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
-
-  
-  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
-
-  
-  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
-
-  
-  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
-
-  
-  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
 
 
-  
-
-
-  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
-
-  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
 
 
 
   
   
-
-  
-  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
-<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
-
-
-
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
   
 
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
 
-  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.4.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.4.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.4.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.4.2"></script>
 
 
 
   
 
 
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.4.2"></script>
+
+
+
   
 
-    
-      <script id="dsq-count-scr" src="https://wangdean.disqus.com/count.js" async></script>
-    
+  
+    <script id="dsq-count-scr" src="https://wangdean.disqus.com/count.js" async></script>
+  
 
-    
-      <script type="text/javascript">
-        var disqus_config = function () {
-          this.page.url = 'http://www.deanwangpro.com/2018/04/13/zuul-hytrix-ribbon-timeout/';
-          this.page.identifier = '2018/04/13/zuul-hytrix-ribbon-timeout/';
-          this.page.title = 'spring-cloud服务网关中的Timeout设置';
+  
+    <script type="text/javascript">
+      var disqus_config = function () {
+        this.page.url = 'http://www.deanwangpro.com/2018/04/13/zuul-hytrix-ribbon-timeout/';
+        this.page.identifier = '2018/04/13/zuul-hytrix-ribbon-timeout/';
+        this.page.title = 'spring-cloud服务网关中的Timeout设置';
         };
+      function loadComments () {
         var d = document, s = d.createElement('script');
         s.src = 'https://wangdean.disqus.com/embed.js';
         s.setAttribute('data-timestamp', '' + +new Date());
         (d.head || d.body).appendChild(s);
-      </script>
-    
-
+      }
+      
+        loadComments();
+      
+    </script>
   
 
 
-
-
-	
-
-
-
-
-
-  
 
 
 
@@ -822,6 +913,15 @@
 
 
 
+  
+
+  
+
+  
+
+  
+
+  
   
 
   
