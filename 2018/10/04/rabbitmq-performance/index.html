@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="google-site-verification" content="6I4nQGwB4yLqPannMFWvXqWhKoRXMlOOaa5jtowR9Y0" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="performance,tuning,rabbitmq," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="在做系统的整体性能测试时发现经常会卡在一个较低的QPS（单机低于100）数值，而且应用服务器的负载不高，检查MQ消费速率只有40左右。接着把目标放在消息发送端上，发现消息发送速率很低，大约40条/s。 果断搭建一个最小化工程单测Rabbitmq发送性能，发现在启用发送端事务后性能下降非常明显。    消息数量 开启事务 未开启事务     10w 320796ms 10246ms    本机SSD">
+<meta name="keywords" content="performance,tuning,rabbitmq">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Rabbitmq的性能测试">
+<meta property="og:url" content="http://www.deanwangpro.com/2018/10/04/rabbitmq-performance/index.html">
+<meta property="og:site_name" content="大名Dean鼎">
+<meta property="og:description" content="在做系统的整体性能测试时发现经常会卡在一个较低的QPS（单机低于100）数值，而且应用服务器的负载不高，检查MQ消费速率只有40左右。接着把目标放在消息发送端上，发现消息发送速率很低，大约40条/s。 果断搭建一个最小化工程单测Rabbitmq发送性能，发现在启用发送端事务后性能下降非常明显。    消息数量 开启事务 未开启事务     10w 320796ms 10246ms    本机SSD">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2018-10-04/rabbitmq_tx.jpg">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2018-10-04/high_iowa.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2018-10-04/low_iowa.png">
+<meta property="og:updated_time" content="2018-10-05T03:30:14.898Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Rabbitmq的性能测试">
+<meta name="twitter:description" content="在做系统的整体性能测试时发现经常会卡在一个较低的QPS（单机低于100）数值，而且应用服务器的负载不高，检查MQ消费速率只有40左右。接着把目标放在消息发送端上，发现消息发送速率很低，大约40条/s。 果断搭建一个最小化工程单测Rabbitmq发送性能，发现在启用发送端事务后性能下降非常明显。    消息数量 开启事务 未开启事务     10w 320796ms 10246ms    本机SSD">
+<meta name="twitter:image" content="http://www.deanwangpro.com/images/2018-10-04/rabbitmq_tx.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '384049',
+      author: 'Dean'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.deanwangpro.com/2018/10/04/rabbitmq-performance/"/>
+
+
+
+
+
+  <title>Rabbitmq的性能测试 | 大名Dean鼎</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-69554053-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">大名Dean鼎</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2018/10/04/rabbitmq-performance/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Dean Wang">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar-cartoon.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="大名Dean鼎">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Rabbitmq的性能测试</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-10-04T00:00:00+08:00">
+                2018-10-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2018/10/04/rabbitmq-performance/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count"
+                        data-disqus-identifier="2018/10/04/rabbitmq-performance/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>在做系统的整体性能测试时发现经常会卡在一个较低的QPS（单机低于100）数值，而且应用服务器的负载不高，检查MQ消费速率只有40左右。接着把目标放在消息发送端上，发现消息发送速率很低，大约40条/s。</p>
+<p>果断搭建一个最小化工程单测Rabbitmq发送性能，发现在启用发送端事务后性能下降非常明显。</p>
+<table>
+<thead>
+<tr>
+<th>消息数量</th>
+<th>开启事务</th>
+<th>未开启事务</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10w</td>
+<td>320796ms</td>
+<td>10246ms</td>
+</tr>
+</tbody>
+</table>
+<p>本机SSD硬盘测试结果10w条消息未开启事务，大约10s发送完毕；而开启了事务后，需要将近320s，差了30多倍。</p>
+<p>接着翻阅Rabbitmq官网，发现开启事务性能最大损失超过250倍。</p>
+<blockquote>
+<p>Using standard AMQP 0-9-1, the only way to guarantee that a message isn’t lost is by using transactions – make the channel transactional then for each message or set of messages publish, commit. In this case, transactions are unnecessarily heavyweight and decrease throughput by a factor of 250. To remedy this, a confirmation mechanism was introduced. It mimics the consumer acknowledgements mechanism already present in the protocol.</p>
+</blockquote>
+<a id="more"></a>
+<h3 id="事务为什么会慢"><a href="#事务为什么会慢" class="headerlink" title="事务为什么会慢"></a>事务为什么会慢</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">rabbitTemplate.setChannelTransacted(<span class="keyword">true</span>);</div></pre></td></tr></table></figure>
+<p>该标志位开启后表示Rabbitmq的发送统一被spring事务管理。当一段代码被<code>@Transactional</code>包裹，那么只有当事务结束后，消息才会正在的发送到Rabbitmq的exchange中。具体代码详见<code>rabbitTemplate.java</code>中的<code>doSend()</code>。</p>
+<p>事务机制是Rabbitmq自身支持的，原理是<code>channel.txSelect()</code>开启事务，<code>channel.txRollback()</code>回滚事务。<code>channel.txCommit()</code>提交事务。当事务开启后，通过抓包会发现网络交互增多。</p>
+<p><img src="/images/2018-10-04/rabbitmq_tx.jpg" alt="rabbitmq_tx"></p>
+<h3 id="是否可以去掉事务呢？"><a href="#是否可以去掉事务呢？" class="headerlink" title="是否可以去掉事务呢？"></a>是否可以去掉事务呢？</h3><p>实践证明，<strong>不行</strong>。</p>
+<p>因为某些消息，特别是实体的新增或者更新消息发出后，消费者有可能会通过API反查，这时如果生产者本地事务未提交。消费者就有可能消费到空数据或者旧数据。所以生产者必须将发送消息的事务包裹在本地数据库事务当中。</p>
+<p>在过去的实践中，有一种解法可以在不开启事务的情况下解决这个问题，就是利用本地消息表，即生产者调用后不发送，而是将消息写入到本地消息表，当事务失败那么此次写入操作也会回滚。真正发送消息到MQ就开启另一个定时线程轮询该本地消息表异步发送消息。这种方法理论上可行，但实际操作非常复杂，当有多个生产者实例时，定时发送线程也会有多个，那么就会遇到各种并发问题。</p>
+<h3 id="最大限度改善性能"><a href="#最大限度改善性能" class="headerlink" title="最大限度改善性能"></a>最大限度改善性能</h3><p>既然无法去除事务，并且也不希望代码异常复杂。那么可以将消息分为两类，一类是changlog即实体的变化，一类是command，即通知消费者可以开始做某事，通常用在同步转异步的场景。对于第一类消息仍然保留事务，对于第二类消息关闭发送事务，采用PublisherConfirm的方式保证消息发送成功。</p>
+<p>再次测试，性能明显提高，但是并未达到预期，通过<code>innotop</code>命令查看MySQL压力，发现只有10K/s上下。检查Rabbitmq所在机器的负载。</p>
+<p><img src="/images/2018-10-04/high_iowa.png" alt="high_iowa"></p>
+<p>iowait非常高，由于该机器上还装有es，同样是io密集型的应用，所以实际性能瓶颈都在磁盘io上了。</p>
+<p>跟Devops确认了机器情况，这台机器恰好是Rabbitmq的磁盘节点。为了快速验证，新增了一块SSD硬盘并将Rabbitmq消息文件都挂载到新加的磁盘上。再次测试，iowait下降明显。</p>
+<p><img src="/images/2018-10-04/low_iowa.png" alt="low_iowa"></p>
+<p>通过<code>innotop</code>命令查看MySQL压力，发现上升了一倍，达到20K/s。基本上把压力都转到了数据库一侧。系统整体性能提升了一个数量级。也许该Rabbitmq节点独占一台机器效果会更好。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>性能优化有时候就像破案，看了jstat没问题，gc没问题，机器负载也不高，就是抓不到“元凶”。需要一点一点的扣，往往一个短板就造成了木桶效应。另外还有一点就是如果硬件能够解决的事情，就不要过度优化软件了，代码复杂度上升往往意味着更多的BUG，在资源有限的情况下多花点钱省点时间还是值得的。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/performance/" rel="tag"># performance</a>
+          
+            <a href="/tags/tuning/" rel="tag"># tuning</a>
+          
+            <a href="/tags/rabbitmq/" rel="tag"># rabbitmq</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/04/13/zuul-hytrix-ribbon-timeout/" rel="next" title="spring-cloud服务网关中的Timeout设置">
+                <i class="fa fa-chevron-left"></i> spring-cloud服务网关中的Timeout设置
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar-cartoon.jpg"
+               alt="Dean Wang" />
+          <p class="site-author-name" itemprop="name">Dean Wang</p>
+           
+              <p class="site-description motion-element" itemprop="description">理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">26</span>
+                <span class="site-state-item-name">posts</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">35</span>
+                <span class="site-state-item-name">tags</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/deanwong" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://twitter.com/wongding" target="_blank" title="Twitter">
+                  
+                    <i class="fa fa-fw fa-twitter"></i>
+                  
+                    
+                      Twitter
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="https://www.instagram.com/rockgeek" target="_blank" title="Instagram">
+                  
+                    <i class="fa fa-fw fa-instagram"></i>
+                  
+                    
+                      Instagram
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/wangding85" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#事务为什么会慢"><span class="nav-number">1.</span> <span class="nav-text">事务为什么会慢</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#是否可以去掉事务呢？"><span class="nav-number">2.</span> <span class="nav-text">是否可以去掉事务呢？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#最大限度改善性能"><span class="nav-number">3.</span> <span class="nav-text">最大限度改善性能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Dean Wang</span>
+
+  
+</div>
+
+
+  <div class="powered-by">
+    Powered by <a class="theme-link" href="https://hexo.io">Hexo</a>
+  </div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">
+    Theme &mdash;
+    <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+      NexT.Mist
+    </a>
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://wangdean.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://www.deanwangpro.com/2018/10/04/rabbitmq-performance/';
+          this.page.identifier = '2018/10/04/rabbitmq-performance/';
+          this.page.title = 'Rabbitmq的性能测试';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://wangdean.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
