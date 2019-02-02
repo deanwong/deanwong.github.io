@@ -110,22 +110,20 @@
 
 
 
-  <meta name="description" content="在做系统的整体性能测试时发现经常会卡在一个较低的QPS（单机低于100）数值，而且应用服务器的负载不高，检查MQ消费速率只有40左右。接着把目标放在消息发送端上，发现消息发送速率很低，大约40条/s。 果断搭建一个最小化工程单测Rabbitmq发送性能，发现在启用发送端事务后性能下降非常明显。    消息数量 开启事务 未开启事务     10w 320796ms 10246ms    本机SSD">
-<meta name="keywords" content="performance,tuning,rabbitmq">
+  <meta name="description" content="节前没有新业务代码，正好Greenwich刚发布，于是开始为期四天的框架代码升级。 之前的版本是 spring boot 1.5.10 , spring cloud Edgware.SR3">
+<meta name="keywords" content="spring-cloud,spring-boot">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Rabbitmq的性能测试">
-<meta property="og:url" content="http://www.deanwangpro.com/2018/10/04/rabbitmq-performance/index.html">
+<meta property="og:title" content="Spring Boot 2.1.2 &amp; Spring Cloud Greenwich 升级记录">
+<meta property="og:url" content="http://www.deanwangpro.com/2019/02/02/spring-boot-cloud-geenwich-upgrade/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
-<meta property="og:description" content="在做系统的整体性能测试时发现经常会卡在一个较低的QPS（单机低于100）数值，而且应用服务器的负载不高，检查MQ消费速率只有40左右。接着把目标放在消息发送端上，发现消息发送速率很低，大约40条/s。 果断搭建一个最小化工程单测Rabbitmq发送性能，发现在启用发送端事务后性能下降非常明显。    消息数量 开启事务 未开启事务     10w 320796ms 10246ms    本机SSD">
+<meta property="og:description" content="节前没有新业务代码，正好Greenwich刚发布，于是开始为期四天的框架代码升级。 之前的版本是 spring boot 1.5.10 , spring cloud Edgware.SR3">
 <meta property="og:locale" content="en">
-<meta property="og:image" content="http://www.deanwangpro.com/images/2018-10-04/rabbitmq_tx.jpg">
-<meta property="og:image" content="http://www.deanwangpro.com/images/2018-10-04/high_iowa.png">
-<meta property="og:image" content="http://www.deanwangpro.com/images/2018-10-04/low_iowa.png">
-<meta property="og:updated_time" content="2018-10-05T03:30:14.898Z">
+<meta property="og:image" content="http://www.deanwangpro.com/images/springboot-prop-migrator.png">
+<meta property="og:updated_time" content="2019-02-02T11:29:27.066Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Rabbitmq的性能测试">
-<meta name="twitter:description" content="在做系统的整体性能测试时发现经常会卡在一个较低的QPS（单机低于100）数值，而且应用服务器的负载不高，检查MQ消费速率只有40左右。接着把目标放在消息发送端上，发现消息发送速率很低，大约40条/s。 果断搭建一个最小化工程单测Rabbitmq发送性能，发现在启用发送端事务后性能下降非常明显。    消息数量 开启事务 未开启事务     10w 320796ms 10246ms    本机SSD">
-<meta name="twitter:image" content="http://www.deanwangpro.com/images/2018-10-04/rabbitmq_tx.jpg">
+<meta name="twitter:title" content="Spring Boot 2.1.2 &amp; Spring Cloud Greenwich 升级记录">
+<meta name="twitter:description" content="节前没有新业务代码，正好Greenwich刚发布，于是开始为期四天的框架代码升级。 之前的版本是 spring boot 1.5.10 , spring cloud Edgware.SR3">
+<meta name="twitter:image" content="http://www.deanwangpro.com/images/springboot-prop-migrator.png">
 
 
 
@@ -134,7 +132,7 @@
 
 
 
-  <link rel="canonical" href="http://www.deanwangpro.com/2018/10/04/rabbitmq-performance/"/>
+  <link rel="canonical" href="http://www.deanwangpro.com/2019/02/02/spring-boot-cloud-geenwich-upgrade/"/>
 
 
 
@@ -144,7 +142,7 @@
   };
 </script>
 
-  <title>Rabbitmq的性能测试 | 大名Dean鼎</title>
+  <title>Spring Boot 2.1.2 & Spring Cloud Greenwich 升级记录 | 大名Dean鼎</title>
   
 
 
@@ -298,7 +296,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2018/10/04/rabbitmq-performance/">
+    <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2019/02/02/spring-boot-cloud-geenwich-upgrade/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Dean Wang">
@@ -315,7 +313,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Rabbitmq的性能测试
+          <h1 class="post-title" itemprop="name headline">Spring Boot 2.1.2 & Spring Cloud Greenwich 升级记录
               
             
           </h1>
@@ -340,24 +338,12 @@
                 
               
 
-              <time title="Created: 2018-10-04 00:00:00" itemprop="dateCreated datePublished" datetime="2018-10-04T00:00:00+08:00">2018-10-04</time>
+              <time title="Created: 2019-02-02 00:00:00 / Modified: 19:29:27" itemprop="dateCreated datePublished" datetime="2019-02-02T00:00:00+08:00">2019-02-02</time>
             
 
             
               
 
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Edited on</span>
-                
-                <time title="Modified: 2018-10-05 11:30:14" itemprop="dateModified" datetime="2018-10-05T11:30:14+08:00">2018-10-05</time>
               
             
           </span>
@@ -371,10 +357,10 @@
                 <span class="post-meta-item-icon">
                   <i class="fa fa-comment-o"></i>
                 </span>
-                <a href="/2018/10/04/rabbitmq-performance/#comments" itemprop="discussionUrl">
+                <a href="/2019/02/02/spring-boot-cloud-geenwich-upgrade/#comments" itemprop="discussionUrl">
                 
                   <span class="post-comments-count disqus-comment-count"
-                        data-disqus-identifier="2018/10/04/rabbitmq-performance/" itemprop="commentCount"></span>
+                        data-disqus-identifier="2019/02/02/spring-boot-cloud-geenwich-upgrade/" itemprop="commentCount"></span>
                 </a>
               </span>
             
@@ -410,45 +396,65 @@
       
 
       
-        <p>在做系统的整体性能测试时发现经常会卡在一个较低的QPS（单机低于100）数值，而且应用服务器的负载不高，检查MQ消费速率只有40左右。接着把目标放在消息发送端上，发现消息发送速率很低，大约40条/s。</p>
-<p>果断搭建一个最小化工程单测Rabbitmq发送性能，发现在启用发送端事务后性能下降非常明显。</p>
-<table>
-<thead>
-<tr>
-<th>消息数量</th>
-<th>开启事务</th>
-<th>未开启事务</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>10w</td>
-<td>320796ms</td>
-<td>10246ms</td>
-</tr>
-</tbody>
-</table>
-<p>本机SSD硬盘测试结果10w条消息未开启事务，大约10s发送完毕；而开启了事务后，需要将近320s，差了30多倍。</p>
-<p>接着翻阅Rabbitmq官网，发现开启事务性能最大损失超过250倍。</p>
-<blockquote>
-<p>Using standard AMQP 0-9-1, the only way to guarantee that a message isn’t lost is by using transactions – make the channel transactional then for each message or set of messages publish, commit. In this case, transactions are unnecessarily heavyweight and decrease throughput by a factor of 250. To remedy this, a confirmation mechanism was introduced. It mimics the consumer acknowledgements mechanism already present in the protocol.</p>
-</blockquote>
+        <p>节前没有新业务代码，正好Greenwich刚发布，于是开始为期四天的框架代码升级。</p>
+<p>之前的版本是 spring boot 1.5.10 , spring cloud Edgware.SR3</p>
 <a id="more"></a>
-<h3 id="事务为什么会慢"><a href="#事务为什么会慢" class="headerlink" title="事务为什么会慢"></a>事务为什么会慢</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rabbitTemplate.setChannelTransacted(<span class="keyword">true</span>);</span><br></pre></td></tr></table></figure>
-<p>该标志位开启后表示Rabbitmq的发送统一被spring事务管理。当一段代码被<code>@Transactional</code>包裹，那么只有当事务结束后，消息才会正在的发送到Rabbitmq的exchange中。具体代码详见<code>rabbitTemplate.java</code>中的<code>doSend()</code>。</p>
-<p>事务机制是Rabbitmq自身支持的，原理是<code>channel.txSelect()</code>开启事务，<code>channel.txRollback()</code>回滚事务。<code>channel.txCommit()</code>提交事务。当事务开启后，通过抓包会发现网络交互增多。</p>
-<p><img src="/images/2018-10-04/rabbitmq_tx.jpg" alt="rabbitmq_tx"></p>
-<h3 id="是否可以去掉事务呢？"><a href="#是否可以去掉事务呢？" class="headerlink" title="是否可以去掉事务呢？"></a>是否可以去掉事务呢？</h3><p>实践证明，<strong>不行</strong>。</p>
-<p>因为某些消息，特别是实体的新增或者更新消息发出后，消费者有可能会通过API反查，这时如果生产者本地事务未提交。消费者就有可能消费到空数据或者旧数据。所以生产者必须将发送消息的事务包裹在本地数据库事务当中。</p>
-<p>在过去的实践中，有一种解法可以在不开启事务的情况下解决这个问题，就是利用本地消息表，即生产者调用后不发送，而是将消息写入到本地消息表，当事务失败那么此次写入操作也会回滚。真正发送消息到MQ就开启另一个定时线程轮询该本地消息表异步发送消息。这种方法理论上可行，但实际操作非常复杂，当有多个生产者实例时，定时发送线程也会有多个，那么就会遇到各种并发问题。</p>
-<h3 id="最大限度改善性能"><a href="#最大限度改善性能" class="headerlink" title="最大限度改善性能"></a>最大限度改善性能</h3><p>既然无法去除事务，并且也不希望代码异常复杂。那么可以将消息分为两类，一类是changlog即实体的变化，一类是command，即通知消费者可以开始做某事，通常用在同步转异步的场景。对于第一类消息仍然保留事务，对于第二类消息关闭发送事务，采用PublisherConfirm的方式保证消息发送成功。</p>
-<p>再次测试，性能明显提高，但是并未达到预期，通过<code>innotop</code>命令查看MySQL压力，发现只有10K/s上下。检查Rabbitmq所在机器的负载。</p>
-<p><img src="/images/2018-10-04/high_iowa.png" alt="high_iowa"></p>
-<p>iowait非常高，由于该机器上还装有es，同样是io密集型的应用，所以实际性能瓶颈都在磁盘io上了。</p>
-<p>跟Devops确认了机器情况，这台机器恰好是Rabbitmq的磁盘节点。为了快速验证，新增了一块SSD硬盘并将Rabbitmq消息文件都挂载到新加的磁盘上。再次测试，iowait下降明显。</p>
-<p><img src="/images/2018-10-04/low_iowa.png" alt="low_iowa"></p>
-<p>通过<code>innotop</code>命令查看MySQL压力，发现上升了一倍，达到20K/s。基本上把压力都转到了数据库一侧。系统整体性能提升了一个数量级。也许该Rabbitmq节点独占一台机器效果会更好。</p>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>性能优化有时候就像破案，看了jstat没问题，gc没问题，机器负载也不高，就是抓不到“元凶”。需要一点一点的扣，往往一个短板就造成了木桶效应。另外还有一点就是如果硬件能够解决的事情，就不要过度优化软件了，代码复杂度上升往往意味着更多的BUG，在资源有限的情况下多花点钱省点时间还是值得的。</p>
+<h2 id="依赖升级"><a href="#依赖升级" class="headerlink" title="依赖升级"></a>依赖升级</h2><ul>
+<li>增加依赖管理插件 <code>apply plugin: &#39;io.spring.dependency-management&#39;</code></li>
+<li>spring-cloud-starter-eureka → spring-cloud-starter-netflix-eureka-client</li>
+<li>spring-cloud-starter-feign → spring-cloud-starter-openfeign</li>
+<li>gradle版本要求4.4</li>
+</ul>
+<h2 id="boot-spring-boot-starter-data-jpa"><a href="#boot-spring-boot-starter-data-jpa" class="headerlink" title="boot : spring-boot-starter-data-jpa"></a>boot : spring-boot-starter-data-jpa</h2><ul>
+<li>delete → deleteById</li>
+<li><p>findone → findById</p>
+<p>  这个改动确实大，返回值变成了Optional，合理是合理的，只改的真多。。</p>
+</li>
+</ul>
+<h2 id="boot-spring-boot-starter-data-redis"><a href="#boot-spring-boot-starter-data-redis" class="headerlink" title="boot : spring-boot-starter-data-redis"></a>boot : spring-boot-starter-data-redis</h2><p>Jedis → Lettuce</p>
+<p>还好并没有使用它的autoconfiguration，配置上有一个小坑，Jedis的redis.timeout是表示connection timeout, 而Lettuce是表示command timeout，之前配置成0的，如果set到Lettuce的commandtimeout里面那就要抛异常了。</p>
+<h2 id="配置"><a href="#配置" class="headerlink" title="配置:"></a>配置<strong>:</strong></h2><p>可以在build.gradle中加入，启动时会检查配置是否兼容</p>
+<pre><code>compile &quot;org.springframework.boot:spring-boot-properties-migrator&quot; 
+</code></pre><p><strong>注意：完成迁移后需要删除</strong></p>
+<p><img src="/images/springboot-prop-migrator.png" alt="migrator"></p>
+<p>警告如上图会告知最新的配置格式</p>
+<h2 id="boot-spring-boot-starter-actuator"><a href="#boot-spring-boot-starter-actuator" class="headerlink" title="boot: spring-boot-starter-actuator"></a>boot: spring-boot-starter-actuator</h2><p>endpoint的暴露方式变化，<code>management.endpoints.web.exposure.include = &quot;*&quot;</code> 表示暴露所有endpoints，如果配置了security那么也需要在security的配置中开放访问<code>/actuator</code>路径</p>
+<h2 id="boot-spring-boot-starter-security"><a href="#boot-spring-boot-starter-security" class="headerlink" title="boot: spring-boot-starter-security"></a>boot: spring-boot-starter-security</h2><p>自动注入的<code>AuthenticationManager</code>可能会找不到</p>
+<p>If you want to expose Spring Security’s <code>AuthenticationManager</code> as a bean, override the <code>authenticationManagerBean</code> method on your <code>WebSecurityConfigurerAdapter</code> and annotate it with <code>@Bean</code>.</p>
+<h2 id="cloud-eureka"><a href="#cloud-eureka" class="headerlink" title="cloud : eureka"></a>cloud : eureka</h2><p>各个项目在注册中心里面的客户端实例IP显示不正确，需要修改每个项目的</p>
+<p><strong>bootstarp.yml</strong> </p>
+<ul>
+<li>${spring.cloud.client.ipAddress} → ${spring.cloud.client.ip-address}</li>
+</ul>
+<h2 id="boot-spring-boot-starter-test"><a href="#boot-spring-boot-starter-test" class="headerlink" title="boot: spring-boot-starter-test:"></a>boot: spring-boot-starter-test<strong>:</strong></h2><ul>
+<li>org.mockito.Matchers → org.mockito.ArgumentMatchers 注意build时的warning</li>
+<li>Mock方法时请使用Mocikto.doReturn(…).when(…)，不使用when(…).thenReturn(…)，否则<code>@spybean</code>的会调用实际方法</li>
+</ul>
+<h2 id="其他问题"><a href="#其他问题" class="headerlink" title="其他问题"></a>其他问题</h2><ol>
+<li>版本升级后会有deprecated的类或方法，所以要注意看console中build的warning信息</li>
+<li><p>由于spring cloud依赖管理插件强制cuator升级到4.0.1，导致我们使用的elestic-job不能正常工作，只能强行控制版本。</p>
+<pre><code>dependencyManagement {
+    imports {
+        mavenBom &quot;org.springframework.cloud:spring-cloud-dependencies:${SPRING_CLOUD_VERSION}&quot;
+    }
+    dependencies {
+        dependency &apos;org.apache.curator:curator-framework:2.10.0&apos;
+        dependency &apos;org.apache.curator:curator-recipes:2.10.0&apos;
+        dependency &apos;org.apache.curator:curator-client:2.10.0&apos;
+    }
+}
+</code></pre></li>
+<li><p>如果启用出现error，报bean重复，首先确认是不是故意覆盖，如重写spring-boot自带的bean，如是，可以在bootstrap.yml加入</p>
+<pre><code>spring.main.allow-bean-definition-overriding=true
+</code></pre></li>
+<li><p>FeignClient注解增加了contextId属性</p>
+<pre><code>@FeignClient(value = &quot;foo&quot;, contextId = &quot;fooFeign&quot;)
+</code></pre><p> 此contextId即表示bean id，所有注入使用时需要</p>
+<pre><code>@Autowried
+FooFeign fooFeign
+</code></pre><p> 如果不写contextId，当多个class都是@FeignClient(“foo”)，即会认为是同一个bean而排除上一条所说的warning</p>
+</li>
+</ol>
 
       
     </div>
@@ -469,11 +475,9 @@
       
         <div class="post-tags">
           
-            <a href="/tags/performance/" rel="tag"># performance</a>
+            <a href="/tags/spring-cloud/" rel="tag"># spring-cloud</a>
           
-            <a href="/tags/tuning/" rel="tag"># tuning</a>
-          
-            <a href="/tags/rabbitmq/" rel="tag"># rabbitmq</a>
+            <a href="/tags/spring-boot/" rel="tag"># spring-boot</a>
           
         </div>
       
@@ -486,8 +490,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/04/13/zuul-hytrix-ribbon-timeout/" rel="next" title="spring-cloud服务网关中的Timeout设置">
-                <i class="fa fa-chevron-left"></i> spring-cloud服务网关中的Timeout设置
+              <a href="/2018/10/04/rabbitmq-performance/" rel="next" title="Rabbitmq的性能测试">
+                <i class="fa fa-chevron-left"></i> Rabbitmq的性能测试
               </a>
             
           </div>
@@ -495,10 +499,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2019/02/02/spring-boot-cloud-geenwich-upgrade/" rel="prev" title="Spring Boot 2.1.2 & Spring Cloud Greenwich 升级记录">
-                Spring Boot 2.1.2 & Spring Cloud Greenwich 升级记录 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -734,7 +734,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#事务为什么会慢"><span class="nav-number">1.</span> <span class="nav-text">事务为什么会慢</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#是否可以去掉事务呢？"><span class="nav-number">2.</span> <span class="nav-text">是否可以去掉事务呢？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#最大限度改善性能"><span class="nav-number">3.</span> <span class="nav-text">最大限度改善性能</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#依赖升级"><span class="nav-number">1.</span> <span class="nav-text">依赖升级</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#boot-spring-boot-starter-data-jpa"><span class="nav-number">2.</span> <span class="nav-text">boot : spring-boot-starter-data-jpa</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#boot-spring-boot-starter-data-redis"><span class="nav-number">3.</span> <span class="nav-text">boot : spring-boot-starter-data-redis</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#配置"><span class="nav-number">4.</span> <span class="nav-text">配置:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#boot-spring-boot-starter-actuator"><span class="nav-number">5.</span> <span class="nav-text">boot: spring-boot-starter-actuator</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#boot-spring-boot-starter-security"><span class="nav-number">6.</span> <span class="nav-text">boot: spring-boot-starter-security</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#cloud-eureka"><span class="nav-number">7.</span> <span class="nav-text">cloud : eureka</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#boot-spring-boot-starter-test"><span class="nav-number">8.</span> <span class="nav-text">boot: spring-boot-starter-test:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其他问题"><span class="nav-number">9.</span> <span class="nav-text">其他问题</span></a></li></ol></div>
             
 
           </div>
@@ -916,9 +916,9 @@
   
     <script type="text/javascript">
       var disqus_config = function () {
-        this.page.url = 'http://www.deanwangpro.com/2018/10/04/rabbitmq-performance/';
-        this.page.identifier = '2018/10/04/rabbitmq-performance/';
-        this.page.title = 'Rabbitmq的性能测试';
+        this.page.url = 'http://www.deanwangpro.com/2019/02/02/spring-boot-cloud-geenwich-upgrade/';
+        this.page.identifier = '2019/02/02/spring-boot-cloud-geenwich-upgrade/';
+        this.page.title = 'Spring Boot 2.1.2 & Spring Cloud Greenwich 升级记录';
         };
       function loadComments () {
         var d = document, s = d.createElement('script');
