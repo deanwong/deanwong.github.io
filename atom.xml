@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.deanwangpro.com/"/>
-  <updated>2018-10-05T03:30:14.898Z</updated>
+  <updated>2019-02-02T11:26:07.654Z</updated>
   <id>http://www.deanwangpro.com/</id>
   
   <author>
@@ -15,6 +15,29 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Spring Boot 2.1.2 &amp; Spring Cloud Greenwich 升级记录</title>
+    <link href="http://www.deanwangpro.com/2019/02/02/2019-02-02/"/>
+    <id>http://www.deanwangpro.com/2019/02/02/2019-02-02/</id>
+    <published>2019-02-02T11:23:26.354Z</published>
+    <updated>2019-02-02T11:26:07.654Z</updated>
+    
+    <content type="html"><![CDATA[<p>节前没有新业务代码，正好Greenwich刚发布，于是开始为期四天的框架代码升级。</p><p>之前的版本是 spring boot 1.5.10 , spring cloud Edgware.SR3</p><a id="more"></a><h2 id="依赖升级"><a href="#依赖升级" class="headerlink" title="依赖升级"></a>依赖升级</h2><ul><li>增加依赖管理插件 <code>apply plugin: &#39;io.spring.dependency-management&#39;</code></li><li>spring-cloud-starter-eureka → spring-cloud-starter-netflix-eureka-client</li><li>spring-cloud-starter-feign → spring-cloud-starter-openfeign</li><li>gradle版本要求4.4</li></ul><h2 id="boot-spring-boot-starter-data-jpa"><a href="#boot-spring-boot-starter-data-jpa" class="headerlink" title="boot : spring-boot-starter-data-jpa"></a>boot : spring-boot-starter-data-jpa</h2><ul><li>delete → deleteById</li><li><p>findone → findById</p><p>  这个改动确实大，返回值变成了Optional，合理是合理的，只改的真多。。</p></li></ul><h2 id="boot-spring-boot-starter-data-redis"><a href="#boot-spring-boot-starter-data-redis" class="headerlink" title="boot : spring-boot-starter-data-redis"></a>boot : spring-boot-starter-data-redis</h2><p>Jedis → Lettuce</p><p>还好并没有使用它的autoconfiguration，配置上有一个小坑，Jedis的redis.timeout是表示connection timeout, 而Lettuce是表示command timeout，之前配置成0的，如果set到Lettuce的commandtimeout里面那就要抛异常了。</p><h2 id="配置"><a href="#配置" class="headerlink" title="配置:"></a>配置<strong>:</strong></h2><p>可以在build.gradle中加入，启动时会检查配置是否兼容</p><pre><code>compile &quot;org.springframework.boot:spring-boot-properties-migrator&quot; </code></pre><p><strong>注意：完成迁移后需要删除</strong></p><p><img src="images/springboot-prop-migrator.png" alt="migrator"></p><p>警告如上图会告知最新的配置格式</p><h2 id="boot-spring-boot-starter-actuator"><a href="#boot-spring-boot-starter-actuator" class="headerlink" title="boot: spring-boot-starter-actuator"></a>boot: spring-boot-starter-actuator</h2><p>endpoint的暴露方式变化，<code>management.endpoints.web.exposure.include = &quot;*&quot;</code> 表示暴露所有endpoints，如果配置了security那么也需要在security的配置中开放访问<code>/actuator</code>路径</p><h2 id="boot-spring-boot-starter-security"><a href="#boot-spring-boot-starter-security" class="headerlink" title="boot: spring-boot-starter-security"></a>boot: spring-boot-starter-security</h2><p>自动注入的<code>AuthenticationManager</code>可能会找不到</p><p>If you want to expose Spring Security’s <code>AuthenticationManager</code> as a bean, override the <code>authenticationManagerBean</code> method on your <code>WebSecurityConfigurerAdapter</code> and annotate it with <code>@Bean</code>.</p><h2 id="cloud-eureka"><a href="#cloud-eureka" class="headerlink" title="cloud : eureka"></a>cloud : eureka</h2><p>各个项目在注册中心里面的客户端实例IP显示不正确，需要修改每个项目的</p><p><strong>bootstarp.yml</strong> </p><ul><li>${spring.cloud.client.ipAddress} → ${spring.cloud.client.ip-address}</li></ul><h2 id="boot-spring-boot-starter-test"><a href="#boot-spring-boot-starter-test" class="headerlink" title="boot: spring-boot-starter-test:"></a>boot: spring-boot-starter-test<strong>:</strong></h2><ul><li>org.mockito.Matchers → org.mockito.ArgumentMatchers 注意build时的warning</li><li>Mock方法时请使用Mocikto.doReturn(…).when(…)，不使用when(…).thenReturn(…)，否则<code>@spybean</code>的会调用实际方法</li></ul><h2 id="其他问题"><a href="#其他问题" class="headerlink" title="其他问题"></a>其他问题</h2><ol><li>版本升级后会有deprecated的类或方法，所以要注意看console中build的warning信息</li><li><p>由于spring cloud依赖管理插件强制cuator升级到4.0.1，导致我们使用的elestic-job不能正常工作，只能强行控制版本。</p><pre><code>dependencyManagement {    imports {        mavenBom &quot;org.springframework.cloud:spring-cloud-dependencies:${SPRING_CLOUD_VERSION}&quot;    }    dependencies {        dependency &apos;org.apache.curator:curator-framework:2.10.0&apos;        dependency &apos;org.apache.curator:curator-recipes:2.10.0&apos;        dependency &apos;org.apache.curator:curator-client:2.10.0&apos;    }}</code></pre></li><li><p>如果启用出现error，报bean重复，首先确认是不是故意覆盖，如重写spring-boot自带的bean，如是，可以在bootstrap.yml加入</p><pre><code>spring.main.allow-bean-definition-overriding=true</code></pre></li><li><p>FeignClient注解增加了contextId属性</p><pre><code>@FeignClient(value = &quot;foo&quot;, contextId = &quot;fooFeign&quot;)</code></pre><p> 此contextId即表示bean id，所有注入使用时需要</p><pre><code>@AutowriedFooFeign fooFeign</code></pre><p> 如果不写contextId，当多个class都是@FeignClient(“foo”)，即会认为是同一个bean而排除上一条所说的warning</p></li></ol>]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;节前没有新业务代码，正好Greenwich刚发布，于是开始为期四天的框架代码升级。&lt;/p&gt;
+&lt;p&gt;之前的版本是 spring boot 1.5.10 , spring cloud Edgware.SR3&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="spring-cloud" scheme="http://www.deanwangpro.com/tags/spring-cloud/"/>
+    
+      <category term="spring-boot" scheme="http://www.deanwangpro.com/tags/spring-boot/"/>
+    
+  </entry>
   
   <entry>
     <title>Rabbitmq的性能测试</title>
@@ -488,31 +511,6 @@
       <category term="Java" scheme="http://www.deanwangpro.com/tags/Java/"/>
     
       <category term="Spring" scheme="http://www.deanwangpro.com/tags/Spring/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>如何在multi-module的项目中配置spring</title>
-    <link href="http://www.deanwangpro.com/2016/09/13/2015-11-9-multi-modules-spring/"/>
-    <id>http://www.deanwangpro.com/2016/09/13/2015-11-9-multi-modules-spring/</id>
-    <published>2016-09-13T15:56:20.000Z</published>
-    <updated>2016-09-13T15:56:20.000Z</updated>
-    
-    <content type="html"><![CDATA[<p>小项目也有可能会分很多小的module开发，毕竟Maven早就支持了Aggregator Project。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">project</span><br><span class="line">|</span><br><span class="line">|--web module</span><br><span class="line">|--serviceA module</span><br><span class="line">|--serviceB module</span><br></pre></td></tr></table></figure><a id="more"></a><p>在Service比较复杂，比如封装了第三方接口的提供内部服务的情况下，我一般会单开一个module来管理代码。就算哪天这个第三方不用了，也不用去动主要业务代码。而且单独测试也容易的多。</p><p>那么想要利用Spring管理bean，比如在web module中注入一个serviceA module的一个服务，就需要给子module配置spring了。</p><p>原理来讲，就是让容器在加载主工程时(一般指web module)，可以读到每个子module的spring 文件。</p><p>在serviceA module的resources下新建一个<code>serviceAContext.xml</code>，内部配置跟一般的spring一样，在我的工程里采用了aop扫描package，所以我写了一段<code>aop:config</code>的配置，同时web module也有一段<code>aop:config</code>，不同点就是apo扫描的package目录不同，实测下来没有问题。</p><p>最后在web module中加载这个context文件即可。</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;import resource=&quot;classpath*:serviceAContext.xml&quot; /&gt;</span><br></pre></td></tr></table></figure><p>简单吧。</p>]]></content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;小项目也有可能会分很多小的module开发，毕竟Maven早就支持了Aggregator Project。&lt;/p&gt;
-&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;3&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;4&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;5&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;project&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;|&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;|--web module&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;|--serviceA module&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;|--serviceB module&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
-    
-    </summary>
-    
-    
-      <category term="Java" scheme="http://www.deanwangpro.com/tags/Java/"/>
-    
-      <category term="Spring" scheme="http://www.deanwangpro.com/tags/Spring/"/>
-    
-      <category term="Maven" scheme="http://www.deanwangpro.com/tags/Maven/"/>
     
   </entry>
   
