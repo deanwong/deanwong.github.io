@@ -58,9 +58,9 @@
     </summary>
     
     
-      <category term="spring-cloud" scheme="http://www.deanwangpro.com/tags/spring-cloud/"/>
-    
       <category term="spring-boot" scheme="http://www.deanwangpro.com/tags/spring-boot/"/>
+    
+      <category term="spring-cloud" scheme="http://www.deanwangpro.com/tags/spring-cloud/"/>
     
   </entry>
   
@@ -159,9 +159,9 @@
     
       <category term="spring" scheme="http://www.deanwangpro.com/tags/spring/"/>
     
-      <category term="spring-cloud" scheme="http://www.deanwangpro.com/tags/spring-cloud/"/>
-    
       <category term="test" scheme="http://www.deanwangpro.com/tags/test/"/>
+    
+      <category term="spring-cloud" scheme="http://www.deanwangpro.com/tags/spring-cloud/"/>
     
   </entry>
   
@@ -183,9 +183,9 @@
     
       <category term="spring" scheme="http://www.deanwangpro.com/tags/spring/"/>
     
-      <category term="test" scheme="http://www.deanwangpro.com/tags/test/"/>
-    
       <category term="spring-boot" scheme="http://www.deanwangpro.com/tags/spring-boot/"/>
+    
+      <category term="test" scheme="http://www.deanwangpro.com/tags/test/"/>
     
   </entry>
   
