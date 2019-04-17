@@ -96,18 +96,20 @@
 
 
 
-  <meta name="description" content="很久没更新了，加入了创业公司，从无到有的构建一套产品，从一开始的码框架到现在思考如何优化产品架构，适应更多的弹性需求和更大的数据量。时间真的是不够用，几乎快半年没有更新博客。近期产品慢慢走上正轨，又有小伙伴加入，所以抽出点时间总结一下这小半年内遇到的坑和走过的路。">
-<meta name="keywords" content="Java,Redis">
+  <meta name="description" content="好久没更新了，正好上周遇到一个获取不到客户端IP的BUG，开发环境用nginx做反代都是work的。上到生产环境就获取不到。思来想去就是生产上多了一个SLB负载均衡。但这是一个老的功能，之前也都是好的，突然就拿的不对了，非常之诡异。">
+<meta name="keywords" content="DevOps">
 <meta property="og:type" content="article">
-<meta property="og:title" content="短链接的简单实现">
-<meta property="og:url" content="http://www.deanwangpro.com/2017/08/20/dwz/index.html">
+<meta property="og:title" content="坑系列之阿里SLB上获取客户IP">
+<meta property="og:url" content="http://www.deanwangpro.com/2019/04/16/slb-real-ip/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
-<meta property="og:description" content="很久没更新了，加入了创业公司，从无到有的构建一套产品，从一开始的码框架到现在思考如何优化产品架构，适应更多的弹性需求和更大的数据量。时间真的是不够用，几乎快半年没有更新博客。近期产品慢慢走上正轨，又有小伙伴加入，所以抽出点时间总结一下这小半年内遇到的坑和走过的路。">
+<meta property="og:description" content="好久没更新了，正好上周遇到一个获取不到客户端IP的BUG，开发环境用nginx做反代都是work的。上到生产环境就获取不到。思来想去就是生产上多了一个SLB负载均衡。但这是一个老的功能，之前也都是好的，突然就拿的不对了，非常之诡异。">
 <meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2017-09-11T15:56:56.000Z">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2018-04-18/SLB%E5%AE%A2%E6%88%B7IP%E8%AE%BE%E7%BD%AE.jpg">
+<meta property="og:updated_time" content="2019-04-17T04:28:54.695Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="短链接的简单实现">
-<meta name="twitter:description" content="很久没更新了，加入了创业公司，从无到有的构建一套产品，从一开始的码框架到现在思考如何优化产品架构，适应更多的弹性需求和更大的数据量。时间真的是不够用，几乎快半年没有更新博客。近期产品慢慢走上正轨，又有小伙伴加入，所以抽出点时间总结一下这小半年内遇到的坑和走过的路。">
+<meta name="twitter:title" content="坑系列之阿里SLB上获取客户IP">
+<meta name="twitter:description" content="好久没更新了，正好上周遇到一个获取不到客户端IP的BUG，开发环境用nginx做反代都是work的。上到生产环境就获取不到。思来想去就是生产上多了一个SLB负载均衡。但这是一个老的功能，之前也都是好的，突然就拿的不对了，非常之诡异。">
+<meta name="twitter:image" content="http://www.deanwangpro.com/images/2018-04-18/SLB%E5%AE%A2%E6%88%B7IP%E8%AE%BE%E7%BD%AE.jpg">
 
 
 
@@ -116,7 +118,7 @@
 
 
 
-  <link rel="canonical" href="http://www.deanwangpro.com/2017/08/20/dwz/"/>
+  <link rel="canonical" href="http://www.deanwangpro.com/2019/04/16/slb-real-ip/"/>
 
 
 
@@ -126,7 +128,7 @@
   };
 </script>
 
-  <title>短链接的简单实现 | 大名Dean鼎</title>
+  <title>坑系列之阿里SLB上获取客户IP | 大名Dean鼎</title>
   
 
 
@@ -291,7 +293,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2017/08/20/dwz/"/>
+    <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2019/04/16/slb-real-ip/"/>
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Dean Wang"/>
@@ -308,7 +310,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">短链接的简单实现
+          <h1 class="post-title" itemprop="name headline">坑系列之阿里SLB上获取客户IP
 
               
             
@@ -334,7 +336,7 @@
                 
               
 
-              <time title="Created: 2017-08-20 00:00:00" itemprop="dateCreated datePublished" datetime="2017-08-20T00:00:00+08:00">2017-08-20</time>
+              <time title="Created: 2019-04-16 00:00:00" itemprop="dateCreated datePublished" datetime="2019-04-16T00:00:00+08:00">2019-04-16</time>
             
 
             
@@ -351,7 +353,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2017-09-11 23:56:56" itemprop="dateModified" datetime="2017-09-11T23:56:56+08:00">2017-09-11</time>
+                <time title="Modified: 2019-04-17 12:28:54" itemprop="dateModified" datetime="2019-04-17T12:28:54+08:00">2019-04-17</time>
               
             
           </span>
@@ -369,8 +371,8 @@
                 </span>
             
                 <span class="post-meta-item-text">Comments: </span>
-                <a href="/2017/08/20/dwz/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2017/08/20/dwz/" itemprop="commentCount"></span>
+                <a href="/2019/04/16/slb-real-ip/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/04/16/slb-real-ip/" itemprop="commentCount"></span>
                 </a>
               </span>
             
@@ -406,23 +408,34 @@
       
 
       
-        <p>很久没更新了，加入了创业公司，从无到有的构建一套产品，从一开始的码框架到现在思考如何优化产品架构，适应更多的弹性需求和更大的数据量。时间真的是不够用，几乎快半年没有更新博客。近期产品慢慢走上正轨，又有小伙伴加入，所以抽出点时间总结一下这小半年内遇到的坑和走过的路。<br><a id="more"></a></p>
-<p>说一说最近做的一个短链服务，短链服务其实很简单，其实就是一张表或者说是一个map：<br>+——-+———————–+<br>|  短链  |         长链           |<br>+——-+———————–+<br>| 7Y65s | <a href="https://www.google.com" target="_blank" rel="noopener">https://www.google.com</a> |<br>+——-+———————–+</p>
-<p>就是这样一个结构，当用户访问 your-domain/7Y65s, 去表里查询一下对应的长链，301到该链接就可以了。</p>
-<h3 id="优化"><a href="#优化" class="headerlink" title="优化"></a>优化</h3><p>基本的思路确定后，我们一点一点来优化。</p>
-<p>首先分析大量查询肯定会出现在通过短链找长链这段逻辑中，如果用数据库肯定影响效率，缓存势在必行，而且一旦短链生成基本是不会变的，所以也不存在失效问题（这里可能会有个批量Archive的处理）。在我的项目中，我选择了redis作为缓存，反正是key-value的其他缓存组件肯定也能做。选用redis的原因是还可以用INCR来统计访问量。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">redisTemplate.opsForHash().put(&quot;short-urls:&quot; + slug, &quot;long_url&quot;, url);</span><br><span class="line">redisTemplate.opsForHash().increment(&quot;short-urls:&quot; + slug, VISITS_FIELD, 1L);</span><br></pre></td></tr></table></figure>
-<p>查询这一侧做完，到了生成短链这一块，这里实际上是刚刚说的那张表的create操作。这里有个基本逻辑是：当一个长链还没有短链的时候，我们生成它并返回，如果已经存在，直接获取返回。</p>
-<p>生成的算法直接贴代码：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">package io.naza.urlshortener.generator;</span><br><span class="line"></span><br><span class="line">import org.apache.commons.codec.digest.DigestUtils;</span><br><span class="line"></span><br><span class="line">public class UrlShortHelper &#123;</span><br><span class="line"></span><br><span class="line">    private final static int LENGTH = 6;</span><br><span class="line"></span><br><span class="line">    private static char[] DIGITS = &quot;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789&quot;.toCharArray();</span><br><span class="line"></span><br><span class="line">    public static String[] shorten(String url) &#123;</span><br><span class="line">        String key = &quot;SECRET&quot;; // 自定义生成MD5加密字符串前的混合KEY</span><br><span class="line">        String hex = DigestUtils.md5Hex(key + url);</span><br><span class="line">        int hexLen = hex.length();</span><br><span class="line">        int subHexLen = hexLen / 8;</span><br><span class="line">        String[] shortStr = new String[subHexLen];</span><br><span class="line"></span><br><span class="line">        for (int i = 0; i &lt; subHexLen; i++) &#123;</span><br><span class="line">            StringBuilder outChars = new StringBuilder();</span><br><span class="line">            int j = i + 1;</span><br><span class="line">            String subHex = hex.substring(i * 8, j * 8);</span><br><span class="line">            long idx = Long.valueOf(&quot;3FFFFFFF&quot;, 16) &amp; Long.valueOf(subHex, 16);</span><br><span class="line">            for (int k = 0; k &lt; LENGTH; k++) &#123;</span><br><span class="line">                int index = (int) (Long.valueOf(&quot;0000003D&quot;, 16) &amp; idx);</span><br><span class="line">                outChars.append(DIGITS[index]);</span><br><span class="line">                idx = idx &gt;&gt; 5;</span><br><span class="line">            &#125;</span><br><span class="line">            shortStr[i] = outChars.toString();</span><br><span class="line">        &#125;</span><br><span class="line">        return shortStr;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>项目中按照长链生成一个固定长度为6位的短链接，只要长链是一样的，那么每次生成的短链也一样。</p>
-<p>考虑到每次生成短链前要查询一下长链是不是存在，继续加一个小缓存，这次反过来，长链作key，短链做value。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redisTemplate.opsForHash().put(&quot;short-urls&quot;, url, slug);</span><br></pre></td></tr></table></figure>
-<h3 id="尾声"><a href="#尾声" class="headerlink" title="尾声"></a>尾声</h3><p>用比较简单的方式完成一个短链接服务，在做短链跳转的过程中可以分析用户的各类行为，比如操作系统，浏览器版本，地域等等。最后说两点要注意的：</p>
+        <p>好久没更新了，正好上周遇到一个获取不到客户端IP的BUG，开发环境用nginx做反代都是work的。上到生产环境就获取不到。思来想去就是生产上多了一个SLB负载均衡。但这是一个老的功能，之前也都是好的，突然就拿的不对了，非常之诡异。</p>
+<a id="more"></a>
+<h1 id="故障重现"><a href="#故障重现" class="headerlink" title="故障重现"></a>故障重现</h1><p>为了确认不是代码的问题，我们使用tcpdump在服务结点上抓包。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">GET /api/foo/bar HTTP/1.1</span><br><span class="line">remoteip: 122.xx.xx.xx</span><br><span class="line">x-forwarded-for: 122.xx.xx.xx, 10.130.0.1</span><br><span class="line">accept: application/json, text/plain, */*</span><br><span class="line">dnt: 1</span><br><span class="line">user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36</span><br><span class="line">referer: https://app.example.com/login</span><br><span class="line">accept-language: zh-CN,zh;q=0.9</span><br><span class="line">x-forwarded-host: app.example.com,app.example.com</span><br><span class="line">x-forwarded-port: 80,80</span><br><span class="line">x-forwarded-proto: http,http</span><br><span class="line">x-request-id: d74323d45afd4609977eb233d59f9a9e</span><br><span class="line">x-trace-id: d74323d45afd4609977eb233d59f9a9e</span><br><span class="line">x-real-ip: 10.130.0.1</span><br><span class="line">x-locale: zh_CN</span><br><span class="line">host: app.example.com</span><br><span class="line">Accept-Encoding: gzip</span><br><span class="line">Content-Length: 0</span><br><span class="line">Connection: Keep-Alive</span><br></pre></td></tr></table></figure>
+<p>发现报文头的X-Real-IP是一个VPC的内网地址，说明在我们的nginx中获取的<code>$remote_addr</code>就是<code>10.130.0.1</code>，是SLB的地址。</p>
+<p>nginx配置如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">http &#123;</span><br><span class="line">		server &#123;</span><br><span class="line">		    listen       80;</span><br><span class="line">		    server_name  192.168.50.88;</span><br><span class="line">		    root  /usr/local/var/www/html;</span><br><span class="line">		</span><br><span class="line">		    location /api &#123;</span><br><span class="line">		        proxy_set_header X-Real-IP $remote_addr;  #将remode_addr写入Http Header</span><br><span class="line">			    	proxy_pass http://backend_hosts;</span><br><span class="line">		    &#125;</span><br><span class="line">		&#125;</span><br><span class="line">		</span><br><span class="line">		upstream backend_hosts &#123;</span><br><span class="line">		    server 127.0.0.1:8080;</span><br><span class="line">		&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>配置很简单，没有使用realip模块，直接将<code>remote_addr</code>认定为客户端ip。大家知道<code>remote_addr</code>不是http头，不容易伪造。它是服务端与客户端建立socket连接时，从客户端直接获取的。但是为什么这里获取的ip却是SLB自身的IP呢？</p>
+<h1 id="故障分析"><a href="#故障分析" class="headerlink" title="故障分析"></a>故障分析</h1><p>再仔细分析抓包内容，发现其实报文中是包含客户端原始IP的，分别在<code>x-forwarded-for</code>和<code>remoteip</code>上。这里<code>x-forwarded-for</code>的值引起了我们的注意，如果是用nginx原始的<code>$proxy_add_x_forwarded_for</code>参数，客户端IP应该会放在最后，但是这里在第一位，说明SLB对这个头做过处理。<br>找到devops询问是否更改过SLB的配置，发现确实做过调整。为了直接在SLB实现http到https的重定向，将原本的4层负载均衡（tcp）换成了7层负载均衡（http）。试着将SLB恢复原有配置，可以获取客户端IP。最终问题定位到SLB的配置上。<br>再次阅读<a href="https://www.alibabacloud.com/help/zh/doc-detail/54007.htm" target="_blank" rel="noopener">SLB手册</a>，发现以下描述：</p>
+<blockquote>
+<p>负载均衡提供获取客户端真实IP地址的功能，该功能默认是开启的。<br>四层负载均衡（TCP协议）服务可以直接在后端ECS上获取客户端的真实IP地址，无需进行额外的配置。<br>七层负载均衡（HTTP/HTTPS协议）服务需要对应用服务器进行配置，然后使用X-Forwarded-For的方式获取客户端的真实IP地址。<br>真实的客户端IP会被负载均衡放在HTTP头部的X-Forwarded-For字段，格式如下：<br>X-Forwarded-For: 用户真实IP, 代理服务器1-IP， 代理服务器2-IP，…<br>当使用此方式获取客户端真实IP时，获取的第一个地址就是客户端真实IP。</p>
+</blockquote>
+<p>查看SLB配置页面确实也如文档所说</p>
+<p><img src="/images/2018-04-18/SLB%E5%AE%A2%E6%88%B7IP%E8%AE%BE%E7%BD%AE.jpg" alt="SLB客户IP设置"></p>
+<p>至于<code>remote_addr</code>获取到SLB的IP也就很容易理解了，当没有上级代理没有透传tcp连接时，<code>remote_addr</code>获取的就是上一层代理的ip地址。</p>
+<h1 id="故障恢复"><a href="#故障恢复" class="headerlink" title="故障恢复"></a>故障恢复</h1><p>既然定位到问题了，那么需要着手解决，改回4层LB是不现实的。<br>阿里云其实提供了两个方案：</p>
 <ol>
-<li>redis毕竟是作为缓存使用的，建议数据还是要落一次在DB，比如在生成短链时，写入到DB一份。这样当redis挂了，还可以从DB中全量恢复。</li>
-<li>对于长时间没有PV的短链，比如超过1年没有PV，需要做批量清理，一般一个月一次就可以了。 </li>
+<li>按照文档上说的，获取X-Forwarded-For的第一段IP即为客户真实IP</li>
+<li>通过抓包发现SLB会添加一个remoteip的头，直接使用就行</li>
 </ol>
+<p>我们偷个懒，直接用第二种，在nginx将remoteip塞到X-Real-IP上，这样不用打hotfix即可修复问题。</p>
+<h1 id="花絮"><a href="#花絮" class="headerlink" title="花絮"></a>花絮</h1><p>其实在故障恢复的过程中，本想在本地复现的。过程就是用nginx搭建一个4层负载代理到7层负载最终到服务。如下图所示</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">+------------------+      +----------------+      +---------------+    +----------------+</span><br><span class="line">|                  |      |                |      |               |    |                |</span><br><span class="line">|                  |      |                |      |               |    |                |</span><br><span class="line">|      Client      +------&gt;    TCP LB      +-----&gt;+     HTTP LB   +----&gt;     SERVER     |</span><br><span class="line">|                  |      |                |      |               |    |                |</span><br><span class="line">|                  |      |                |      |               |    |                |</span><br><span class="line">+------------------+      +----------------+      +---------------+    +----------------+</span><br></pre></td></tr></table></figure>
+<p>tcp负载的配置如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">stream &#123;</span><br><span class="line">    upstream tcp_proxy &#123;</span><br><span class="line">        server 127.0.0.1:80;</span><br><span class="line">    &#125;</span><br><span class="line">    server &#123;</span><br><span class="line">        listen 88;</span><br><span class="line">        proxy_connect_timeout 1s;</span><br><span class="line">        proxy_timeout 300s;</span><br><span class="line">        proxy_pass tcp_proxy;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最终发现nginx的tcp代理有个巨大的坑，就是无法透传<code>remote_addr</code>，如果tcp代理跳过http直连服务，获取到的remote_addr就是127.0.0.1这个本机地址。<br>翻了翻文档，发现还真有<a href="https://www.nginx.com/blog/ip-transparency-direct-server-return-nginx-plus-transparent-proxy/" target="_blank" rel="noopener">官方说明</a></p>
+<p>简而言之，就是要买nginx-plus，里面有个<code>proxy_bind $remote_addr transparent;</code>可以实现透传功能，满满的套路。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>DevOps有的时候真的会影响到业务，不同环境不同配置造成难以预料的影响。虽然我们的服务都已经实现了容器化。但是对于这些PaaS组件如何统一配置并且将配置代码化，让多个环境（包括开发，测试，staging）保持一致还是挺值得研究的话题。</p>
 
       
     </div>
@@ -469,9 +482,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/Java/" rel="tag"># Java</a>
-          
-            <a href="/tags/Redis/" rel="tag"># Redis</a>
+            <a href="/tags/DevOps/" rel="tag"># DevOps</a>
           
         </div>
       
@@ -484,8 +495,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2017/03/22/spring-boot-monitor/" rel="next" title="Spring boot监控初探">
-                <i class="fa fa-chevron-left"></i> Spring boot监控初探
+              <a href="/2019/02/18/road-of-microservice/" rel="next" title="小团队的微服务之路">
+                <i class="fa fa-chevron-left"></i> 小团队的微服务之路
               </a>
             
           </div>
@@ -493,10 +504,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2017/09/11/activiti-delegate-interceptor/" rel="prev" title="Activiti系列一之delegate拦截器">
-                Activiti系列一之delegate拦截器 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -767,7 +774,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#优化"><span class="nav-number">1.</span> <span class="nav-text">优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#尾声"><span class="nav-number">2.</span> <span class="nav-text">尾声</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#故障重现"><span class="nav-number">1.</span> <span class="nav-text">故障重现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#故障分析"><span class="nav-number">2.</span> <span class="nav-text">故障分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#故障恢复"><span class="nav-number">3.</span> <span class="nav-text">故障恢复</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#花絮"><span class="nav-number">4.</span> <span class="nav-text">花絮</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
             
 
           </div>
@@ -952,9 +959,9 @@
 
 <script>
   var disqus_config = function() {
-    this.page.url = "http://www.deanwangpro.com/2017/08/20/dwz/";
-    this.page.identifier = "2017/08/20/dwz/";
-    this.page.title = '短链接的简单实现';
+    this.page.url = "http://www.deanwangpro.com/2019/04/16/slb-real-ip/";
+    this.page.identifier = "2019/04/16/slb-real-ip/";
+    this.page.title = '坑系列之阿里SLB上获取客户IP';
     };
   function loadComments() {
     var d = document, s = d.createElement('script');
