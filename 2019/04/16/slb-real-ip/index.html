@@ -104,12 +104,12 @@
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="好久没更新了，正好上周遇到一个获取不到客户端IP的BUG，开发环境用nginx做反代都是work的。上到生产环境就获取不到。思来想去就是生产上多了一个SLB负载均衡。但这是一个老的功能，之前也都是好的，突然就拿的不对了，非常之诡异。">
 <meta property="og:locale" content="en">
-<meta property="og:image" content="http://www.deanwangpro.com/images/2018-04-18/SLB%E5%AE%A2%E6%88%B7IP%E8%AE%BE%E7%BD%AE.jpg">
-<meta property="og:updated_time" content="2019-04-17T04:28:54.695Z">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-16/SLB客户IP设置.jpg">
+<meta property="og:updated_time" content="2019-04-19T12:55:03.229Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="坑系列之阿里SLB上获取客户IP">
 <meta name="twitter:description" content="好久没更新了，正好上周遇到一个获取不到客户端IP的BUG，开发环境用nginx做反代都是work的。上到生产环境就获取不到。思来想去就是生产上多了一个SLB负载均衡。但这是一个老的功能，之前也都是好的，突然就拿的不对了，非常之诡异。">
-<meta name="twitter:image" content="http://www.deanwangpro.com/images/2018-04-18/SLB%E5%AE%A2%E6%88%B7IP%E8%AE%BE%E7%BD%AE.jpg">
+<meta name="twitter:image" content="http://www.deanwangpro.com/images/2019-04-16/SLB客户IP设置.jpg">
 
 
 
@@ -353,7 +353,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2019-04-17 12:28:54" itemprop="dateModified" datetime="2019-04-17T12:28:54+08:00">2019-04-17</time>
+                <time title="Modified: 2019-04-19 20:55:03" itemprop="dateModified" datetime="2019-04-19T20:55:03+08:00">2019-04-19</time>
               
             
           </span>
@@ -421,7 +421,7 @@
 <p>负载均衡提供获取客户端真实IP地址的功能，该功能默认是开启的。<br>四层负载均衡（TCP协议）服务可以直接在后端ECS上获取客户端的真实IP地址，无需进行额外的配置。<br>七层负载均衡（HTTP/HTTPS协议）服务需要对应用服务器进行配置，然后使用X-Forwarded-For的方式获取客户端的真实IP地址。<br>真实的客户端IP会被负载均衡放在HTTP头部的X-Forwarded-For字段，格式如下：<br>X-Forwarded-For: 用户真实IP, 代理服务器1-IP， 代理服务器2-IP，…<br>当使用此方式获取客户端真实IP时，获取的第一个地址就是客户端真实IP。</p>
 </blockquote>
 <p>查看SLB配置页面确实也如文档所说</p>
-<p><img src="/images/2018-04-18/SLB%E5%AE%A2%E6%88%B7IP%E8%AE%BE%E7%BD%AE.jpg" alt="SLB客户IP设置"></p>
+<p><img src="/images/2019-04-16/SLB客户IP设置.jpg" alt="SLB客户IP设置"></p>
 <p>至于<code>remote_addr</code>获取到SLB的IP也就很容易理解了，当没有上级代理没有透传tcp连接时，<code>remote_addr</code>获取的就是上一层代理的ip地址。</p>
 <h1 id="故障恢复"><a href="#故障恢复" class="headerlink" title="故障恢复"></a>故障恢复</h1><p>既然定位到问题了，那么需要着手解决，改回4层LB是不现实的。<br>阿里云其实提供了两个方案：</p>
 <ol>
@@ -505,6 +505,10 @@
 
           <div class="post-nav-prev post-nav-item">
             
+              <a href="/2019/04/19/microservice-practice/" rel="prev" title="小团队微服务落地实践">
+                小团队微服务落地实践 <i class="fa fa-chevron-right"></i>
+              </a>
+            
           </div>
         </div>
       
@@ -583,7 +587,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">29</span>
+                    <span class="site-state-item-count">30</span>
                     <span class="site-state-item-name">posts</span>
                   </a>
                 </div>

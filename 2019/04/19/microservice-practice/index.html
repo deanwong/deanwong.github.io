@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html class="theme-next mist" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222"/>
+
+
+
+
+
+
+
+
+
+
+  <meta name="google-site-verification" content="6I4nQGwB4yLqPannMFWvXqWhKoRXMlOOaa5jtowR9Y0"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2"/>
+
+<link rel="stylesheet" href="/css/main.css?v=7.0.1"/>
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.0.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.0.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.0.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.0.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '7.0.1',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false,"dimmer":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: true,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="我们的产品是一个客户数据平台。产品的一个重要部分类似企业版的”捷径”，让运营人员可以像搭乐高积木一样创建企业的自动化流程，无需编程即可让数据流动起来。从这一点上，我们的业务特点就是聚少成多，把一个个服务连接起来就成了数据的海洋。理念上跟微服务一致，一个个独立的小服务最终实现大功能。当然我们一开始也没有使用微服务，当业务还未成型就开始考虑架构，那么就是”过度设计”。另一方面需要考虑的因素就是”人”，">
+<meta name="keywords" content="spring-cloud,ci,microservice">
+<meta property="og:type" content="article">
+<meta property="og:title" content="小团队微服务落地实践">
+<meta property="og:url" content="http://www.deanwangpro.com/2019/04/19/microservice-practice/index.html">
+<meta property="og:site_name" content="大名Dean鼎">
+<meta property="og:description" content="我们的产品是一个客户数据平台。产品的一个重要部分类似企业版的”捷径”，让运营人员可以像搭乐高积木一样创建企业的自动化流程，无需编程即可让数据流动起来。从这一点上，我们的业务特点就是聚少成多，把一个个服务连接起来就成了数据的海洋。理念上跟微服务一致，一个个独立的小服务最终实现大功能。当然我们一开始也没有使用微服务，当业务还未成型就开始考虑架构，那么就是”过度设计”。另一方面需要考虑的因素就是”人”，">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/CI-7f63954d-d630-4d00-a138-8cbbe6810812.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/-9e423b2c-8c0b-4ae5-80aa-1414394848feuntitled.jpg">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/-47c5e4c3-9d49-442f-bd61-1d0f2167e23euntitled.jpg">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/Test-cce3af46-fa1b-4bdc-996c-69a19fbfe7dc.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/pasted-image-91c2effb-ad25-424a-acf3-b0b6e46c97ee.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/perf-a70ca413-382e-4d98-b696-752dc6a56c90.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/pasted-image-2-22b160cb-d527-4d8b-a608-28cbb672fe0e.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/jenkins-ac588247-2366-4338-9bb7-8ac8b8520187.jpg">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/harbor1-418e44ad-9782-4137-bd7f-8644082d13b4.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/harbor2-ca928974-9b42-4262-8272-892a428ebd56.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/deploymentconfig-b8e607bf-23b0-440d-8e8c-f157281c5765.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/router-5483dbbd-e127-4905-a5cf-6d0e6db5d79d.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/router2-52da6dd4-60a7-449f-ba93-73e99f0f04ac.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/Untitled-eedbc8b1-14e7-4a64-b29c-8703fb84ff88.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/grafana1-d2675f57-eeca-4669-a764-70cb3af9fb68.png">
+<meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/-5f7ae443-5d3e-48bb-9c67-cc60e717d33cuntitled.jpg">
+<meta property="og:updated_time" content="2019-04-19T13:00:21.594Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="小团队微服务落地实践">
+<meta name="twitter:description" content="我们的产品是一个客户数据平台。产品的一个重要部分类似企业版的”捷径”，让运营人员可以像搭乐高积木一样创建企业的自动化流程，无需编程即可让数据流动起来。从这一点上，我们的业务特点就是聚少成多，把一个个服务连接起来就成了数据的海洋。理念上跟微服务一致，一个个独立的小服务最终实现大功能。当然我们一开始也没有使用微服务，当业务还未成型就开始考虑架构，那么就是”过度设计”。另一方面需要考虑的因素就是”人”，">
+<meta name="twitter:image" content="http://www.deanwangpro.com/images/2019-04-19/CI-7f63954d-d630-4d00-a138-8cbbe6810812.png">
+
+
+
+  <link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml"/>
+
+
+
+
+  <link rel="canonical" href="http://www.deanwangpro.com/2019/04/19/microservice-practice/"/>
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>小团队微服务落地实践 | 大名Dean鼎</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">大名Dean鼎</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br/>Home</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br/>Archives</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2019/04/19/microservice-practice/"/>
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Dean Wang"/>
+      <meta itemprop="description" content="理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover"/>
+      <meta itemprop="image" content="/images/avatar-cartoon.jpg"/>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="大名Dean鼎"/>
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">小团队微服务落地实践
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2019-04-19 00:00:00 / Modified: 21:00:21" itemprop="dateCreated datePublished" datetime="2019-04-19T00:00:00+08:00">2019-04-19</time>
+            
+
+            
+              
+
+              
+            
+          </span>
+
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Comments: </span>
+                <a href="/2019/04/19/microservice-practice/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/04/19/microservice-practice/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon"
+            >
+            <i class="fa fa-eye"></i>
+             Views:  
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>我们的产品是一个客户数据平台。产品的一个重要部分类似企业版的”捷径”，让运营人员可以像搭乐高积木一样创建企业的自动化流程，无需编程即可让数据流动起来。从这一点上，我们的业务特点就是聚少成多，把一个个服务连接起来就成了数据的海洋。理念上跟微服务一致，一个个独立的小服务最终实现大功能。当然我们一开始也没有使用微服务，当业务还未成型就开始考虑架构，那么就是”过度设计”。另一方面需要考虑的因素就是”人”，有没有经历过微服务项目的人，团队是否有devops文化等等，综合考量是否需要微服务化。</p>
+<a id="more"></a>
+<h1 id="要不要微服务"><a href="#要不要微服务" class="headerlink" title="要不要微服务"></a>要不要微服务</h1><p>微服务的好处是什么？</p>
+<ul>
+<li>相比于单体应用，每个服务的复杂度会下降，特别是数据层面（数据表关系）更清晰，不会一个应用上百张表，新员工上手快。</li>
+<li>对于稳定的核心业务可以单独成为一个服务，降低该服务的发布频率，也减少测试人员压力。</li>
+<li>可以将不同密集型的服务搭配着放到物理机上，或者单独对某个服务进行扩容，实现硬件资源的充分利用。</li>
+<li>部署灵活，在私有化项目中，如果客户有不需要的业务，那么对应的微服务就不需要部署，节省硬件成本，就像上文提到的乐高积木理念。</li>
+</ul>
+<p>微服务有什么挑战？</p>
+<ul>
+<li>一旦设计不合理，交叉调用，相互依赖频繁，就会出现牵一发动全身的局面。想象单个应用内service层依赖复杂的场面就明白了。</li>
+<li>项目多了，轮子需求也会变多，需要有人专注公共代码的开发。</li>
+<li>开发过程的质量需要通过持续集成（CI）严格把控，提高自动化测试的比例，因为往往一个接口改动会涉及多个项目，光靠人工测试很难覆盖所有情况。</li>
+<li>发布过程会变得复杂，因为微服务要发挥全部能力需要容器化的加持，容器编排就是最大的挑战。</li>
+<li>线上运维，当系统出现问题需要快速定位到某个机器节点或具体服务，监控和链路日志分析都必不可少。</li>
+</ul>
+<p>下面详细说说我们是怎么应对这些挑战的</p>
+<h1 id="开发过程的挑战"><a href="#开发过程的挑战" class="headerlink" title="开发过程的挑战"></a>开发过程的挑战</h1><h2 id="持续集成"><a href="#持续集成" class="headerlink" title="持续集成"></a>持续集成</h2><p>通过CI将开发过程规范化，串联自动化测试和人工Review。</p>
+<p>我们使用Gerrit作为代码&amp;分支管理工具，在流程管理上遵循Gitlab的工作流模型。</p>
+<ul>
+<li>开发人员提交代码至Gerrit的magic分支</li>
+<li>代码Review人员Review代码并给出评分</li>
+<li>对应Repo的Jenkins job监听分支上的变动，触发Build job。经过IT和Sonar的静态代码检查给出评分</li>
+<li>Review和Verify皆通过之后，相应Repo的负责人将代码merge到真实分支上</li>
+<li>若有一项不通过，代码修改后重复过程</li>
+<li>Gerrit将代码实时同步备份至的两个远程仓库中</li>
+</ul>
+<p><img src="/images/2019-04-19/CI-7f63954d-d630-4d00-a138-8cbbe6810812.png" alt=""></p>
+<h2 id="集成测试"><a href="#集成测试" class="headerlink" title="集成测试"></a>集成测试</h2><p>一般来说代码自动执行的都是单元测试(Unit Test)，即不依赖任何资源（数据库，消息队列）和其他服务，只测试本系统的代码逻辑。但这种测试需要mock的部分非常多，一是写起来复杂，二是代码重构起来跟着改的测试用例也非常多，显得不够敏捷。而且一旦要求开发团队要达到某个覆盖率，就会出现很多造假的情况。所以我们选择主要针对API进行测试，即针对controller层的测试。另外对于一些公共组件如分布式锁，json序列化模块也会有对应的测试代码覆盖。测试代码在运行时会采用一个随机端口拉起项目，并通过http client对本地API发起请求，测试只会对外部服务做mock，数据库的读写，消息队列的消费等都是真实操作，相当于把Jmeter的事情在Java层面完成一部分。Spring Boot项目可以很容易的启动这样一个测试环境，代码如下：</p>
+<pre><code>@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+</code></pre><p>测试过程的http client推荐使用<code>io.rest-assured:rest-assured</code>支持JsonPath，十分好用。</p>
+<p>测试时需要注意的一个点是测试数据的构造和清理。构造又分为schema的创建和测试数据的创建。</p>
+<ul>
+<li>schema由flyway处理，在启用测试环境前先删除所有表，再进行表的创建。</li>
+<li>测试数据可以通过<code>@Sql</code>读取一个sql文件进行创建，在一个用例结束后再清除这些数据。</li>
+</ul>
+<p>顺带说一下，基于flyway的schema upgrade功能我们封成了独立的项目，每个微服务都有自己的upgrade项目，好处一是支持command-line模式，可以细粒度的控制升级版本，二是也可以支持分库分表以后的schema操作。upgrade项目也会被制作成docker image提交到docker hub。</p>
+<p>测试在每次提交代码后都会执行，Jenkins监听gerrit的提交，通过<code>docker run -rm {upgrade项目的image}</code>先执行一次schema upgrade，然后<code>gradle test</code>执行测试。最终会生成测试报告和覆盖率报告，覆盖率报告采用jacoco的gradle插件生成。如图。</p>
+<p><img src="/images/2019-04-19/-9e423b2c-8c0b-4ae5-80aa-1414394848feuntitled.jpg" alt=""></p>
+<p><img src="/images/2019-04-19/-47c5e4c3-9d49-442f-bd61-1d0f2167e23euntitled.jpg" alt=""></p>
+<p>这里多提一点，除了集成测试，服务之间的接口要保证兼容，实际上还需要一种consumer-driven testing tool，就是说接口消费端先写接口测试用例，然后发布到一个公共区域，接口提供方发布接口时也会执行这个公共区域的用例，一旦测试失败，表示接口出现了不兼容的情况。比较推荐大家使用Pact或是Spring Cloud Contact。我们目前的契约基于”人的信任“，毕竟服务端开发者还不多，所以没有必要使用这样一套工具。</p>
+<p>集成测试的同时还会进行静态代码检查，我们用的是sonar，当所有检查通过后jenkins会+1分，再由reviewer进行代码review。</p>
+<h2 id="自动化测试"><a href="#自动化测试" class="headerlink" title="自动化测试"></a>自动化测试</h2><p>单独拿自动化测试出来说，就是因为它是质量保证的非常重要的一环，上文能在CI中执行的测试都是针对单个微服务的，那么当所有服务（包括前端页面）都在一起工作的时候是否会出现问题，就需要一个更接近线上的环境来进行测试了。</p>
+<p>在自动化测试环节，我们结合Docker提高一定的工作效率并提高测试运行时环境的一致性以及可移植性。在准备好基础的Pyhton镜像以及Webdriver（selenium）之后，我们的自动化测试工作主要由以下主要步骤组成</p>
+<ul>
+<li>测试人员在本地调试测试代码并提交至Gerrit</li>
+<li>Jenkins进行测试运行时环境的镜像制作，主要将引用的各种组件和库打包进一个Python的基础镜像</li>
+<li>通过Jenkins定时或手动触发，调用环境部署的job将专用的自动化测试环境更新，然后拉取自动化测试代码启动一次性的自动化测试运行时环境的Docker容器，将代码和测试报告的路径镜像至容器内</li>
+<li>自动化测试过程将在容器内进行</li>
+<li>测试完成之后，不必手动清理产生的各种多余内容，直接在Jenkins上查看发布出来的测试结果与趋势</li>
+</ul>
+<p><img src="/images/2019-04-19/Test-cce3af46-fa1b-4bdc-996c-69a19fbfe7dc.png" alt=""></p>
+<p><img src="/images/2019-04-19/pasted-image-91c2effb-ad25-424a-acf3-b0b6e46c97ee.png" alt=""></p>
+<p>关于部分性能测试的执行，我们同样也将其集成到Jenkins中，在可以直观的通过一些结果数值来观察版本性能变化情况的回归测试和基础场景，将会很大程度的提高效率、便捷的观察趋势</p>
+<ul>
+<li>测试人员在本地调试测试代码并提交至Gerrit</li>
+<li>通过Jenkins定时或手动触发，调用环境部署的job将专用的性能测试环境更新以及可能的Mock Server更新</li>
+<li>拉取最新的性能测试代码，通过Jenkins的性能测试插件来调用测试脚本</li>
+<li>测试完成之后，直接在Jenkins上查看通过插件发布出来的测试结果与趋势</li>
+</ul>
+<p><img src="/images/2019-04-19/perf-a70ca413-382e-4d98-b696-752dc6a56c90.png" alt=""></p>
+<p><img src="/images/2019-04-19/pasted-image-2-22b160cb-d527-4d8b-a608-28cbb672fe0e.png" alt=""></p>
+<h1 id="发布过程的挑战"><a href="#发布过程的挑战" class="headerlink" title="发布过程的挑战"></a>发布过程的挑战</h1><p>上面提到微服务一定需要结合容器化才能发挥全部优势，容器化就意味线上有一套容器编排平台。我们目前采用是Redhat的Openshift。所以发布过程较原来只是启动jar包相比要复杂的多，需要结合容器编排平台的特点找到合适的方法。</p>
+<h2 id="镜像准备"><a href="#镜像准备" class="headerlink" title="镜像准备"></a>镜像准备</h2><p>公司开发基于gitlab的工作流程，git分支为master，pre-production和prodution三个分支，同时生产版本发布都打上对应的tag。每个项目代码里面都包含dockerfile与jenkinsfile，通过jenkins的多分支pipeline来打包docker镜像并推送到harbor私库上。</p>
+<p><img src="/images/2019-04-19/jenkins-ac588247-2366-4338-9bb7-8ac8b8520187.jpg" alt=""></p>
+<p>docker镜像的命令方式为 <code>项目名/分支名:git_commit_id</code>，如 <code>funnel/production:4ee0b052fd8bd3c4f253b5c2777657424fccfbc9</code>，tag版本的docker镜像命名为 <code>项目名/release:tag名</code>，如 <code>funnel/release:18.10.R1</code></p>
+<p><img src="/images/2019-04-19/harbor1-418e44ad-9782-4137-bd7f-8644082d13b4.png" alt=""></p>
+<p><img src="/images/2019-04-19/harbor2-ca928974-9b42-4262-8272-892a428ebd56.png" alt=""></p>
+<p>在jenkins中执行build docker image job时会在每次pull代码之后调用harbor的api来判断此版本的docker image是否已经存在，如果存在就不执行后续编译打包的stage。在jenkins的发布任务中会调用打包job，避免了重复打包镜像，这样就大大的加快了发布速度。</p>
+<h2 id="数据库Schema升级"><a href="#数据库Schema升级" class="headerlink" title="数据库Schema升级"></a>数据库Schema升级</h2><p>数据库的升级用的是flyway，打包成docker镜像后，在openshift中创建job去执行数据库升级。job可以用最简单的命令行的方式去创建</p>
+<pre><code>oc run upgrade-foo --image=upgrade/production --replicas=1 --restart=OnFailure --command -- java -jar -Dprofile=production /app/upgrade-foo.jar
+</code></pre><p>脚本升级任务也集成在jenkins中。</p>
+<h2 id="容器发布"><a href="#容器发布" class="headerlink" title="容器发布"></a>容器发布</h2><p>openshift有个特别概念叫DeploymentConfig，原生k8s Deployment与之相似，但openshift的DeploymentConfig功能更多些。</p>
+<p>Deploymentconfig关联了一个叫做ImageStreamTag的东西，而这个ImagesStreamTag和实际的镜像地址做关联，当ImageStreamTag关联的镜像地址发生了变更，就会触发相应的DeploymentConfig重新部署。我们发布是使用了jenkins+openshift插件，只需要将项目对应的ImageStreamTag指向到新生成的镜像上，就触发了部署。</p>
+<p><img src="/images/2019-04-19/deploymentconfig-b8e607bf-23b0-440d-8e8c-f157281c5765.png" alt=""></p>
+<p>如果是服务升级，已经有容器在运行怎么实现平滑替换而不影响业务呢？</p>
+<p>配置Pod的健康检查，Health Check只配置了ReadinessProbe，没有用LivenessProbe。因为LivenessProbe在健康检查失败之后，会将故障的pod直接干掉，故障现场没有保留，不利于问题的排查定位。而ReadinessProbe只会将故障的pod从service中踢除，不接受流量。使用了ReadinessProbe后，可以实现滚动升级不中断业务，只有当pod健康检查成功之后，关联的service才会转发流量请求给新升级的pod，并销毁旧的pod。</p>
+<pre><code>readinessProbe:
+    failureThreshold: 4
+    httpGet:
+      path: /actuator/metrics
+      port: 8090
+      scheme: HTTP
+    initialDelaySeconds: 60
+    periodSeconds: 15
+    successThreshold: 2
+    timeoutSeconds: 2
+</code></pre><h1 id="线上运维的挑战"><a href="#线上运维的挑战" class="headerlink" title="线上运维的挑战"></a>线上运维的挑战</h1><h2 id="服务间调用"><a href="#服务间调用" class="headerlink" title="服务间调用"></a>服务间调用</h2><p>Spring Cloud使用eruka接受服务注册请求，并在内存中维护服务列表。当一个服务作为客户端发起跨服务调用时，会先获取服务提供者列表，再通过某种负载均衡算法取得具体的服务提供者地址(ip + port)，即所谓的客户端服务发现。在本地开发环境中我们使用这种方式。</p>
+<p>由于Openshift天然就提供服务端服务发现，即service模块，客户端无需关注服务发现具体细节，只需知道服务的域名就可以发起调用。由于我们有nodejs应用，在实现eureka的注册和去注册的过程中都遇到过一些问题，不能达到生产级别。所以决定直接使用service方式替换掉eureka，也为以后采用service mesh做好铺垫。具体的做法是，配置环境变量<code>EUREKA_CLIENT_ENABLED=false</code>，<code>RIBBON_EUREKA_ENABLED=false</code>，并将服务列表如 <code>FOO_RIBBON_LISTOFSERVERS: &#39;[http://foo:8080](http://foo:8080/)&#39;</code> 写进configmap中，以<code>envFrom: configMapRef</code>方式获取环境变量列表。</p>
+<p>如果一个服务需要暴露到外部怎么办，比如暴露前端的html文件或者服务端的gateway。</p>
+<p>Openshift内置的haproxy router，相当于k8s的ingress，直接在Openshift的web界面里面就可以很方便的配置。我们将前端的资源也作为一个Pod并有对应的Service，当请求进入haproxy符合规则就会转发到ui所在的Service。router支持A/B test等功能，唯一的遗憾是还不支持url rewrite。</p>
+<p><img src="/images/2019-04-19/router-5483dbbd-e127-4905-a5cf-6d0e6db5d79d.png" alt=""></p>
+<p><img src="/images/2019-04-19/router2-52da6dd4-60a7-449f-ba93-73e99f0f04ac.png" alt=""></p>
+<p>对于需要url rewrite的场景怎么办？那么就直接将nginx也作为一个服务，再做一层转发。流程变成 router → nginx pod → 具体提供服务的pod。</p>
+<h2 id="链路跟踪"><a href="#链路跟踪" class="headerlink" title="链路跟踪"></a>链路跟踪</h2><p>开源的全链路跟踪很多，比如spring cloud sleuth + zipkin，国内有美团的CAT等等。其目的就是当一个请求经过多个服务时，可以通过一个固定值获取整条请求链路的行为日志，基于此可以再进行耗时分析等，衍生出一些性能诊断的功能。不过对于我们而言，首要目的就是trouble shooting，出了问题需要快速定位异常出现在什么服务，整个请求的链路是怎样的。</p>
+<p>为了让解决方案轻量，我们在日志中打印RequestId以及TraceId来标记链路。RequestId在gateway生成表示唯一一次请求，TraceId相当于二级路径，一开始与RequestId一样，但进入线程池或者消息队列后，TraceId会增加标记来标识唯一条路径。举个例子，当一次请求会向MQ发送一个消息，那么这个消息可能会被多个消费者消费，此时每个消费线程都会自己生成一个TraceId来标记消费链路。加入TraceId的目的就是为了避免只用RequestId过滤出太多日志。</p>
+<p>实现上，通过ThreadLocal存放APIRequestContext串联单服务内的所有调用，当跨服务调用时，将APIRequestContext信息转化为Http Header，被调用方获取到Http Header后再次构建APIRequestContext放入ThreadLocal，重复循环保证RequestId和TraceId不丢失即可。如果进入MQ，那么APIRequestContext信息转化为Message Header即可（基于Rabbitmq实现）。</p>
+<p>当日志汇总到日志系统后，如果出现问题，只需要捕获发生异常的RequestId或是TraceId即可进行问题定位。</p>
+<p><img src="/images/2019-04-19/Untitled-eedbc8b1-14e7-4a64-b29c-8703fb84ff88.png" alt=""></p>
+<p>经过一年来的使用，基本可以满足绝大多数trouble shooting的场景，一般半小时内即可定位到具体业务。</p>
+<h2 id="容器监控"><a href="#容器监控" class="headerlink" title="容器监控"></a>容器监控</h2><p>容器化前监控用的是telegraf探针，容器化后用的是prometheus，直接安装了openshift自带的cluster-monitoring-operator。自带的监控项目已经比较全面，包括node，pod资源的监控，在新增node后也会自动添加进来。</p>
+<p>Java项目也添加了prometheus的监控端点，只是可惜cluster-monitoring-operator提供的配置是只读的，后期将研究怎么将java的jvm监控这些整合进来。</p>
+<p><img src="/images/2019-04-19/grafana1-d2675f57-eeca-4669-a764-70cb3af9fb68.png" alt=""></p>
+<p><img src="/images/2019-04-19/-5f7ae443-5d3e-48bb-9c67-cc60e717d33cuntitled.jpg" alt=""></p>
+<h1 id="更多的"><a href="#更多的" class="headerlink" title="更多的"></a>更多的</h1><p>开源软件是对中小团队的一种福音，无论是Spring Cloud还是k8s都大大降低了团队在基础设施建设上的时间成本。当然其中有更多的话题，比如服务升降级，限流熔断，分布式任务调度，灰度发布，功能开关等等都需要更多时间来探讨。对于小团队，要根据自身情况选择微服务的技术方案，不可一味追新，适合自己的才是最好的。</p>
+<blockquote>
+<p>本文是2019年3月19日dockone.io的分享，文稿内容由我，leon和arthur共同完成。dockone也进行了整理并发表于公众号。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById(&quot;QR&quot;); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+  <span><i class="fa fa-thumbs-o-up"></i>喜欢作者</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/reward_wechat.jpg" alt="Dean Wang WeChat Pay"/>
+        <p>希望对你有帮助，分享或是请我喝杯咖啡吧~</p>
+      </div>
+    
+
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/spring-cloud/" rel="tag"># spring-cloud</a>
+          
+            <a href="/tags/ci/" rel="tag"># ci</a>
+          
+            <a href="/tags/microservice/" rel="tag"># microservice</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/04/16/slb-real-ip/" rel="next" title="坑系列之阿里SLB上获取客户IP">
+                <i class="fa fa-chevron-left"></i> 坑系列之阿里SLB上获取客户IP
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar-cartoon.jpg"
+                alt="Dean Wang"/>
+            
+              <p class="site-author-name" itemprop="name">Dean Wang</p>
+              <p class="site-description motion-element" itemprop="description">理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">30</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">37</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://github.com/deanwong" title="GitHub &rarr; https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="mailto:wangding85@gmail.com" title="E-Mail &rarr; mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://twitter.com/wongding" title="Twitter &rarr; https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://www.instagram.com/rockgeek" title="Instagram &rarr; https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="http://weibo.com/wangding85" title="Weibo &rarr; http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#要不要微服务"><span class="nav-number">1.</span> <span class="nav-text">要不要微服务</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#开发过程的挑战"><span class="nav-number">2.</span> <span class="nav-text">开发过程的挑战</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#持续集成"><span class="nav-number">2.1.</span> <span class="nav-text">持续集成</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#集成测试"><span class="nav-number">2.2.</span> <span class="nav-text">集成测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自动化测试"><span class="nav-number">2.3.</span> <span class="nav-text">自动化测试</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#发布过程的挑战"><span class="nav-number">3.</span> <span class="nav-text">发布过程的挑战</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#镜像准备"><span class="nav-number">3.1.</span> <span class="nav-text">镜像准备</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据库Schema升级"><span class="nav-number">3.2.</span> <span class="nav-text">数据库Schema升级</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#容器发布"><span class="nav-number">3.3.</span> <span class="nav-text">容器发布</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#线上运维的挑战"><span class="nav-number">4.</span> <span class="nav-text">线上运维的挑战</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#服务间调用"><span class="nav-number">4.1.</span> <span class="nav-text">服务间调用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#链路跟踪"><span class="nav-number">4.2.</span> <span class="nav-text">链路跟踪</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#容器监控"><span class="nav-number">4.3.</span> <span class="nav-text">容器监控</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#更多的"><span class="nav-number">5.</span> <span class="nav-text">更多的</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2015 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Dean Wang</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.0.1</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="Total Visitors">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="Total Views">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=7.0.1"></script>
+
+  <script src="/js/src/motion.js?v=7.0.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/schemes/muse.js?v=7.0.1"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=7.0.1"></script>
+<script src="/js/src/post-details.js?v=7.0.1"></script>
+
+
+
+  
+
+
+  <script src="/js/src/bootstrap.js?v=7.0.1"></script>
+
+
+  
+  
+  
+  <script id="dsq-count-scr" src="https://wangdean.disqus.com/count.js" async></script>
+
+
+<script>
+  var disqus_config = function() {
+    this.page.url = "http://www.deanwangpro.com/2019/04/19/microservice-practice/";
+    this.page.identifier = "2019/04/19/microservice-practice/";
+    this.page.title = '小团队微服务落地实践';
+    };
+  function loadComments() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://wangdean.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', '' + +new Date());
+    (d.head || d.body).appendChild(s);
+  }
+  
+    loadComments();
+  
+</script>
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
