@@ -96,20 +96,20 @@
 
 
 
-  <meta name="description" content="需求大家都看过Github上的webhook，可以对某一个repository设置webhook监听仓库变化，比如push，page_build等event（X-GitHub-Event）。">
+  <meta name="description" content="Webhook是一种非常强大的推送机制，如果熟悉WordPress的同学可以类比构建WP生态的各类钩子函数。Githubt通过webhook让开发人员可以监听仓库的变化触发持续集成工具的运作，比如Travis CI。 需求大家都看过Github上的webhook，可以对某一个repository设置webhook监听仓库变化，比如push，page_build等event（X-GitHub-Eve">
 <meta name="keywords" content="CAP,webhook">
 <meta property="og:type" content="article">
 <meta property="og:title" content="类似Github的webhook实现">
 <meta property="og:url" content="http://www.deanwangpro.com/2019/05/31/2019-05-31/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
-<meta property="og:description" content="需求大家都看过Github上的webhook，可以对某一个repository设置webhook监听仓库变化，比如push，page_build等event（X-GitHub-Event）。">
+<meta property="og:description" content="Webhook是一种非常强大的推送机制，如果熟悉WordPress的同学可以类比构建WP生态的各类钩子函数。Githubt通过webhook让开发人员可以监听仓库的变化触发持续集成工具的运作，比如Travis CI。 需求大家都看过Github上的webhook，可以对某一个repository设置webhook监听仓库变化，比如push，page_build等event（X-GitHub-Eve">
 <meta property="og:locale" content="en">
 <meta property="og:image" content="http://www.deanwangpro.com/images/201905/github-webhook.jpg">
 <meta property="og:image" content="http://www.deanwangpro.com/images/201905/github-webhook-history.jpg">
-<meta property="og:updated_time" content="2019-05-31T02:45:18.394Z">
+<meta property="og:updated_time" content="2019-05-31T02:59:57.236Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="类似Github的webhook实现">
-<meta name="twitter:description" content="需求大家都看过Github上的webhook，可以对某一个repository设置webhook监听仓库变化，比如push，page_build等event（X-GitHub-Event）。">
+<meta name="twitter:description" content="Webhook是一种非常强大的推送机制，如果熟悉WordPress的同学可以类比构建WP生态的各类钩子函数。Githubt通过webhook让开发人员可以监听仓库的变化触发持续集成工具的运作，比如Travis CI。 需求大家都看过Github上的webhook，可以对某一个repository设置webhook监听仓库变化，比如push，page_build等event（X-GitHub-Eve">
 <meta name="twitter:image" content="http://www.deanwangpro.com/images/201905/github-webhook.jpg">
 
 
@@ -337,7 +337,7 @@
                 
               
 
-              <time title="Created: 2019-05-31 10:36:34 / Modified: 10:45:18" itemprop="dateCreated datePublished" datetime="2019-05-31T10:36:34+08:00">2019-05-31</time>
+              <time title="Created: 2019-05-31 10:36:34 / Modified: 10:59:57" itemprop="dateCreated datePublished" datetime="2019-05-31T10:36:34+08:00">2019-05-31</time>
             
 
             
@@ -397,7 +397,8 @@
       
 
       
-        <h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><p>大家都看过Github上的webhook，可以对某一个repository设置webhook监听仓库变化，比如push，page_build等event（X-GitHub-Event）。</p>
+        <p>Webhook是一种非常强大的推送机制，如果熟悉WordPress的同学可以类比构建WP生态的各类钩子函数。Githubt通过webhook让开发人员可以监听仓库的变化触发持续集成工具的运作，比如Travis CI。</p>
+<h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><p>大家都看过Github上的webhook，可以对某一个repository设置webhook监听仓库变化，比如push，page_build等event（X-GitHub-Event）。</p>
 <a id="more"></a>
 <p><img src="/images/201905/github-webhook.jpg" alt="github-webhook"><br>每一次发送都会有个uuid作为标记，并写入到HTTP Header的X-GitHub-Delivery，并且对于发送失败的历史记录，可以点击Redeliver进行重发。</p>
 <p><img src="/images/201905/github-webhook-history.jpg" alt="github-webhook-history"></p>
