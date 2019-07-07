@@ -301,6 +301,171 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2019/07/07/benifit-from-spring-config/"/>
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Dean Wang"/>
+      <meta itemprop="description" content="理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover"/>
+      <meta itemprop="image" content="/images/avatar-cartoon.jpg"/>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="大名Dean鼎"/>
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2019/07/07/benifit-from-spring-config/" class="post-title-link" itemprop="url">怎么用好Spring Config</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2019-07-07 00:00:00 / Modified: 23:29:01" itemprop="dateCreated datePublished" datetime="2019-07-07T00:00:00+08:00">2019-07-07</time>
+            
+
+            
+              
+
+              
+            
+          </span>
+
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Comments: </span>
+                <a href="/2019/07/07/benifit-from-spring-config/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/07/07/benifit-from-spring-config/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>配置其实分为结构和内容两个方面，结构对应的是代码，比如1.0.0新开发的代码上有一个功能开关<code>${feature.switchA}</code>，但master上还没有，这就是结构的变化。另一方面是内容，1.0.0的开发分支有两个测试环境，连着不同的数据库，那么对应的<code>${mysql.url}</code>的内容肯定不同。</p>
+<p>内容的类别上也可以分为三种：业务配置，功能开关，服务配置。</p>
+<p>Spring Cloud的配置中心是Spring Config，经过两年的使用，发现了其中不少的问题，有些是使用问题，有些是Spring Config本身的管理能力导致的问题。</p>
+<p>Spring Config首推基于git的管理方式，提供了两个管理维度，一个是label(即branch)，一个是profile。当服务foo在一套代码下要安装多套环境，比如预发布环境有2套，一套在shanghai机房，一套在beijing机房。那么比较自然的管理维度就是利用profile，foo-shanghai.yaml以及foo-beijing.yaml。当生产环境也依然需要2台时，怎么处理呢？这时候就会有两种做法，一种利用增加label维度做区分，一种依然只用profile。</p>
+          <!--noindex-->
+          
+            <div class="post-button text-center">
+              <a class="btn" href="/2019/07/07/benifit-from-spring-config/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2019/05/31/github-webhook/"/>
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1807,180 +1972,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2018/03/10/Ali-SLB-for-Websocket/"/>
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Dean Wang"/>
-      <meta itemprop="description" content="理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover"/>
-      <meta itemprop="image" content="/images/avatar-cartoon.jpg"/>
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="大名Dean鼎"/>
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                
-                <a href="/2018/03/10/Ali-SLB-for-Websocket/" class="post-title-link" itemprop="url">坑系列之阿里SLB上使用Webscoket</a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-
-              
-                
-              
-
-              <time title="Created: 2018-03-10 00:00:00" itemprop="dateCreated datePublished" datetime="2018-03-10T00:00:00+08:00">2018-03-10</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Edited on</span>
-                
-                <time title="Modified: 2018-03-12 09:51:14" itemprop="dateModified" datetime="2018-03-12T09:51:14+08:00">2018-03-12</time>
-              
-            
-          </span>
-
-          
-
-          
-            
-            
-              
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-            
-                <span class="post-meta-item-text">Comments: </span>
-                <a href="/2018/03/10/Ali-SLB-for-Websocket/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2018/03/10/Ali-SLB-for-Websocket/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>Websocket是HTML5之后的一个新事物，可以方便的实现客户端到服务端的长会话，特别适合用于客户端需要接收服务端推送的场景。例如在线客服聊天，提醒推送等等。改变了以往客户端只能通过轮询或者long poll来获取服务端状态的限制。</p>
-          <!--noindex-->
-          
-            <div class="post-button text-center">
-              <a class="btn" href="/2018/03/10/Ali-SLB-for-Websocket/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-      
-    
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2031,7 +2022,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">31</span>
+                    <span class="site-state-item-count">32</span>
                     <span class="site-state-item-name">posts</span>
                   </a>
                 </div>
@@ -2124,7 +2115,9 @@
                     
                       
                     
-                    <span class="site-state-item-count">39</span>
+                      
+                    
+                    <span class="site-state-item-count">40</span>
                     <span class="site-state-item-name">tags</span>
                   </a>
                 </div>

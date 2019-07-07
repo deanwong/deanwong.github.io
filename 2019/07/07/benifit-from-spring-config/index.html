@@ -96,18 +96,18 @@
 
 
 
-  <meta name="description" content="这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有答案.第一个高分回答表示各种位操作都看不懂。传说中的Hamming_weight算法。真是给跪了。 突然想到Java的Inte">
-<meta name="keywords" content="Java,algorithm">
+  <meta name="description" content="配置其实分为结构和内容两个方面，结构对应的是代码，比如1.0.0新开发的代码上有一个功能开关${feature.switchA}，但master上还没有，这就是结构的变化。另一方面是内容，1.0.0的开发分支有两个测试环境，连着不同的数据库，那么对应的${mysql.url}的内容肯定不同。 内容的类别上也可以分为三种：业务配置，功能开关，服务配置。 Spring Cloud的配置中心是Sprin">
+<meta name="keywords" content="spring,config">
 <meta property="og:type" content="article">
-<meta property="og:title" content="How to count the number of set bits in ASCII string">
-<meta property="og:url" content="http://www.deanwangpro.com/2016/11/14/asc-to-binary/index.html">
+<meta property="og:title" content="怎么用好Spring Config">
+<meta property="og:url" content="http://www.deanwangpro.com/2019/07/07/benifit-from-spring-config/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
-<meta property="og:description" content="这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有答案.第一个高分回答表示各种位操作都看不懂。传说中的Hamming_weight算法。真是给跪了。 突然想到Java的Inte">
+<meta property="og:description" content="配置其实分为结构和内容两个方面，结构对应的是代码，比如1.0.0新开发的代码上有一个功能开关${feature.switchA}，但master上还没有，这就是结构的变化。另一方面是内容，1.0.0的开发分支有两个测试环境，连着不同的数据库，那么对应的${mysql.url}的内容肯定不同。 内容的类别上也可以分为三种：业务配置，功能开关，服务配置。 Spring Cloud的配置中心是Sprin">
 <meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2017-03-22T14:32:52.000Z">
+<meta property="og:updated_time" content="2019-07-07T15:29:01.705Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="How to count the number of set bits in ASCII string">
-<meta name="twitter:description" content="这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有答案.第一个高分回答表示各种位操作都看不懂。传说中的Hamming_weight算法。真是给跪了。 突然想到Java的Inte">
+<meta name="twitter:title" content="怎么用好Spring Config">
+<meta name="twitter:description" content="配置其实分为结构和内容两个方面，结构对应的是代码，比如1.0.0新开发的代码上有一个功能开关${feature.switchA}，但master上还没有，这就是结构的变化。另一方面是内容，1.0.0的开发分支有两个测试环境，连着不同的数据库，那么对应的${mysql.url}的内容肯定不同。 内容的类别上也可以分为三种：业务配置，功能开关，服务配置。 Spring Cloud的配置中心是Sprin">
 
 
 
@@ -116,7 +116,7 @@
 
 
 
-  <link rel="canonical" href="http://www.deanwangpro.com/2016/11/14/asc-to-binary/"/>
+  <link rel="canonical" href="http://www.deanwangpro.com/2019/07/07/benifit-from-spring-config/"/>
 
 
 
@@ -126,7 +126,7 @@
   };
 </script>
 
-  <title>How to count the number of set bits in ASCII string | 大名Dean鼎</title>
+  <title>怎么用好Spring Config | 大名Dean鼎</title>
   
 
 
@@ -302,7 +302,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2016/11/14/asc-to-binary/"/>
+    <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2019/07/07/benifit-from-spring-config/"/>
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Dean Wang"/>
@@ -319,7 +319,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">How to count the number of set bits in ASCII string
+          <h1 class="post-title" itemprop="name headline">怎么用好Spring Config
 
               
             
@@ -345,24 +345,12 @@
                 
               
 
-              <time title="Created: 2016-11-14 00:00:00" itemprop="dateCreated datePublished" datetime="2016-11-14T00:00:00+08:00">2016-11-14</time>
+              <time title="Created: 2019-07-07 00:00:00 / Modified: 23:29:01" itemprop="dateCreated datePublished" datetime="2019-07-07T00:00:00+08:00">2019-07-07</time>
             
 
             
               
 
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Edited on</span>
-                
-                <time title="Modified: 2017-03-22 22:32:52" itemprop="dateModified" datetime="2017-03-22T22:32:52+08:00">2017-03-22</time>
               
             
           </span>
@@ -380,8 +368,8 @@
                 </span>
             
                 <span class="post-meta-item-text">Comments: </span>
-                <a href="/2016/11/14/asc-to-binary/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2016/11/14/asc-to-binary/" itemprop="commentCount"></span>
+                <a href="/2019/07/07/benifit-from-spring-config/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2019/07/07/benifit-from-spring-config/" itemprop="commentCount"></span>
                 </a>
               </span>
             
@@ -417,12 +405,83 @@
       
 
       
-        <p>这是最近看到的一个算法题，第一眼看过去连题目都看不懂啊囧。非计算机本科生表示对算法十分无力。第一直觉肯定是把ASCII的字符都换成int，然后题目就可以变成How to count the number of set bits in integer. google一下还真有<a href="How to count the number of set bits in ASCII string">答案</a>.第一个高分回答表示各种位操作都看不懂。传说中的<a href="http://en.wikipedia.org/wiki/Hamming_weight" target="_blank" rel="noopener">Hamming_weight</a>算法。真是给跪了。</p>
-<p>突然想到Java的Integer类本来就有个toBinaryString方法，再加上最近正好研究UUID生成，觉得用现成的方法实现一下。</p>
+        <p>配置其实分为结构和内容两个方面，结构对应的是代码，比如1.0.0新开发的代码上有一个功能开关<code>${feature.switchA}</code>，但master上还没有，这就是结构的变化。另一方面是内容，1.0.0的开发分支有两个测试环境，连着不同的数据库，那么对应的<code>${mysql.url}</code>的内容肯定不同。</p>
+<p>内容的类别上也可以分为三种：业务配置，功能开关，服务配置。</p>
+<p>Spring Cloud的配置中心是Spring Config，经过两年的使用，发现了其中不少的问题，有些是使用问题，有些是Spring Config本身的管理能力导致的问题。</p>
+<p>Spring Config首推基于git的管理方式，提供了两个管理维度，一个是label(即branch)，一个是profile。当服务foo在一套代码下要安装多套环境，比如预发布环境有2套，一套在shanghai机房，一套在beijing机房。那么比较自然的管理维度就是利用profile，foo-shanghai.yaml以及foo-beijing.yaml。当生产环境也依然需要2台时，怎么处理呢？这时候就会有两种做法，一种利用增加label维度做区分，一种依然只用profile。</p>
 <a id="more"></a>
-<p>直接贴源码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ASC2Bin</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> DEFAULT_LENGTH = <span class="number">8</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">asc2bin</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">        StringBuilder binaryString = <span class="keyword">new</span> StringBuilder(<span class="number">8</span> * str.length());</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; str.length(); i++) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">int</span> ascInt = (<span class="keyword">int</span>) str.charAt(i);</span><br><span class="line">                StringBuilder temp = <span class="keyword">new</span> StringBuilder(Integer.toBinaryString(ascInt));</span><br><span class="line">                String bin = <span class="keyword">null</span>;</span><br><span class="line">                <span class="keyword">if</span> (temp.length() &lt;= DEFAULT_LENGTH) &#123;</span><br><span class="line">                    <span class="keyword">while</span> (temp.length() &lt; DEFAULT_LENGTH) &#123;</span><br><span class="line">                        temp.insert(<span class="number">0</span>, <span class="string">"0"</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">                    bin = temp.toString();</span><br><span class="line">                &#125; <span class="keyword">else</span> <span class="keyword">if</span> (temp.length() &gt; DEFAULT_LENGTH) &#123;</span><br><span class="line">                    <span class="keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                binaryString.append(bin);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (NumberFormatException nfe) &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> binaryString.toString();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">bin2asc</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">        StringBuilder sb = <span class="keyword">new</span> StringBuilder();</span><br><span class="line"></span><br><span class="line">        <span class="comment">//10010001100101 split into 8 characters</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; str.length() - <span class="number">1</span>; i += DEFAULT_LENGTH) &#123;</span><br><span class="line"></span><br><span class="line">            <span class="comment">//grab the hex in pairs</span></span><br><span class="line">            String output = str.substring(i, (i + DEFAULT_LENGTH));</span><br><span class="line">            <span class="comment">//convert hex to decimal</span></span><br><span class="line">            <span class="keyword">int</span> decimal = Integer.parseInt(output, <span class="number">2</span>);</span><br><span class="line">            <span class="comment">//convert the decimal to character</span></span><br><span class="line">            sb.append((<span class="keyword">char</span>) decimal);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> sb.toString();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        String binary = asc2bin(<span class="string">"Hello world!"</span>);</span><br><span class="line">        System.out.println(<span class="string">"binary : "</span> + binary);</span><br><span class="line">        String asc = bin2asc(binary);</span><br><span class="line">        System.out.println(<span class="string">"ASC : "</span> + asc);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>其实一开始的时候我并没有强制限定每一个ASCII字符都是8位bits，但是逆操作的时候遇到问题了。一般的ASCII字符在我本机CPU下的是7个bit，但是空格和其他符号都是6个bit。这个就比较麻烦了，不好直接按位数切分做逆操作。索性定死8位前面补0，方法比较土鳖，也没考虑性能（说实话我还真没那个本事），各位随便看看吧。</p>
+<h2 id="方法一：用label-profile区分"><a href="#方法一：用label-profile区分" class="headerlink" title="方法一：用label + profile区分"></a>方法一：用label + profile区分</h2><table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Branch</th>
+<th>Profile</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>foo-shanghai.yaml</td>
+<td>stg</td>
+<td>shanghai</td>
+</tr>
+<tr>
+<td>foo-beijing.yaml</td>
+<td>stg</td>
+<td>beijing</td>
+</tr>
+<tr>
+<td>foo-shanghai.yaml</td>
+<td>prd</td>
+<td>shanghai</td>
+</tr>
+<tr>
+<td>foo-beijing.yaml</td>
+<td>Prd</td>
+<td>beijing</td>
+</tr>
+</tbody>
+</table>
+<p>branch其实表示的是结构，即对应不同的代码，而profile对应的是内容。</p>
+<p>这种方式有什么问题？一般应用都是只有profile来区分环境，比如logback要分环境区分配置也是通过<code>&lt;springProfile&gt;</code>来指定。一旦采用两个维度来确定唯一的配置，那么所有项目都需要有<code>label</code>这个变量。</p>
+<p>试想如果foo这个应用在线上有个bug需要fix，势必会增加一个hotfix的branch在配置中心，同时还需要增加相应的profile，对应foo的<code>label</code>变量设置为hotfix，<code>profile</code>设置为beijing或者shanghai。</p>
+<p>再考虑另一种情况，foo在prd的代码需要放到stg进行验证如何处理？foo的代码版本肯定是prd的（因为stg的配置结构也许已经变了），但profile需要用stg的环境。这时实际上只能在配置中心的prd分支上新建一个新的profile来临时满足这种需求。</p>
+<h2 id="方法二：只使用profile区分"><a href="#方法二：只使用profile区分" class="headerlink" title="方法二：只使用profile区分"></a>方法二：只使用profile区分</h2><table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Branch</th>
+<th>Profile</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>foo-stg-shanghai.yaml</td>
+<td>master</td>
+<td>stg-shanghai</td>
+</tr>
+<tr>
+<td>foo-stg-beijing.yaml</td>
+<td>master</td>
+<td>stg-beijing</td>
+</tr>
+<tr>
+<td>foo-prd-shanghai.yaml</td>
+<td>master</td>
+<td>prd-shanghai</td>
+</tr>
+<tr>
+<td>foo-prd-beijing.yaml</td>
+<td>master</td>
+<td>prd-beijing</td>
+</tr>
+</tbody>
+</table>
+<p>这种方式可以降低管理维度，即放弃label的维度，只有profile的维度。同样的问题，如果foo这个应用在线上有个bug需要fix，那么需要新增两个profile，hotfix-beijing和hotfix-shanghai。虽然维度降低了，但是管理上却有些麻烦。因为master的这个分支无法保护起来，如果有开发人员直接修改了prd-XXX的环境就会导致线上问题。</p>
+<p>同样的，foo在prd的代码需要放到stg进行验证如何处理？foo的代码版本肯定是prd的（因为stg的配置结构也许已经变了），但profile需要用stg的环境。这时实际上只能再配置中心新建一个profile，比如stg-oldshanghai，来满足这种需求。</p>
+<p>然而我们知道，增加新的profile其实还是挺麻烦的事情，如果代码中有直接比较profile的逻辑，那么往往容易出现问题。</p>
+<p>有没有不临时增加profile的办法呢？其实仔细思考一下，在stg环境验证prd的服务，真正的逻辑是什么？是希望用stg环境的配置内容，以及stg某个历史版本（与prd匹配的）的配置结构。所以纵向维度我们需要的其实是version，profile都是stg-shanghai，而version一个是1.0.0，一个是latest。</p>
+<h2 id="方法三：综合一下"><a href="#方法三：综合一下" class="headerlink" title="方法三：综合一下"></a>方法三：综合一下</h2><p>好了，现在我们来综合一下两种方式，可以使用git的分支作为version，profile依然还是按照方法二来区分。毕竟频繁增加环境的可能性不高。但是如果要同时维护一个profile两个分支，其实还是要来回切换的，比较麻烦，这也是Spring Config为人诟病的管理功能弱。好在Spring Cloud也支持mysql，用mysql同时管理多个label的内容还是方便不少，只是git自带的“后悔药”(history)功能没有了。所以说还是有利有弊。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>如果想要更完善的配置管理工具，建议还是使用Apollo。要想用好Spring Cloud，必须可以忍受它比较弱的管理能力，并且做好前期规划，结合项目特点来使用label和profile的能力。</p>
 
       
     </div>
@@ -469,9 +528,9 @@
       
         <div class="post-tags">
           
-            <a href="/tags/Java/" rel="tag"># Java</a>
+            <a href="/tags/spring/" rel="tag"># spring</a>
           
-            <a href="/tags/algorithm/" rel="tag"># algorithm</a>
+            <a href="/tags/config/" rel="tag"># config</a>
           
         </div>
       
@@ -484,8 +543,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2016/10/30/spring-featuretoggle/" rel="next" title="利用Spring的Conditional注解来实现FeatureToggle">
-                <i class="fa fa-chevron-left"></i> 利用Spring的Conditional注解来实现FeatureToggle
+              <a href="/2019/05/31/github-webhook/" rel="next" title="类似Github的webhook实现">
+                <i class="fa fa-chevron-left"></i> 类似Github的webhook实现
               </a>
             
           </div>
@@ -493,10 +552,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2016/12/01/how-to-handle-dependency-message/" rel="prev" title="如何处理有依赖的消息">
-                如何处理有依赖的消息 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -547,8 +602,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
 
-      <div class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <div class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -754,6 +818,23 @@
       </div>
 
       
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#方法一：用label-profile区分"><span class="nav-number">1.</span> <span class="nav-text">方法一：用label + profile区分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#方法二：只使用profile区分"><span class="nav-number">2.</span> <span class="nav-text">方法二：只使用profile区分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#方法三：综合一下"><span class="nav-number">3.</span> <span class="nav-text">方法三：综合一下</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
 
       
 
@@ -935,9 +1016,9 @@
 
 <script>
   var disqus_config = function() {
-    this.page.url = "http://www.deanwangpro.com/2016/11/14/asc-to-binary/";
-    this.page.identifier = "2016/11/14/asc-to-binary/";
-    this.page.title = 'How to count the number of set bits in ASCII string';
+    this.page.url = "http://www.deanwangpro.com/2019/07/07/benifit-from-spring-config/";
+    this.page.identifier = "2019/07/07/benifit-from-spring-config/";
+    this.page.title = '怎么用好Spring Config';
     };
   function loadComments() {
     var d = document, s = d.createElement('script');
