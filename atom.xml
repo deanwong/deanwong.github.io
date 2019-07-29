@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.deanwangpro.com/"/>
-  <updated>2019-07-07T15:29:01.705Z</updated>
+  <updated>2019-07-29T11:30:47.805Z</updated>
   <id>http://www.deanwangpro.com/</id>
   
   <author>
@@ -15,6 +15,30 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>记录一次Spring Boot假死诊断</title>
+    <link href="http://www.deanwangpro.com/2019/07/28/zombie-thread-trouble-shooting/"/>
+    <id>http://www.deanwangpro.com/2019/07/28/zombie-thread-trouble-shooting/</id>
+    <published>2019-07-27T16:00:00.000Z</published>
+    <updated>2019-07-29T11:30:47.805Z</updated>
+    
+    <content type="html"><![CDATA[<p>这两天遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。</p><a id="more"></a><h2 id="检查系统状态"><a href="#检查系统状态" class="headerlink" title="检查系统状态"></a>检查系统状态</h2><p>执行top，发现CPU和内存占用都不高，但是通过命令</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -n | awk &apos;/^tcp/ &#123;++S[$NF]&#125; END &#123;for(a in S) print a, S[a]&#125;&apos;</span><br></pre></td></tr></table></figure><p>发现有大量的CLOSE_WAIT端口占用，继续调用该服务的api，等待超时之后发现CLOSE_WAIT的数量也没有上升，也就是说服务几乎完全僵死。</p><h2 id="检查JVM情况"><a href="#检查JVM情况" class="headerlink" title="检查JVM情况"></a>检查JVM情况</h2><p>怀疑可能是线程有死锁，决定先dump一下线程情况，执行</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jstack &lt;pid&gt; &gt; /tmp/thread.hump</span><br></pre></td></tr></table></figure><p>发现tomcat线程基本也正常，都是parking状态。</p><p><img src="/images/2019-07-28/Thread.jpg" alt=""></p><p>这就比较奇怪了，继续想是不是GC导致了STW，使用<code>jstat</code>查看垃圾回收情况</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">app@server:/tmp$ jstat -gcutil 1 2000 10</span><br><span class="line">  S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     GCT</span><br><span class="line">  0.00  27.79  65.01  15.30  94.75  92.23   1338   44.375  1881  475.064  519.439</span><br></pre></td></tr></table></figure><p>一看吓一跳，FGC的次数居然超过了YGC，时长有475s。一定是有什么原因触发了FGC，好在我们打开了GC log。</p><p><img src="/images/2019-07-28/GC.jpg" alt=""></p><p>发现一段时间内频繁发生Allocation Failure引起的Full GC。而且eden区的使用占比也很大，考虑有频繁新建对象逃逸到老年代造成问题。询问了一下业务的开发，确认有一个外部对接API没有分页，查询后可能会产生大量对象。</p><p>由于外部API暂时无法联系对方修改，所以为了先解决问题，对原有的MaxNewSize进扩容，从192MB扩容到一倍。经过几天的观察，发现gc基本趋于正常</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     GCT</span><br><span class="line">0.00   3.37  60.55   8.60  95.08  92.98     87    2.421     0    0.000    2.421</span><br></pre></td></tr></table></figure><p>扩容之前对heap进行了dump</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jmap -dump:format=b,file=heapDump &lt;PID&gt;</span><br></pre></td></tr></table></figure><p>通过MAT分析内存泄露，居然疑似是jdbc中的一个类，但其实整体占用堆容量并不多。</p><p><img src="/images/2019-07-28/mat.jpg" alt=""></p><p>分析了线程数量，大约是240多条，与正常时也并没有很大的出入。而且大量的是在sleep的定时线程。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本次排查其实并未找到真正的原因，间接表象是FGC频繁导致服务假死。而且acturator端口是正常工作的，导致health check进程误认为服务正常，没有触发告警。</p>]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;这两天遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="spring boot" scheme="http://www.deanwangpro.com/tags/spring-boot/"/>
+    
+      <category term="tomcat" scheme="http://www.deanwangpro.com/tags/tomcat/"/>
+    
+      <category term="zombie" scheme="http://www.deanwangpro.com/tags/zombie/"/>
+    
+  </entry>
   
   <entry>
     <title>怎么用好Spring Config</title>
@@ -483,24 +507,6 @@
     
     
       <category term="面试" scheme="http://www.deanwangpro.com/tags/%E9%9D%A2%E8%AF%95/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>蜕变的2016</title>
-    <link href="http://www.deanwangpro.com/2016/12/30/2016-summary/"/>
-    <id>http://www.deanwangpro.com/2016/12/30/2016-summary/</id>
-    <published>2016-12-29T16:00:00.000Z</published>
-    <updated>2017-01-06T15:27:44.000Z</updated>
-    
-    <content type="html"><![CDATA[<p>今天是2016年的倒数第二天，仿佛踮起脚就能够到17年。16年对于我来说是不平凡的一年，即使在暮年回首想必也会历历在目。</p><a id="more"></a><h3 id="孩子"><a href="#孩子" class="headerlink" title="孩子"></a>孩子</h3><p>最大的蜕变就是身份升级成了父亲，老婆从1月怀孕经历艰难的十月怀胎，终于在10月产下一个胖小子。这是全家最大的欢乐，即便有一些磕磕碰碰，但随着这个孩子的降临，一切都有了新的希望。感谢老婆，岳母岳母，爸妈对孩子的悉心照顾。自己也有了新的责任感，陪伴孩子的几个月真的是这一辈子最难忘也最怀念的时光。</p><h3 id="技术"><a href="#技术" class="headerlink" title="技术"></a>技术</h3><p>工作一直还算比较安定和自由，有一定的自主权选择自己喜欢的方向做一些东西。最打的收获应该说是全方位的体验了一次微服务的洗礼。一个既存系统从mono到拆成20多个小的service，期间经历了林林种种的问题，大约花费了半年的时间总算稳定下来。所以微服务给我最大的感受就是，这真不是一般公司可以玩儿的起的。对于架构师，甚至一线程序员的要求都高出不少。devops文化，API设计的规范，性能优化的能力等等都得具备。</p><p>接触到技术或者床架主要是kubernetes，和spring-boot提供一系列微服务方案，其中包含了netflix的各类组件比如hytrix。如果用spring-boot从无到有的构建一个微服务，在官网上已经给出了<a href="https://spring.io/blog/2015/07/14/microservices-with-spring" target="_blank" rel="noopener">答案</a>，而且Github上的脚手架也是不少。</p><p>微服务之间的通信除了API的直接通信，更多的是一种基于消息的异步通信，好处是提高throughput，16年大约有4个月的时间我都在研究基于消息的数据同步存储。也写了几篇浅见发在自己的博客上。这个<a href="http://www.deanwangpro.com/">博客</a>也是今年刚刚上线，一开始是jekyll的，后来转到hexo，托管在Github。有了技术博客，有个很大的好处是一旦有一些技术发现就想纪录下来，并且写的过程也是一个揣摩再消化的过程。明年希望能够保持一周到两周一篇的更新频率。</p><p>工作之外接触最多的技术还就是docker了，再加上玩儿了WordPress一两年了，所以也利用compose搞了一个WordPress的开发环境，大概是这样的配置<code>nginx-apline + php7-fpm-alpine + mariadb + wordpress 4.6</code></p><h3 id="财务"><a href="#财务" class="headerlink" title="财务"></a>财务</h3><p>结婚以后家里柴米油盐都是花销，从08年我就有记账的习惯，保持至今。今年家里添丁，花销自然是不少，所以最后结果仅仅是略有盈余，但是明年还需要买车位装修，交契税，更大的花销还在17年。</p><ul><li>最大的开支是车位预支了3w定金</li><li>保险花费了1.6w，这一项比较固定，今年新增加了宝宝的保险</li><li>养车1.2w</li><li>生宝宝医院费用 + 月嫂 + 各种育儿用品2w</li><li>家里水电宽带各种新添置的电器等等共计1.5w</li><li>平时吃饭包括聚会什么的共计1w</li><li>其余手机费，买衣服，看演出等费用非常低，大约0.5w左右，可见今年养孩子真是没有娱乐活动的。</li></ul><p>综上，一年花销在11w左右，财务状况还是挺正常的，开源节流看来没有必要，还是想想怎么多赚钱好了。</p><h3 id="愿望"><a href="#愿望" class="headerlink" title="愿望"></a>愿望</h3><ul><li>多多跟孩子在一起，真的不像错过儿子任何一个成长的瞬间。</li><li>磨炼技艺，多赚钱，真想再深挖一下WordPress的潜力。</li><li>坚持更新技术博客，二三周一遍的频率。</li><li>坚持夜跑，每天2~3公里。</li><li>坚持看书，一周3~4小时。</li><li>坚持练习口语，一周3~4小时。</li></ul>]]></content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;今天是2016年的倒数第二天，仿佛踮起脚就能够到17年。16年对于我来说是不平凡的一年，即使在暮年回首想必也会历历在目。&lt;/p&gt;
-    
-    </summary>
-    
     
   </entry>
   
