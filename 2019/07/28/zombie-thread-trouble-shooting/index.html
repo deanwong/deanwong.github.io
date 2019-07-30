@@ -107,7 +107,7 @@
 <meta property="og:image" content="http://www.deanwangpro.com/images/2019-07-28/Thread.jpg">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2019-07-28/GC.jpg">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2019-07-28/mat.jpg">
-<meta property="og:updated_time" content="2019-07-29T11:30:47.805Z">
+<meta property="og:updated_time" content="2019-07-30T12:40:11.529Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="记录一次Spring Boot假死诊断">
 <meta name="twitter:description" content="这两天遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。">
@@ -366,7 +366,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2019-07-29 19:30:47" itemprop="dateModified" datetime="2019-07-29T19:30:47+08:00">2019-07-29</time>
+                <time title="Modified: 2019-07-30 20:40:11" itemprop="dateModified" datetime="2019-07-30T20:40:11+08:00">2019-07-30</time>
               
             
           </span>
@@ -442,7 +442,7 @@
 <p>通过MAT分析内存泄露，居然疑似是jdbc中的一个类，但其实整体占用堆容量并不多。</p>
 <p><img src="/images/2019-07-28/mat.jpg" alt=""></p>
 <p>分析了线程数量，大约是240多条，与正常时也并没有很大的出入。而且大量的是在sleep的定时线程。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本次排查其实并未找到真正的原因，间接表象是FGC频繁导致服务假死。而且acturator端口是正常工作的，导致health check进程误认为服务正常，没有触发告警。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本次排查其实并未找到真正的原因，间接表象是FGC频繁导致服务假死。而且acturator端口是正常工作的，导致health check进程误认为服务正常，没有触发告警。如果你也遇到类似的情况欢迎一起讨论。</p>
 
       
     </div>
