@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html class="theme-next mist" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222"/>
+
+
+
+
+
+
+
+
+
+
+  <meta name="google-site-verification" content="6I4nQGwB4yLqPannMFWvXqWhKoRXMlOOaa5jtowR9Y0"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2"/>
+
+<link rel="stylesheet" href="/css/main.css?v=7.0.1"/>
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.0.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.0.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.0.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.0.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '7.0.1',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false,"dimmer":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: true,
+    tabs: true,
+    motion: {"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="距离上次博文已经有快半年了。原本打算在过年期间写一篇2019年的回顾和总结。但也被这突如其来的疫情打乱。放假期间一直关注相关新闻导致信息过载，一度非常沮丧。 2月复工以后，停止了疫情信息的摄取，反倒心理上轻松不少。人都是健忘的，可不是吗？ 言归正传，上篇博文说遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。正好最近又重现了，并且找到了root caus">
+<meta name="keywords" content="java,gc">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Full GC (Allocation Failure)引发的应用僵死">
+<meta property="og:url" content="http://www.deanwangpro.com/2020/02/22/oom-address/index.html">
+<meta property="og:site_name" content="大名Dean鼎">
+<meta property="og:description" content="距离上次博文已经有快半年了。原本打算在过年期间写一篇2019年的回顾和总结。但也被这突如其来的疫情打乱。放假期间一直关注相关新闻导致信息过载，一度非常沮丧。 2月复工以后，停止了疫情信息的摄取，反倒心理上轻松不少。人都是健忘的，可不是吗？ 言归正传，上篇博文说遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。正好最近又重现了，并且找到了root caus">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://img.deanwangpro.com/t/20200222-oom-jstat.jpg">
+<meta property="og:image" content="http://img.deanwangpro.com/t/20200222-big-object.jpg">
+<meta property="og:image" content="http://img.deanwangpro.com/t/20200222-mysql-full-scan.jpg">
+<meta property="og:updated_time" content="2020-02-22T09:40:26.583Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Full GC (Allocation Failure)引发的应用僵死">
+<meta name="twitter:description" content="距离上次博文已经有快半年了。原本打算在过年期间写一篇2019年的回顾和总结。但也被这突如其来的疫情打乱。放假期间一直关注相关新闻导致信息过载，一度非常沮丧。 2月复工以后，停止了疫情信息的摄取，反倒心理上轻松不少。人都是健忘的，可不是吗？ 言归正传，上篇博文说遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。正好最近又重现了，并且找到了root caus">
+<meta name="twitter:image" content="http://img.deanwangpro.com/t/20200222-oom-jstat.jpg">
+
+
+
+  <link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml"/>
+
+
+
+
+  <link rel="canonical" href="http://www.deanwangpro.com/2020/02/22/oom-address/"/>
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Full GC (Allocation Failure)引发的应用僵死 | 大名Dean鼎</title>
+  
+
+
+
+
+  <script async src="//www.googletagmanager.com/gtag/js?id=[object Object]"></script>
+  <script>
+    var host = window.location.hostname;
+    if (host !== "localhost" || !true) {
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-69554053-1');
+    }
+  </script>
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">大名Dean鼎</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br/>Home</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br/>Archives</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2020/02/22/oom-address/"/>
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Dean Wang"/>
+      <meta itemprop="description" content="理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover"/>
+      <meta itemprop="image" content="/images/avatar-cartoon.jpg"/>
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="大名Dean鼎"/>
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Full GC (Allocation Failure)引发的应用僵死
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2020-02-22 00:00:00 / Modified: 17:40:26" itemprop="dateCreated datePublished" datetime="2020-02-22T00:00:00+08:00">2020-02-22</time>
+            
+
+            
+              
+
+              
+            
+          </span>
+
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Comments: </span>
+                <a href="/2020/02/22/oom-address/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2020/02/22/oom-address/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon"
+            >
+            <i class="fa fa-eye"></i>
+             Views:  
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>距离上次博文已经有快半年了。原本打算在过年期间写一篇2019年的回顾和总结。但也被这突如其来的疫情打乱。放假期间一直关注相关新闻导致信息过载，一度非常沮丧。</p>
+<p>2月复工以后，停止了疫情信息的摄取，反倒心理上轻松不少。人都是健忘的，可不是吗？</p>
+<p>言归正传，上篇博文说遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。正好最近又重现了，并且找到了root cause。</p>
+<a id="more"></a>
+<h2 id="检查状态"><a href="#检查状态" class="headerlink" title="检查状态"></a>检查状态</h2><h3 id="系统状态"><a href="#系统状态" class="headerlink" title="系统状态"></a>系统状态</h3><p>依然从全局入手，执行top查看发现负载很低，cpu都在10%以下，说明不是计算密集的问题，基本可以感觉是io或者是jvm垃圾回收有异常。另外查询系统情况推荐dstat这个工具，蜜汁好用。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dstat -lcdngy</span><br></pre></td></tr></table></figure>
+<h3 id="JVM状态"><a href="#JVM状态" class="headerlink" title="JVM状态"></a>JVM状态</h3><p>因为开启了gc log，所以先检查一下是不是有频繁的full gc，当然上手就<code>jstat</code>不犹豫也是没问题的。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">2020-02-19T17:32:59.041+0800: 5618.660: Application time: 0.9945668 seconds</span><br><span class="line">&#123;Heap before GC invocations=339 (full 70):</span><br><span class="line"> par new generation   total 1415616K, used 1415615K [0x00000006f0800000, 0x0000000750800000, 0x0000000750800000)</span><br><span class="line">  eden space 1258368K, 100% used [0x00000006f0800000, 0x000000073d4e0000, 0x000000073d4e0000)</span><br><span class="line">  from space 157248K,  99% used [0x000000073d4e0000, 0x0000000746e6ffd0, 0x0000000746e70000)</span><br><span class="line">  to   space 157248K,   0% used [0x0000000746e70000, 0x0000000746e70000, 0x0000000750800000)</span><br><span class="line"> concurrent mark-sweep generation total 2621440K, used 2621440K [0x0000000750800000, 0x00000007f0800000, 0x00000007f0800000)</span><br><span class="line"> Metaspace       used 124199K, capacity 131576K, committed 135808K, reserved 1169408K</span><br><span class="line">  class space    used 14564K, capacity 15735K, committed 16256K, reserved 1048576K</span><br><span class="line">2020-02-19T17:32:59.042+0800: 5618.661: [Full GC (Allocation Failure) 2020-02-19T17:32:59.043+0800: 5618.661: [CMS2020-02-19T17:33:00.282+0800: 5619.901: [CMS-concurrent-mark: 2.232/2.235 secs] [Times: user=3.23 sys=0.00, real=2.24 secs] </span><br><span class="line"> (concurrent mode failure): 2621440K-&gt;2611778K(2621440K), 7.6795988 secs] 4037055K-&gt;2611778K(4037056K), [Metaspace: 124199K-&gt;124199K(1169408K)], 7.6798738 secs] [Times: user=7.68 sys=0.00, real=7.68 secs] </span><br><span class="line">Heap after GC invocations=340 (full 71):</span><br><span class="line"> par new generation   total 1415616K, used 0K [0x00000006f0800000, 0x0000000750800000, 0x0000000750800000)</span><br><span class="line">  eden space 1258368K,   0% used [0x00000006f0800000, 0x00000006f0800000, 0x000000073d4e0000)</span><br><span class="line">  from space 157248K,   0% used [0x000000073d4e0000, 0x000000073d4e0000, 0x0000000746e70000)</span><br><span class="line">  to   space 157248K,   0% used [0x0000000746e70000, 0x0000000746e70000, 0x0000000750800000)</span><br><span class="line"> concurrent mark-sweep generation total 2621440K, used 2611778K [0x0000000750800000, 0x00000007f0800000, 0x00000007f0800000)</span><br><span class="line"> Metaspace       used 124199K, capacity 131576K, committed 135808K, reserved 1169408K</span><br><span class="line">  class space    used 14564K, capacity 15735K, committed 16256K, reserved 1048576K</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>大概有十几个Full GC，原因都是 Allocation Failure。特别值得注意的是，GC前eden的占用是100%，s0的占用是99%，此时还有Allocation Failure说明old区也满了。eden和s0的对象都无法通过Young GC回收，年轻代对象继续向old区晋升，但是old区也满了，导致 Allocation Failure 触发Full GC，而且耗时7.68 secs，这可是STW啊，整个系统都暂停响应了。再看GC后的情况，年轻代都清零了，说明并不是有内存泄露导致无法回收。而是短时间有大量新对象被创建，Young GC来不及回收，直到新对象不断晋升到老年代导致的STW。</p>
+<p>那么接下来就开始追查什么原因会创建这么多新对象，手头缺一个最好的证据，就是Full GC时的heap dump。开启<code>jstat</code>不停的刷，等到old区快满的时候，抓dump。</p>
+<p><img src="http://img.deanwangpro.com/t/20200222-oom-jstat.jpg" alt=""></p>
+<p>时机正好，通过<code>jmap</code>导出dump文件</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jmap -dump:format=b,file=/tmp/heap.hprof 1</span><br></pre></td></tr></table></figure>
+<p>一看文件足足有6g，说明真的是待回收的对象太多了。</p>
+<h2 id="分析Dump"><a href="#分析Dump" class="headerlink" title="分析Dump"></a>分析Dump</h2><p>使用mat打开这个dump文件都花了半小时，风扇呼呼的在抗议。一个小tip，记得把mat的Xmx调大，不然会崩掉。另外由于这次并不是内存泄露造成不可回收，所以需要打开mat的<code>Keep unreachable objects</code>去分析不可触达的对象。</p>
+<p><img src="http://img.deanwangpro.com/t/20200222-big-object.jpg" alt=""></p>
+<p>打开lead suspects可以看到最大的是<code>java.lang.Object[]</code>，这也印证了大量对象被创建并被加入数组的猜测。</p>
+<h2 id="Root-cause"><a href="#Root-cause" class="headerlink" title="Root cause"></a>Root cause</h2><p>那么究竟是什么操作引发的呢？在mat的报告中最终发现这个object是一个entity类，说明这是一个数据库操作，查询出了大量结果导致的。</p>
+<p>这种查询量级一定会被记录为了慢查询，打开阿里云的RDS慢日志查询</p>
+<p><img src="http://img.deanwangpro.com/t/20200222-mysql-full-scan.jpg" alt=""></p>
+<p>218w的记录被查询到，没有直接OOM算是走运了。</p>
+<p>但是查询的sql很奇怪，出现了<code>is null</code>的条件语句，由于这个字段是索引字段应该精确匹配的，业务逻辑中不可能出现查询空记录的需求。repository的查询接口是使用spring-data-jpa标准描述的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Person <span class="title">findByAAndBAndC</span><span class="params">(String A, String B, String C)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>理论上应该转化为</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> * <span class="keyword">from</span> person <span class="keyword">where</span> A=A <span class="keyword">and</span> B=B <span class="keyword">and</span> C=C;</span><br></pre></td></tr></table></figure>
+<p>结果却变成了</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> * <span class="keyword">from</span> person <span class="keyword">where</span> A <span class="keyword">is</span> <span class="literal">null</span> <span class="keyword">and</span> B=B <span class="keyword">and</span> C=C;</span><br></pre></td></tr></table></figure>
+<p>这样以来，就跳开了索引并查询到相当可观的记录。经过试验发现如果未经过判空校验，当A=null时，spring-data-jpa会自动转化为<code>is null</code>的SQL语句。</p>
+<p>最终我们对所有类似调用都加上了<code>Assert.notnull</code>的处理。重新上线后问题解决，再也没有FGC发生了。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>对于程序员来讲，这种“智能”的框架真的是非常可怕，当你面对一个黑盒的时候，灾难往往就在不远处。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById(&quot;QR&quot;); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+  <span><i class="fa fa-thumbs-o-up"></i>喜欢作者</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/reward_wechat.jpg" alt="Dean Wang WeChat Pay"/>
+        <p>希望对你有帮助，分享或是请我喝杯咖啡吧~</p>
+      </div>
+    
+
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/gc/" rel="tag"># gc</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/07/28/zombie-thread-trouble-shooting/" rel="next" title="记录一次Spring Boot假死诊断">
+                <i class="fa fa-chevron-left"></i> 记录一次Spring Boot假死诊断
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/avatar-cartoon.jpg"
+                alt="Dean Wang"/>
+            
+              <p class="site-author-name" itemprop="name">Dean Wang</p>
+              <p class="site-description motion-element" itemprop="description">理性在左，感性再右, 这里有技术，有电影，有音乐 | Dean，Java & PHP deveoper, Front-End Engineer， Music & Movie & Photograph lover</p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">34</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">45</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://github.com/deanwong" title="GitHub &rarr; https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="mailto:wangding85@gmail.com" title="E-Mail &rarr; mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://twitter.com/wongding" title="Twitter &rarr; https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="https://www.instagram.com/rockgeek" title="Instagram &rarr; https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <a href="http://weibo.com/wangding85" title="Weibo &rarr; http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#检查状态"><span class="nav-number">1.</span> <span class="nav-text">检查状态</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#系统状态"><span class="nav-number">1.1.</span> <span class="nav-text">系统状态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#JVM状态"><span class="nav-number">1.2.</span> <span class="nav-text">JVM状态</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#分析Dump"><span class="nav-number">2.</span> <span class="nav-text">分析Dump</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Root-cause"><span class="nav-number">3.</span> <span class="nav-text">Root cause</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2015 – <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Dean Wang</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v3.7.1</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.0.1</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="Total Visitors">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="Total Views">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+        <div style="width:300px;margin:0 auto; padding:20px 0;">
+          <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=32010402000664" style="display:inline-block;text-decoration:none;height:20px;line-height:20px;"><img src="http://www.beian.gov.cn/img/ghs.png" style="float:left;"/><p style="float:left;height:20px;line-height:20px;margin: 0px 0px 0px 5px; color:#939393;">苏公网安备 32010402000664号</p></a>
+        </div>
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=7.0.1"></script>
+
+  <script src="/js/src/motion.js?v=7.0.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/schemes/muse.js?v=7.0.1"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=7.0.1"></script>
+<script src="/js/src/post-details.js?v=7.0.1"></script>
+
+
+
+  
+
+
+  <script src="/js/src/bootstrap.js?v=7.0.1"></script>
+
+
+  
+  
+  
+  <script id="dsq-count-scr" src="https://wangdean.disqus.com/count.js" async></script>
+
+
+<script>
+  var disqus_config = function() {
+    this.page.url = "http://www.deanwangpro.com/2020/02/22/oom-address/";
+    this.page.identifier = "2020/02/22/oom-address/";
+    this.page.title = 'Full GC (Allocation Failure)引发的应用僵死';
+    };
+  function loadComments() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://wangdean.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', '' + +new Date());
+    (d.head || d.body).appendChild(s);
+  }
+  
+    loadComments();
+  
+</script>
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

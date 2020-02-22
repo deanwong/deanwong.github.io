@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.deanwangpro.com/"/>
-  <updated>2019-07-30T12:40:11.529Z</updated>
+  <updated>2020-02-22T09:40:26.583Z</updated>
   <id>http://www.deanwangpro.com/</id>
   
   <author>
@@ -15,6 +15,30 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Full GC (Allocation Failure)引发的应用僵死</title>
+    <link href="http://www.deanwangpro.com/2020/02/22/oom-address/"/>
+    <id>http://www.deanwangpro.com/2020/02/22/oom-address/</id>
+    <published>2020-02-21T16:00:00.000Z</published>
+    <updated>2020-02-22T09:40:26.583Z</updated>
+    
+    <content type="html"><![CDATA[<p>距离上次博文已经有快半年了。原本打算在过年期间写一篇2019年的回顾和总结。但也被这突如其来的疫情打乱。放假期间一直关注相关新闻导致信息过载，一度非常沮丧。</p><p>2月复工以后，停止了疫情信息的摄取，反倒心理上轻松不少。人都是健忘的，可不是吗？</p><p>言归正传，上篇博文说遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。正好最近又重现了，并且找到了root cause。</p><a id="more"></a><h2 id="检查状态"><a href="#检查状态" class="headerlink" title="检查状态"></a>检查状态</h2><h3 id="系统状态"><a href="#系统状态" class="headerlink" title="系统状态"></a>系统状态</h3><p>依然从全局入手，执行top查看发现负载很低，cpu都在10%以下，说明不是计算密集的问题，基本可以感觉是io或者是jvm垃圾回收有异常。另外查询系统情况推荐dstat这个工具，蜜汁好用。</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dstat -lcdngy</span><br></pre></td></tr></table></figure><h3 id="JVM状态"><a href="#JVM状态" class="headerlink" title="JVM状态"></a>JVM状态</h3><p>因为开启了gc log，所以先检查一下是不是有频繁的full gc，当然上手就<code>jstat</code>不犹豫也是没问题的。</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">2020-02-19T17:32:59.041+0800: 5618.660: Application time: 0.9945668 seconds</span><br><span class="line">&#123;Heap before GC invocations=339 (full 70):</span><br><span class="line"> par new generation   total 1415616K, used 1415615K [0x00000006f0800000, 0x0000000750800000, 0x0000000750800000)</span><br><span class="line">  eden space 1258368K, 100% used [0x00000006f0800000, 0x000000073d4e0000, 0x000000073d4e0000)</span><br><span class="line">  from space 157248K,  99% used [0x000000073d4e0000, 0x0000000746e6ffd0, 0x0000000746e70000)</span><br><span class="line">  to   space 157248K,   0% used [0x0000000746e70000, 0x0000000746e70000, 0x0000000750800000)</span><br><span class="line"> concurrent mark-sweep generation total 2621440K, used 2621440K [0x0000000750800000, 0x00000007f0800000, 0x00000007f0800000)</span><br><span class="line"> Metaspace       used 124199K, capacity 131576K, committed 135808K, reserved 1169408K</span><br><span class="line">  class space    used 14564K, capacity 15735K, committed 16256K, reserved 1048576K</span><br><span class="line">2020-02-19T17:32:59.042+0800: 5618.661: [Full GC (Allocation Failure) 2020-02-19T17:32:59.043+0800: 5618.661: [CMS2020-02-19T17:33:00.282+0800: 5619.901: [CMS-concurrent-mark: 2.232/2.235 secs] [Times: user=3.23 sys=0.00, real=2.24 secs] </span><br><span class="line"> (concurrent mode failure): 2621440K-&gt;2611778K(2621440K), 7.6795988 secs] 4037055K-&gt;2611778K(4037056K), [Metaspace: 124199K-&gt;124199K(1169408K)], 7.6798738 secs] [Times: user=7.68 sys=0.00, real=7.68 secs] </span><br><span class="line">Heap after GC invocations=340 (full 71):</span><br><span class="line"> par new generation   total 1415616K, used 0K [0x00000006f0800000, 0x0000000750800000, 0x0000000750800000)</span><br><span class="line">  eden space 1258368K,   0% used [0x00000006f0800000, 0x00000006f0800000, 0x000000073d4e0000)</span><br><span class="line">  from space 157248K,   0% used [0x000000073d4e0000, 0x000000073d4e0000, 0x0000000746e70000)</span><br><span class="line">  to   space 157248K,   0% used [0x0000000746e70000, 0x0000000746e70000, 0x0000000750800000)</span><br><span class="line"> concurrent mark-sweep generation total 2621440K, used 2611778K [0x0000000750800000, 0x00000007f0800000, 0x00000007f0800000)</span><br><span class="line"> Metaspace       used 124199K, capacity 131576K, committed 135808K, reserved 1169408K</span><br><span class="line">  class space    used 14564K, capacity 15735K, committed 16256K, reserved 1048576K</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>大概有十几个Full GC，原因都是 Allocation Failure。特别值得注意的是，GC前eden的占用是100%，s0的占用是99%，此时还有Allocation Failure说明old区也满了。eden和s0的对象都无法通过Young GC回收，年轻代对象继续向old区晋升，但是old区也满了，导致 Allocation Failure 触发Full GC，而且耗时7.68 secs，这可是STW啊，整个系统都暂停响应了。再看GC后的情况，年轻代都清零了，说明并不是有内存泄露导致无法回收。而是短时间有大量新对象被创建，Young GC来不及回收，直到新对象不断晋升到老年代导致的STW。</p><p>那么接下来就开始追查什么原因会创建这么多新对象，手头缺一个最好的证据，就是Full GC时的heap dump。开启<code>jstat</code>不停的刷，等到old区快满的时候，抓dump。</p><p><img src="http://img.deanwangpro.com/t/20200222-oom-jstat.jpg" alt=""></p><p>时机正好，通过<code>jmap</code>导出dump文件</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jmap -dump:format=b,file=/tmp/heap.hprof 1</span><br></pre></td></tr></table></figure><p>一看文件足足有6g，说明真的是待回收的对象太多了。</p><h2 id="分析Dump"><a href="#分析Dump" class="headerlink" title="分析Dump"></a>分析Dump</h2><p>使用mat打开这个dump文件都花了半小时，风扇呼呼的在抗议。一个小tip，记得把mat的Xmx调大，不然会崩掉。另外由于这次并不是内存泄露造成不可回收，所以需要打开mat的<code>Keep unreachable objects</code>去分析不可触达的对象。</p><p><img src="http://img.deanwangpro.com/t/20200222-big-object.jpg" alt=""></p><p>打开lead suspects可以看到最大的是<code>java.lang.Object[]</code>，这也印证了大量对象被创建并被加入数组的猜测。</p><h2 id="Root-cause"><a href="#Root-cause" class="headerlink" title="Root cause"></a>Root cause</h2><p>那么究竟是什么操作引发的呢？在mat的报告中最终发现这个object是一个entity类，说明这是一个数据库操作，查询出了大量结果导致的。</p><p>这种查询量级一定会被记录为了慢查询，打开阿里云的RDS慢日志查询</p><p><img src="http://img.deanwangpro.com/t/20200222-mysql-full-scan.jpg" alt=""></p><p>218w的记录被查询到，没有直接OOM算是走运了。</p><p>但是查询的sql很奇怪，出现了<code>is null</code>的条件语句，由于这个字段是索引字段应该精确匹配的，业务逻辑中不可能出现查询空记录的需求。repository的查询接口是使用spring-data-jpa标准描述的。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Person <span class="title">findByAAndBAndC</span><span class="params">(String A, String B, String C)</span></span>;</span><br></pre></td></tr></table></figure><p>理论上应该转化为</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> * <span class="keyword">from</span> person <span class="keyword">where</span> A=A <span class="keyword">and</span> B=B <span class="keyword">and</span> C=C;</span><br></pre></td></tr></table></figure><p>结果却变成了</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> * <span class="keyword">from</span> person <span class="keyword">where</span> A <span class="keyword">is</span> <span class="literal">null</span> <span class="keyword">and</span> B=B <span class="keyword">and</span> C=C;</span><br></pre></td></tr></table></figure><p>这样以来，就跳开了索引并查询到相当可观的记录。经过试验发现如果未经过判空校验，当A=null时，spring-data-jpa会自动转化为<code>is null</code>的SQL语句。</p><p>最终我们对所有类似调用都加上了<code>Assert.notnull</code>的处理。重新上线后问题解决，再也没有FGC发生了。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>对于程序员来讲，这种“智能”的框架真的是非常可怕，当你面对一个黑盒的时候，灾难往往就在不远处。</p>]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;距离上次博文已经有快半年了。原本打算在过年期间写一篇2019年的回顾和总结。但也被这突如其来的疫情打乱。放假期间一直关注相关新闻导致信息过载，一度非常沮丧。&lt;/p&gt;
+&lt;p&gt;2月复工以后，停止了疫情信息的摄取，反倒心理上轻松不少。人都是健忘的，可不是吗？&lt;/p&gt;
+&lt;p&gt;言归正传，上篇博文说遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。正好最近又重现了，并且找到了root cause。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="java" scheme="http://www.deanwangpro.com/tags/java/"/>
+    
+      <category term="gc" scheme="http://www.deanwangpro.com/tags/gc/"/>
+    
+  </entry>
   
   <entry>
     <title>记录一次Spring Boot假死诊断</title>
@@ -486,27 +510,6 @@
       <category term="Spring" scheme="http://www.deanwangpro.com/tags/Spring/"/>
     
       <category term="aop" scheme="http://www.deanwangpro.com/tags/aop/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>阿里电面试题汇总</title>
-    <link href="http://www.deanwangpro.com/2017/01/31/ali-interview/"/>
-    <id>http://www.deanwangpro.com/2017/01/31/ali-interview/</id>
-    <published>2017-01-30T16:00:00.000Z</published>
-    <updated>2017-01-31T15:30:14.000Z</updated>
-    
-    <content type="html"><![CDATA[<p>年前意外的经历了一次阿里的电话面试，话说还没想换工作，但这位业余HR（应该是技术负责人）都没介绍工作岗位和要求，直接就约定某晚的电面时间，抱着好奇的态度被“虐”了一把。</p><p>总体感觉这位面试官问的问题非常深，基本都是系统或者原理级别的。不知道是不是代表了阿里面试的基本思路。</p><a id="more"></a><h4 id="JVM的内存模型"><a href="#JVM的内存模型" class="headerlink" title="JVM的内存模型"></a>JVM的内存模型</h4><p>内存空间（Runtime Data Area）中可以按照是否线程共享分成两块，线程共享的是方法区（Method Area）和堆（Heap），线程独享的是Java栈（Java Stack），本地方法栈（Native Method Stack）和PC寄存器（Program Counter Register）。</p><p>当然从1.8开始有一些变化，按照我的理解，原来常量池等信息都储存方法区，现在都移到堆里了。</p><blockquote><p>1.8中-XX:PermSize 和 -XX:MaxPermSize 已经失效，取而代之的是一个新的区域 —— Metaspace（元数据区）。</p></blockquote><blockquote><p>在 JDK 1.7 及以往的 JDK 版本中，Java 类信息、常量池、静态变量都存储在 Perm（永久代）里。类的元数据和静态变量在类加载的时候分配到 Perm，当类被卸载的时候垃圾收集器从 Perm 处理掉类的元数据和静态变量。当然常量池的东西也会在 Perm 垃圾收集的时候进行处理。</p></blockquote><blockquote><p>JDK 1.8 的对 JVM 架构的改造将类元数据放到本地内存中，另外，将常量池和静态变量放到 Java 堆里。HotSopt VM 将会为类的元数据明确分配和释放本地内存。在这种架构下，类元信息就突破了原来 -XX:MaxPermSize 的限制，现在可以使用更多的本地内存。这样就从一定程度上解决了原来在运行时生成大量类的造成经常 Full GC 问题，如运行时使用反射、代理等。</p></blockquote><p>所以升级以后Java堆空间可能会增加。</p><h4 id="http1-0，http1-1，http2-0区别"><a href="#http1-0，http1-1，http2-0区别" class="headerlink" title="http1.0，http1.1，http2.0区别"></a>http1.0，http1.1，http2.0区别</h4><p>说实话没有接触过1.0，只知道跟1.0相比1.1可以一次传输多个文件，各类浏览器大概都支持3~5个请求同时发送。</p><p>http2.0也是最近调Nginx才知道的一些，主要就是二进制的格式替代了原来的文本。后来查了资料大概知道增加了多路复用和首部压缩解决了head of line blocking，另外还有server pushing等新特性。协议的东西还是要看一看官网的说明，不过这东西过一段就容易忘。</p><h4 id="Get-Post对缓存的影响"><a href="#Get-Post对缓存的影响" class="headerlink" title="Get/Post对缓存的影响"></a>Get/Post对缓存的影响</h4><p>这题我一直没Get到点，意图其实是问浏览器缓存对于HTTP Method中Get和Post的请求是否支持，答案就是不支持Post Method。Get可以被浏览器缓存。</p><h4 id="浏览器渲染机制"><a href="#浏览器渲染机制" class="headerlink" title="浏览器渲染机制"></a>浏览器渲染机制</h4><p>这题其实我没法答，问的太大，大概瞥过V8的一些机制。比如构建Dom，生成CSS Rule等等。但是真实没有特别系统的理解过。</p><h4 id="mysql的Join原理以及索引数据结构和实现原理"><a href="#mysql的Join原理以及索引数据结构和实现原理" class="headerlink" title="mysql的Join原理以及索引数据结构和实现原理"></a>mysql的Join原理以及索引数据结构和实现原理</h4><p>只知道mysql innoDB join只支持Nested Loop，不支持Hash Join，就是确定一个驱动表后不断Join得到结果集，再继续往下Join。所以Join的顺序很重要。</p><p>索引只知道数据结构是B+Tree，其实就真悲催了。所以检讨一下，搜到一篇不错的<a href="http://blog.codinglabs.org/articles/theory-of-mysql-index.html" target="_blank" rel="noopener">文章</a>。</p><h4 id="浏览器meta-charset和response中content-type的优先级"><a href="#浏览器meta-charset和response中content-type的优先级" class="headerlink" title="浏览器meta charset和response中content-type的优先级"></a>浏览器meta charset和response中content-type的优先级</h4><p>这题也是懵了，其实应该回想一下这一句，</p><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">meta</span> <span class="attr">http-equiv</span>=<span class="string">"Content-Type"</span> <span class="attr">content</span>=<span class="string">"text/html; charset=utf-8"</span> /&gt;</span></span><br></pre></td></tr></table></figure><p>简写才是</p><figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">"utf-8"</span> /&gt;</span></span><br></pre></td></tr></table></figure><p>http-equiv 这个属性就是对应 HTTP response headers 里面的项目，其初衷是让不能（比如没有权限）设定服务器 header 的站点可以通过它来告知浏览器一些页面内容的相关信息。</p><p>了解以上就知道肯定是后者的优先级更高。</p><p>总结一下，裸面被虐残，阿里的面试官绝对是技术大拿，一言不合就问原理，触及灵魂了。反省自己还是应用做的太多，协议啊操作系统啊还是忘得快，没有系统的理解。以后还是应该多温故知新。</p>]]></content>
-    
-    <summary type="html">
-    
-      &lt;p&gt;年前意外的经历了一次阿里的电话面试，话说还没想换工作，但这位业余HR（应该是技术负责人）都没介绍工作岗位和要求，直接就约定某晚的电面时间，抱着好奇的态度被“虐”了一把。&lt;/p&gt;
-&lt;p&gt;总体感觉这位面试官问的问题非常深，基本都是系统或者原理级别的。不知道是不是代表了阿里面试的基本思路。&lt;/p&gt;
-    
-    </summary>
-    
-    
-      <category term="面试" scheme="http://www.deanwangpro.com/tags/%E9%9D%A2%E8%AF%95/"/>
     
   </entry>
   
