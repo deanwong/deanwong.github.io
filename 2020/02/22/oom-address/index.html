@@ -99,7 +99,7 @@
   <meta name="description" content="距离上次博文已经有快半年了。原本打算在过年期间写一篇2019年的回顾和总结。但也被这突如其来的疫情打乱。放假期间一直关注相关新闻导致信息过载，一度非常沮丧。 2月复工以后，停止了疫情信息的摄取，反倒心理上轻松不少。人都是健忘的，可不是吗？ 言归正传，上篇博文说遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。正好最近又重现了，并且找到了root caus">
 <meta name="keywords" content="java,gc">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Full GC (Allocation Failure)引发的应用僵死">
+<meta property="og:title" content="Full GC (Allocation Failure) 引发的应用僵死">
 <meta property="og:url" content="http://www.deanwangpro.com/2020/02/22/oom-address/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="距离上次博文已经有快半年了。原本打算在过年期间写一篇2019年的回顾和总结。但也被这突如其来的疫情打乱。放假期间一直关注相关新闻导致信息过载，一度非常沮丧。 2月复工以后，停止了疫情信息的摄取，反倒心理上轻松不少。人都是健忘的，可不是吗？ 言归正传，上篇博文说遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。正好最近又重现了，并且找到了root caus">
@@ -107,9 +107,9 @@
 <meta property="og:image" content="http://img.deanwangpro.com/t/20200222-oom-jstat.jpg">
 <meta property="og:image" content="http://img.deanwangpro.com/t/20200222-big-object.jpg">
 <meta property="og:image" content="http://img.deanwangpro.com/t/20200222-mysql-full-scan.jpg">
-<meta property="og:updated_time" content="2020-02-22T09:40:26.583Z">
+<meta property="og:updated_time" content="2020-02-27T15:58:47.228Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Full GC (Allocation Failure)引发的应用僵死">
+<meta name="twitter:title" content="Full GC (Allocation Failure) 引发的应用僵死">
 <meta name="twitter:description" content="距离上次博文已经有快半年了。原本打算在过年期间写一篇2019年的回顾和总结。但也被这突如其来的疫情打乱。放假期间一直关注相关新闻导致信息过载，一度非常沮丧。 2月复工以后，停止了疫情信息的摄取，反倒心理上轻松不少。人都是健忘的，可不是吗？ 言归正传，上篇博文说遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。正好最近又重现了，并且找到了root caus">
 <meta name="twitter:image" content="http://img.deanwangpro.com/t/20200222-oom-jstat.jpg">
 
@@ -130,7 +130,7 @@
   };
 </script>
 
-  <title>Full GC (Allocation Failure)引发的应用僵死 | 大名Dean鼎</title>
+  <title>Full GC (Allocation Failure) 引发的应用僵死 | 大名Dean鼎</title>
   
 
 
@@ -323,7 +323,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Full GC (Allocation Failure)引发的应用僵死
+          <h1 class="post-title" itemprop="name headline">Full GC (Allocation Failure) 引发的应用僵死
 
               
             
@@ -349,12 +349,24 @@
                 
               
 
-              <time title="Created: 2020-02-22 00:00:00 / Modified: 17:40:26" itemprop="dateCreated datePublished" datetime="2020-02-22T00:00:00+08:00">2020-02-22</time>
+              <time title="Created: 2020-02-22 00:00:00" itemprop="dateCreated datePublished" datetime="2020-02-22T00:00:00+08:00">2020-02-22</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2020-02-27 23:58:47" itemprop="dateModified" datetime="2020-02-27T23:58:47+08:00">2020-02-27</time>
               
             
           </span>
@@ -877,8 +889,9 @@
 
 
         
-        <div style="width:300px;margin:0 auto; padding:20px 0;">
-          <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=32010402000664" style="display:inline-block;text-decoration:none;height:20px;line-height:20px;"><img src="http://www.beian.gov.cn/img/ghs.png" style="float:left;"/><p style="float:left;height:20px;line-height:20px;margin: 0px 0px 0px 5px; color:#939393;">苏公网安备 32010402000664号</p></a>
+        <div style="width:400px;margin:0 auto; padding:20px 0;">
+          <a target="_blank" href="http://www.beian.miit.gov.cn" style="float:left;display:inline-block;height:20px;line-height:20px;">苏ICP备19023727号-1</a>
+          <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=32010402000664" style="float:right;display:inline-block;text-decoration:none;height:20px;line-height:20px;"><img src="http://www.beian.gov.cn/img/ghs.png" style="float:left;"/><p style="float:left;height:20px;line-height:20px;margin: 0px 0px 0px 5px; color:#939393;">苏公网安备 32010402000664号</p></a>
         </div>
       </div>
     </footer>
@@ -985,7 +998,7 @@
   var disqus_config = function() {
     this.page.url = "http://www.deanwangpro.com/2020/02/22/oom-address/";
     this.page.identifier = "2020/02/22/oom-address/";
-    this.page.title = 'Full GC (Allocation Failure)引发的应用僵死';
+    this.page.title = 'Full GC (Allocation Failure) 引发的应用僵死';
     };
   function loadComments() {
     var d = document, s = d.createElement('script');
