@@ -107,7 +107,7 @@
 <meta property="og:image" content="http://www.deanwangpro.com/images/2018-10-04/rabbitmq_tx.jpg">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2018-10-04/high_iowa.png">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2018-10-04/low_iowa.png">
-<meta property="og:updated_time" content="2018-10-05T03:30:14.898Z">
+<meta property="og:updated_time" content="2018-10-05T03:30:14.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Rabbitmq的性能测试">
 <meta name="twitter:description" content="在做系统的整体性能测试时发现经常会卡在一个较低的QPS（单机低于100）数值，而且应用服务器的负载不高，检查MQ消费速率只有40左右。接着把目标放在消息发送端上，发现消息发送速率很低，大约40条/s。 果断搭建一个最小化工程单测Rabbitmq发送性能，发现在启用发送端事务后性能下降非常明显。    消息数量 开启事务 未开启事务     10w 320796ms 10246ms    本机SSD">
@@ -904,9 +904,9 @@
 
 
         
-        <div style="width:400px;margin:0 auto; padding:20px 0;">
-          <a target="_blank" href="http://www.beian.miit.gov.cn" style="float:left;display:inline-block;height:20px;line-height:20px;">苏ICP备19023727号-1</a>
-          <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=32010402000664" style="float:right;display:inline-block;text-decoration:none;height:20px;line-height:20px;"><img src="http://www.beian.gov.cn/img/ghs.png" style="float:left;"/><p style="float:left;height:20px;line-height:20px;margin: 0px 0px 0px 5px; color:#939393;">苏公网安备 32010402000664号</p></a>
+        <div class="beian">
+          <a target="_blank" href="http://www.beian.miit.gov.cn">苏ICP备19023727号-1</a>
+          <!-- <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=32010402000664" style="float:right;display:inline-block;text-decoration:none;height:20px;line-height:20px;"><img src="http://www.beian.gov.cn/img/ghs.png" style="float:left;"/><p style="float:left;height:20px;line-height:20px;margin: 0px 0px 0px 5px; color:#939393;">苏公网安备 32010402000664号</p></a> -->
         </div>
       </div>
     </footer>
