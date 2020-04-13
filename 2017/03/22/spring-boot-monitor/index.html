@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -21,20 +21,21 @@
   </script>
 
   <meta name="description" content="最近对devOps这个话题有点兴趣，所以研究了一下monitor相关的开源项目，翻到medium上的一篇文章,而且实际项目中也曾看到devOps组的同事搭过类似的监控，就想过把瘾，了解一下监控可视化。">
-<meta name="keywords" content="Spring,DevOps">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Spring boot监控初探">
 <meta property="og:url" content="http://www.deanwangpro.com/2017/03/22/spring-boot-monitor/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="最近对devOps这个话题有点兴趣，所以研究了一下monitor相关的开源项目，翻到medium上的一篇文章,而且实际项目中也曾看到devOps组的同事搭过类似的监控，就想过把瘾，了解一下监控可视化。">
-<meta property="og:locale" content="en">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://www.deanwangpro.com/images/Jolokia.png">
 <meta property="og:image" content="http://www.deanwangpro.com/images/Grafana.png">
 <meta property="og:image" content="http://www.deanwangpro.com/images/tomcat.png">
-<meta property="og:updated_time" content="2017-03-26T14:10:10.000Z">
+<meta property="article:published_time" content="2017-03-21T16:00:00.000Z">
+<meta property="article:modified_time" content="2017-03-26T14:10:10.000Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="Spring">
+<meta property="article:tag" content="DevOps">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Spring boot监控初探">
-<meta name="twitter:description" content="最近对devOps这个话题有点兴趣，所以研究了一下monitor相关的开源项目，翻到medium上的一篇文章,而且实际项目中也曾看到devOps组的同事搭过类似的监控，就想过把瘾，了解一下监控可视化。">
 <meta name="twitter:image" content="http://www.deanwangpro.com/images/Jolokia.png">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2017/03/22/spring-boot-monitor/">
@@ -90,6 +91,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -232,15 +234,20 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>最近对devOps这个话题有点兴趣，所以研究了一下monitor相关的开源项目，翻到medium上的<a href="https://medium.com/@brunosimioni/near-real-time-monitoring-charts-with-spring-boot-actuator-jolokia-and-grafana-1ce267c50bcc#.il5xmlnv7" target="_blank" rel="noopener">一篇文章</a>,而且实际项目中也曾看到devOps组的同事搭过类似的监控，就想过把瘾，了解一下监控可视化。<br><a id="more"></a></p>
+        <p>最近对devOps这个话题有点兴趣，所以研究了一下monitor相关的开源项目，翻到medium上的<a href="https://medium.com/@brunosimioni/near-real-time-monitoring-charts-with-spring-boot-actuator-jolokia-and-grafana-1ce267c50bcc#.il5xmlnv7" target="_blank" rel="noopener">一篇文章</a>,而且实际项目中也曾看到devOps组的同事搭过类似的监控，就想过把瘾，了解一下监控可视化。</p>
+<a id="more"></a>
+
 <h3 id="被监控服务配置"><a href="#被监控服务配置" class="headerlink" title="被监控服务配置"></a>被监控服务配置</h3><p>本地正好有spring-boot的项目，并且也依赖了<code>jolokia</code>（主要就是为了把JMX的mbean通过HTTP暴露出去）<br>项目配置也少不了</p>
-<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">endpoints:</span></span><br><span class="line"><span class="attr">    enabled:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">    jmx:</span></span><br><span class="line"><span class="attr">        enabled:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">    jolokia:</span></span><br><span class="line"><span class="attr">        enabled:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="attr">management:</span></span><br><span class="line"><span class="attr">    security:</span></span><br><span class="line"><span class="attr">        enabled:</span> <span class="literal">false</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">endpoints:</span></span><br><span class="line">    <span class="attr">enabled:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">jmx:</span></span><br><span class="line">        <span class="attr">enabled:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">jolokia:</span></span><br><span class="line">        <span class="attr">enabled:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="attr">management:</span></span><br><span class="line">    <span class="attr">security:</span></span><br><span class="line">        <span class="attr">enabled:</span> <span class="literal">false</span></span><br></pre></td></tr></table></figure>
+
 <p>访问一下URL看看是不是ok</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://localhost:8080/jolokia/read/org.springframework.boot:name=metricsEndpoint,type=Endpoint/Data</span><br></pre></td></tr></table></figure>
-<h3 id="搭建监控系统"><a href="#搭建监控系统" class="headerlink" title="搭建监控系统"></a>搭建监控系统</h3><p>如果能看到数据，说明server端配置没问题了，下面我们怎么搭建Telegraf + InfluxDB + Grafana呢，这个三个组件是这么配合的，Telegraf实际就是收集信息的，比如每隔10s访问一次上面那个URL得到metrics，收集到的数据存到InfluxDB，然后Grafana做数据可视化。<br>但是如果纯手动安装实在太麻烦，求助万能的github，找到一个非常棒的项目(<a href="https://github.com/samuelebistoletti/docker-statsd-influxdb-grafana)" target="_blank" rel="noopener">https://github.com/samuelebistoletti/docker-statsd-influxdb-grafana)</a>, 直接fork然后修改一些配置就可以为自己的项目服务了。如果你不了解相关配置可以先直接run起来，然后通过ssh进去一探究竟。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http:&#x2F;&#x2F;localhost:8080&#x2F;jolokia&#x2F;read&#x2F;org.springframework.boot:name&#x3D;metricsEndpoint,type&#x3D;Endpoint&#x2F;Data</span><br></pre></td></tr></table></figure>
+
+<h3 id="搭建监控系统"><a href="#搭建监控系统" class="headerlink" title="搭建监控系统"></a>搭建监控系统</h3><p>如果能看到数据，说明server端配置没问题了，下面我们怎么搭建Telegraf + InfluxDB + Grafana呢，这个三个组件是这么配合的，Telegraf实际就是收集信息的，比如每隔10s访问一次上面那个URL得到metrics，收集到的数据存到InfluxDB，然后Grafana做数据可视化。<br>但是如果纯手动安装实在太麻烦，求助万能的github，找到一个非常棒的项目(<a href="https://github.com/samuelebistoletti/docker-statsd-influxdb-grafana" target="_blank" rel="noopener">https://github.com/samuelebistoletti/docker-statsd-influxdb-grafana</a>), 直接fork然后修改一些配置就可以为自己的项目服务了。如果你不了解相关配置可以先直接run起来，然后通过ssh进去一探究竟。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh root@localhost -p 22022</span><br></pre></td></tr></table></figure>
 <p>配置方面，主要是要修改Telegraf的，因为它是对接不同项目的，你需要收集什么样的信息，比如cpu，disk，net等等都要在Telegraf里配。简单起见，我只设置了三个输入。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"># /etc/telegraf/telegraf.conf</span><br><span class="line">[[inputs.jolokia]]</span><br><span class="line">  context = &quot;/jolokia&quot;</span><br><span class="line"></span><br><span class="line">[[inputs.jolokia.servers]]</span><br><span class="line">    name = &quot;springbootapp&quot;</span><br><span class="line">    host = &quot;&#123;app ip address&#125;&quot;</span><br><span class="line">    port = &quot;8080&quot;</span><br><span class="line"></span><br><span class="line">[[inputs.jolokia.metrics]]</span><br><span class="line">    name = &quot;metrics&quot;</span><br><span class="line">    mbean  = &quot;org.springframework.boot:name=metricsEndpoint,type=Endpoint&quot;</span><br><span class="line">    attribute = &quot;Data&quot;</span><br><span class="line">    </span><br><span class="line">[[inputs.jolokia.metrics]]</span><br><span class="line">    name = &quot;tomcat_max_threads&quot;</span><br><span class="line">    mbean  = &quot;Tomcat:name=\&quot;http-nio-8080\&quot;,type=ThreadPool&quot;</span><br><span class="line">    attribute = &quot;maxThreads&quot;</span><br><span class="line"></span><br><span class="line">[[inputs.jolokia.metrics]]</span><br><span class="line">    name = &quot;tomcat_current_threads_busy&quot;</span><br><span class="line">    mbean  = &quot;Tomcat:name=\&quot;http-nio-8080\&quot;,type=ThreadPool&quot;</span><br><span class="line">    attribute = &quot;currentThreadsBusy&quot;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"># &#x2F;etc&#x2F;telegraf&#x2F;telegraf.conf</span><br><span class="line">[[inputs.jolokia]]</span><br><span class="line">  context &#x3D; &quot;&#x2F;jolokia&quot;</span><br><span class="line"></span><br><span class="line">[[inputs.jolokia.servers]]</span><br><span class="line">    name &#x3D; &quot;springbootapp&quot;</span><br><span class="line">    host &#x3D; &quot;&#123;app ip address&#125;&quot;</span><br><span class="line">    port &#x3D; &quot;8080&quot;</span><br><span class="line"></span><br><span class="line">[[inputs.jolokia.metrics]]</span><br><span class="line">    name &#x3D; &quot;metrics&quot;</span><br><span class="line">    mbean  &#x3D; &quot;org.springframework.boot:name&#x3D;metricsEndpoint,type&#x3D;Endpoint&quot;</span><br><span class="line">    attribute &#x3D; &quot;Data&quot;</span><br><span class="line">    </span><br><span class="line">[[inputs.jolokia.metrics]]</span><br><span class="line">    name &#x3D; &quot;tomcat_max_threads&quot;</span><br><span class="line">    mbean  &#x3D; &quot;Tomcat:name&#x3D;\&quot;http-nio-8080\&quot;,type&#x3D;ThreadPool&quot;</span><br><span class="line">    attribute &#x3D; &quot;maxThreads&quot;</span><br><span class="line"></span><br><span class="line">[[inputs.jolokia.metrics]]</span><br><span class="line">    name &#x3D; &quot;tomcat_current_threads_busy&quot;</span><br><span class="line">    mbean  &#x3D; &quot;Tomcat:name&#x3D;\&quot;http-nio-8080\&quot;,type&#x3D;ThreadPool&quot;</span><br><span class="line">    attribute &#x3D; &quot;currentThreadsBusy&quot;</span><br></pre></td></tr></table></figure>
+
 <p>其实就是spring-boot标准的metrics以及tomcat的Threads。<br>完成之后重启服务<code>/etc/init.d/telegraf restart</code></p>
 <h3 id="查看监控数据"><a href="#查看监控数据" class="headerlink" title="查看监控数据"></a>查看监控数据</h3><p>我们访问InfluxDB看看有数据了没有<code>http://localhost:3004/</code>，切换数据库到Telegraf。输入以下命令试试吧</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">SHOW MEASUREMENTS</span><br><span class="line">SELECT * FROM jolokia</span><br><span class="line">SELECT * FROM cpu</span><br><span class="line">SELECT * FROM mem</span><br><span class="line">SELECT * FROM diskio</span><br></pre></td></tr></table></figure>
@@ -254,13 +261,16 @@
 <li>Choose <code>direct</code> as <code>access</code></li>
 <li>Fill remaining fields as follows and click on <code>Add</code> without altering other fields</li>
 </ol>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Url: http://localhost:8086</span><br><span class="line">Database:	telegraf</span><br><span class="line">User: telegraf</span><br><span class="line">Password:	telegraf</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Url: http:&#x2F;&#x2F;localhost:8086</span><br><span class="line">Database:	telegraf</span><br><span class="line">User: telegraf</span><br><span class="line">Password:	telegraf</span><br></pre></td></tr></table></figure>
+
 <p>添加好InfluxDB后，新建一个Dashboard，然后快速的ADD几个Graph来。<br>为了演示，我添加了三个，分别使用下面三组查询语句来渲染出三张图表</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">SELECT MEAN(usage_system) + MEAN(usage_user) AS cpu_total FROM cpu WHERE $timeFilter GROUP BY time($interval)</span><br><span class="line"></span><br><span class="line">SELECT mean(&quot;total&quot;) as &quot;total&quot; FROM &quot;mem&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</span><br><span class="line">SELECT mean(&quot;used&quot;) as &quot;used&quot; FROM &quot;mem&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</span><br><span class="line"></span><br><span class="line">SELECT mean(&quot;metrics_heap.used&quot;) as &quot;heap_usage&quot; FROM &quot;jolokia&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</span><br></pre></td></tr></table></figure>
+
 <p>第一张是CPU占用率；第二张是内存占用情况，绿线是Total，黄线是Used；第三张是jolokia提供的jvm heap的使用，可以到看到GC的情况。</p>
 <p><img src="/images/Grafana.png" alt="Grafana"></p>
 <p>刚才还配置了Tomcat的收集，想看Tomcat的Thread情况也是妥妥的。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">SELECT mean(&quot;tomcat_max_threads&quot;) FROM &quot;jolokia&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</span><br><span class="line">SELECT mean(&quot;tomcat_current_threads_busy&quot;) FROM &quot;jolokia&quot; WHERE $timeFilter GROUP BY time($interval) fill(null)</span><br></pre></td></tr></table></figure>
+
 <p><img src="/images/tomcat.png" alt="tomcat"></p>
 <h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>可以看到搭建这样一套环境其实很快，原理也并不复杂，监控数据可视化的难点在于</p>
 <ul>
@@ -403,19 +413,16 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -446,7 +453,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -488,9 +495,15 @@
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 

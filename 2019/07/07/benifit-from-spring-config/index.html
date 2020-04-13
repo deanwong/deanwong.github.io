@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -21,17 +21,18 @@
   </script>
 
   <meta name="description" content="配置其实分为结构和内容两个方面，结构对应的是代码，比如1.0.0新开发的代码上有一个功能开关${feature.switchA}，但master上还没有，这就是结构的变化。另一方面是内容，1.0.0的开发分支有两个测试环境，连着不同的数据库，那么对应的${mysql.url}的内容肯定不同。 内容的类别上也可以分为三种：业务配置，功能开关，服务配置。 Spring Cloud的配置中心是Sprin">
-<meta name="keywords" content="spring,config">
 <meta property="og:type" content="article">
 <meta property="og:title" content="怎么用好Spring Config">
 <meta property="og:url" content="http://www.deanwangpro.com/2019/07/07/benifit-from-spring-config/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="配置其实分为结构和内容两个方面，结构对应的是代码，比如1.0.0新开发的代码上有一个功能开关${feature.switchA}，但master上还没有，这就是结构的变化。另一方面是内容，1.0.0的开发分支有两个测试环境，连着不同的数据库，那么对应的${mysql.url}的内容肯定不同。 内容的类别上也可以分为三种：业务配置，功能开关，服务配置。 Spring Cloud的配置中心是Sprin">
-<meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2019-07-19T08:14:36.000Z">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2019-07-06T16:00:00.000Z">
+<meta property="article:modified_time" content="2019-07-19T08:14:36.000Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="spring">
+<meta property="article:tag" content="config">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="怎么用好Spring Config">
-<meta name="twitter:description" content="配置其实分为结构和内容两个方面，结构对应的是代码，比如1.0.0新开发的代码上有一个功能开关${feature.switchA}，但master上还没有，这就是结构的变化。另一方面是内容，1.0.0的开发分支有两个测试环境，连着不同的数据库，那么对应的${mysql.url}的内容肯定不同。 内容的类别上也可以分为三种：业务配置，功能开关，服务配置。 Spring Cloud的配置中心是Sprin">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2019/07/07/benifit-from-spring-config/">
 
@@ -86,6 +87,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -233,6 +235,7 @@
 <p>Spring Cloud的配置中心是Spring Config，经过两年的使用，发现了其中不少的问题，有些是使用问题，有些是Spring Config本身的管理能力导致的问题。</p>
 <p>Spring Config首推基于git的管理方式，提供了两个管理维度，一个是label(即branch)，一个是profile。当服务foo在一套代码下要安装多套环境，比如预发布环境有2套，一套在shanghai机房，一套在beijing机房。那么比较自然的管理维度就是利用profile，foo-shanghai.yaml以及foo-beijing.yaml。当生产环境也依然需要2台时，怎么处理呢？这时候就会有两种做法，一种利用增加label维度做区分，一种依然只用profile。</p>
 <a id="more"></a>
+
 <h2 id="方法一：用label-profile区分"><a href="#方法一：用label-profile区分" class="headerlink" title="方法一：用label + profile区分"></a>方法一：用label + profile区分</h2><table>
 <thead>
 <tr>
@@ -241,8 +244,7 @@
 <th>Profile</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>foo-shanghai.yaml</td>
 <td>stg</td>
 <td>shanghai</td>
@@ -262,9 +264,12 @@
 <td>Prd</td>
 <td>beijing</td>
 </tr>
-</tbody>
-</table>
-<p>branch其实表示的是结构，即对应不同的代码，而profile对应的是内容。</p>
+<tr>
+<td>branch其实表示的是结构，即对应不同的代码，而profile对应的是内容。</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
 <p>这种方式有什么问题？一般应用都是只有profile来区分环境，比如logback要分环境区分配置也是通过<code>&lt;springProfile&gt;</code>来指定。一旦采用两个维度来确定唯一的配置，那么所有项目都需要有<code>label</code>这个变量。</p>
 <p>试想如果foo这个应用在线上有个bug需要fix，势必会增加一个hotfix的branch在配置中心，同时还需要增加相应的profile，对应foo的<code>label</code>变量设置为hotfix，<code>profile</code>设置为beijing或者shanghai。</p>
 <p>再考虑另一种情况，foo在prd的代码需要放到stg进行验证如何处理？foo的代码版本肯定是prd的（因为stg的配置结构也许已经变了），但profile需要用stg的环境。这时实际上只能在配置中心的prd分支上新建一个新的profile来临时满足这种需求。</p>
@@ -276,8 +281,7 @@
 <th>Profile</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>foo-stg-shanghai.yaml</td>
 <td>master</td>
 <td>stg-shanghai</td>
@@ -297,8 +301,7 @@
 <td>master</td>
 <td>prd-beijing</td>
 </tr>
-</tbody>
-</table>
+</tbody></table>
 <p>这种方式可以降低管理维度，即放弃label的维度，只有profile的维度。同样的问题，如果foo这个应用在线上有个bug需要fix，那么需要新增两个profile，hotfix-beijing和hotfix-shanghai。虽然维度降低了，但是管理上却有些麻烦。因为master的这个分支无法保护起来，如果有开发人员直接修改了prd-XXX的环境就会导致线上问题。</p>
 <p>同样的，foo在prd的代码需要放到stg进行验证如何处理？foo的代码版本肯定是prd的（因为stg的配置结构也许已经变了），但profile需要用stg的环境。这时实际上只能再配置中心新建一个profile，比如stg-oldshanghai，来满足这种需求。</p>
 <p>然而我们知道，增加新的profile其实还是挺麻烦的事情，如果代码中有直接比较profile的逻辑，那么往往容易出现问题。</p>
@@ -440,19 +443,16 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -483,7 +483,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -525,9 +525,15 @@
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 

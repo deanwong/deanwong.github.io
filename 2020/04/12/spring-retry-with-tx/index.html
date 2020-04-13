@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -21,13 +21,12 @@
   </script>
 
   <meta name="description" content="MySQL死锁从产品之初就偶有发生，算是萦绕在心中的噩梦之一。由于死锁大都伴随着锁等待，所以一般都会拉低服务QPS，在死锁发生时肯定会出现各种意料不到的问题。前期一直采用“指标不治本”的办法，对特别容易产生死锁的方法增加retry。但当retry和事务嵌套在一起时也会出现不可预知的错误。 对于数据库死锁这个万恶之源，真可谓深恶痛绝，所以这次在解决retry和事务嵌套问题时，将这个元凶也一并解决。">
-<meta name="keywords" content="spring,mysql,deadlock,retry">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MySQL死锁与Spring事务">
 <meta property="og:url" content="http://www.deanwangpro.com/2020/04/12/spring-retry-with-tx/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="MySQL死锁从产品之初就偶有发生，算是萦绕在心中的噩梦之一。由于死锁大都伴随着锁等待，所以一般都会拉低服务QPS，在死锁发生时肯定会出现各种意料不到的问题。前期一直采用“指标不治本”的办法，对特别容易产生死锁的方法增加retry。但当retry和事务嵌套在一起时也会出现不可预知的错误。 对于数据库死锁这个万恶之源，真可谓深恶痛绝，所以这次在解决retry和事务嵌套问题时，将这个元凶也一并解决。">
-<meta property="og:locale" content="en">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://img.deanwangpro.com/t/tx_threadlocal.png">
 <meta property="og:image" content="http://img.deanwangpro.com/t/tx_commit.png">
 <meta property="og:image" content="http://img.deanwangpro.com/t/tx_rollback.png">
@@ -37,10 +36,14 @@
 <meta property="og:image" content="http://img.deanwangpro.com/t/arthas_deadlock.png">
 <meta property="og:image" content="http://img.deanwangpro.com/t/tx_spring_batch.png">
 <meta property="og:image" content="http://img.deanwangpro.com/t/tx_spring_orm_eclipselink.png">
-<meta property="og:updated_time" content="2020-04-13T02:05:12.548Z">
+<meta property="article:published_time" content="2020-04-11T16:00:00.000Z">
+<meta property="article:modified_time" content="2020-04-13T02:05:12.548Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="spring">
+<meta property="article:tag" content="mysql">
+<meta property="article:tag" content="deadlock">
+<meta property="article:tag" content="retry">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="MySQL死锁与Spring事务">
-<meta name="twitter:description" content="MySQL死锁从产品之初就偶有发生，算是萦绕在心中的噩梦之一。由于死锁大都伴随着锁等待，所以一般都会拉低服务QPS，在死锁发生时肯定会出现各种意料不到的问题。前期一直采用“指标不治本”的办法，对特别容易产生死锁的方法增加retry。但当retry和事务嵌套在一起时也会出现不可预知的错误。 对于数据库死锁这个万恶之源，真可谓深恶痛绝，所以这次在解决retry和事务嵌套问题时，将这个元凶也一并解决。">
 <meta name="twitter:image" content="http://img.deanwangpro.com/t/tx_threadlocal.png">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2020/04/12/spring-retry-with-tx/">
@@ -96,6 +99,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -241,6 +245,7 @@
         <p>MySQL死锁从产品之初就偶有发生，算是萦绕在心中的噩梦之一。由于死锁大都伴随着锁等待，所以一般都会拉低服务QPS，在死锁发生时肯定会出现各种意料不到的问题。前期一直采用“指标不治本”的办法，对特别容易产生死锁的方法增加retry。但当retry和事务嵌套在一起时也会出现不可预知的错误。</p>
 <p>对于数据库死锁这个万恶之源，真可谓深恶痛绝，所以这次在解决retry和事务嵌套问题时，将这个元凶也一并解决。</p>
 <a id="more"></a>
+
 <h2 id="一些关于事务的概念"><a href="#一些关于事务的概念" class="headerlink" title="一些关于事务的概念"></a>一些关于事务的概念</h2><p>为了更好的说明问题，我们先来解释一下基本概念</p>
 <h3 id="隔离级别"><a href="#隔离级别" class="headerlink" title="隔离级别"></a>隔离级别</h3><p>TransactionDefinition 接口中定义了五个表示隔离级别的常量：</p>
 <ul>
@@ -280,17 +285,20 @@
 <p>由于篇幅原因，源码部分就不过多展示了， 如果感兴趣可以自行debug一下就能了解其中的机制。</p>
 <h2 id="当-Spring-Retry-与事务相遇"><a href="#当-Spring-Retry-与事务相遇" class="headerlink" title="当 Spring Retry 与事务相遇"></a>当 Spring Retry 与事务相遇</h2><p>上文谈到我们在处理死锁时采用重试的方式解决，但并不是说任何方法都套上<code>@Retryable</code>就万事大吉了。</p>
 <h3 id="Retry的注意点"><a href="#Retry的注意点" class="headerlink" title="Retry的注意点"></a>Retry的注意点</h3><p>一般来说，在spring中使用retry非常的简单，在注解中定义好重试次数和避让策略就可以了。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="meta">@Retryable</span>(maxAttempts = MAX_RETIES, value = &#123;MySQLIntegrityConstraintViolationException.class, MySQLTransactionRollbackException.class&#125;, backoff = <span class="meta">@Backoff</span>(delay = <span class="number">100</span>, multiplier = <span class="number">2</span>))</span><br><span class="line"><span class="function"><span class="keyword">public</span> Foo <span class="title">save</span><span class="params">(@Nullable Foo foo)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="comment">// foo.setXXX(...)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="meta">@Retryable</span>(maxAttempts = MAX_RETIES, value = &#123;MySQLIntegrityConstraintViolationException<span class="class">.<span class="keyword">class</span>, <span class="title">MySQLTransactionRollbackException</span>.<span class="title">class</span>&#125;, <span class="title">backoff</span> </span>= <span class="meta">@Backoff</span>(delay = <span class="number">100</span>, multiplier = <span class="number">2</span>))</span><br><span class="line"><span class="function"><span class="keyword">public</span> Foo <span class="title">save</span><span class="params">(@Nullable Foo foo)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="comment">// foo.setXXX(...)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>值得注意是，如果方法内部会对参数对象进行修改，那么实际上每次retry的逻辑就都不是幂等的了，因为这一次的retry会受上一次的影响。假设这个<code>save</code>方法会根据有没有id来判断处理逻辑是创建还是更新，那么第二次的retry很有可能就会变成更新逻辑，而不是预期的创建逻辑了。如果参数是不可变的（immutable）那么可以很大程序上降低这种复杂度。这也告诉我们，immutable思想非常重要，可以在设计和编译阶段就解决很多“头疼”的问题。</p>
 <p>回到正题，试想一下，如果这个<code>save</code>是个子事务方法会发生什么？按照上一节说的，第一次执行就会设置rollbackOnly=true，那么即使第二次重试成功也并不会将rollbackOnly设置为false，所以父事务依然会失败。换句话说，<strong>retry在子事务方法上是没有意义的</strong>。这点在编码时尤其需要注意。</p>
 <h2 id="数据库死锁"><a href="#数据库死锁" class="headerlink" title="数据库死锁"></a>数据库死锁</h2><p>事务的问题说完，回到万恶之源的数据库死锁问题。</p>
 <h3 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h3><p>其实死锁的困扰已久，一般一周次数在几次到十几次不等。而且死锁的对象都是索引或者主键，查阅了一些资料觉得可能是并发写入比较严重造成，但线下模拟了很久也没有复现。次数倒也不多，也就先用重试策略抵挡一下。当然也就遇到了上文提及的问题。</p>
 <p>近期由于业务增长，死锁发生的频繁愈发频繁，所以“治本”的任务也紧急地提上了日程。</p>
 <h3 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h3><p>死锁第一步分析肯定先从MySQL的死锁log入手</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">------------------------</span><br><span class="line">LATEST DETECTED DEADLOCK</span><br><span class="line">------------------------</span><br><span class="line">2020-03-27 10:35:51 0x7f5124f91700</span><br><span class="line">*** (1) TRANSACTION:</span><br><span class="line">TRANSACTION 860653361, ACTIVE 0 sec inserting</span><br><span class="line">mysql tables in use 1, locked 1</span><br><span class="line">LOCK WAIT 15 lock struct(s), heap size 1136, 7 row lock(s), undo log entries 2</span><br><span class="line">MySQL thread id 11732538, OS thread handle 139984633485056, query id 5318215849 10.0.20.22 linkflow update</span><br><span class="line">INSERT INTO contact_identity (contact_id, external_id, last_updated, tenant_id) VALUES (34868134,  &apos;oPawF5kfWh7BjsgMesjfsndYc548&apos;, &apos;2020-03-27 10:35:51.579&apos;, 1)</span><br><span class="line">*** (1) WAITING FOR THIS LOCK TO BE GRANTED:</span><br><span class="line">RECORD LOCKS space id 433 page no 911218 n bits 600 index idx_t_contact of table `linkflow`.`contact_identity` trx id 860653361 lock_mode X locks gap before rec insert intention waiting</span><br><span class="line">Record lock, heap no 412 PHYSICAL RECORD: n_fields 3; compact format; info bits 0</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"></span><br><span class="line">*** (2) TRANSACTION:</span><br><span class="line">TRANSACTION 860653362, ACTIVE 0 sec inserting</span><br><span class="line">mysql tables in use 1, locked 1</span><br><span class="line">15 lock struct(s), heap size 1136, 7 row lock(s), undo log entries 2</span><br><span class="line">MySQL thread id 11736226, OS thread handle 139986489382656, query id 5318215869 10.0.20.22 linkflow update</span><br><span class="line">INSERT INTO contact_identity (contact_id, external_id, last_updated, tenant_id) VALUES (34868135, &apos;oPawF5t1K1_a1i96ZDrJQRx22T8w&apos;,&apos;2020-03-27 10:35:51.588&apos;, 1)</span><br><span class="line">*** (2) HOLDS THE LOCK(S):</span><br><span class="line">RECORD LOCKS space id 433 page no 911218 n bits 600 index idx_t_contact of table `linkflow`.`contact_identity` trx id 860653362 lock mode S locks gap before rec</span><br><span class="line">Record lock, heap no 412 PHYSICAL RECORD: n_fields 3; compact format; info bits 0</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"></span><br><span class="line">*** (2) WAITING FOR THIS LOCK TO BE GRANTED:</span><br><span class="line">RECORD LOCKS space id 433 page no 911218 n bits 600 index idx_t_contact of table `linkflow`.`contact_identity` trx id 860653362 lock_mode X locks gap before rec insert intention waiting</span><br><span class="line">Record lock, heap no 412 PHYSICAL RECORD: n_fields 3; compact format; info bits 0</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"></span><br><span class="line">*** WE ROLL BACK TRANSACTION (2)</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">------------------------</span><br><span class="line">LATEST DETECTED DEADLOCK</span><br><span class="line">------------------------</span><br><span class="line">2020-03-27 10:35:51 0x7f5124f91700</span><br><span class="line">*** (1) TRANSACTION:</span><br><span class="line">TRANSACTION 860653361, ACTIVE 0 sec inserting</span><br><span class="line">mysql tables in use 1, locked 1</span><br><span class="line">LOCK WAIT 15 lock struct(s), heap size 1136, 7 row lock(s), undo log entries 2</span><br><span class="line">MySQL thread id 11732538, OS thread handle 139984633485056, query id 5318215849 10.0.20.22 linkflow update</span><br><span class="line">INSERT INTO contact_identity (contact_id, external_id, last_updated, tenant_id) VALUES (34868134,  &#39;oPawF5kfWh7BjsgMesjfsndYc548&#39;, &#39;2020-03-27 10:35:51.579&#39;, 1)</span><br><span class="line">*** (1) WAITING FOR THIS LOCK TO BE GRANTED:</span><br><span class="line">RECORD LOCKS space id 433 page no 911218 n bits 600 index idx_t_contact of table &#96;linkflow&#96;.&#96;contact_identity&#96; trx id 860653361 lock_mode X locks gap before rec insert intention waiting</span><br><span class="line">Record lock, heap no 412 PHYSICAL RECORD: n_fields 3; compact format; info bits 0</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"></span><br><span class="line">*** (2) TRANSACTION:</span><br><span class="line">TRANSACTION 860653362, ACTIVE 0 sec inserting</span><br><span class="line">mysql tables in use 1, locked 1</span><br><span class="line">15 lock struct(s), heap size 1136, 7 row lock(s), undo log entries 2</span><br><span class="line">MySQL thread id 11736226, OS thread handle 139986489382656, query id 5318215869 10.0.20.22 linkflow update</span><br><span class="line">INSERT INTO contact_identity (contact_id, external_id, last_updated, tenant_id) VALUES (34868135, &#39;oPawF5t1K1_a1i96ZDrJQRx22T8w&#39;,&#39;2020-03-27 10:35:51.588&#39;, 1)</span><br><span class="line">*** (2) HOLDS THE LOCK(S):</span><br><span class="line">RECORD LOCKS space id 433 page no 911218 n bits 600 index idx_t_contact of table &#96;linkflow&#96;.&#96;contact_identity&#96; trx id 860653362 lock mode S locks gap before rec</span><br><span class="line">Record lock, heap no 412 PHYSICAL RECORD: n_fields 3; compact format; info bits 0</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"></span><br><span class="line">*** (2) WAITING FOR THIS LOCK TO BE GRANTED:</span><br><span class="line">RECORD LOCKS space id 433 page no 911218 n bits 600 index idx_t_contact of table &#96;linkflow&#96;.&#96;contact_identity&#96; trx id 860653362 lock_mode X locks gap before rec insert intention waiting</span><br><span class="line">Record lock, heap no 412 PHYSICAL RECORD: n_fields 3; compact format; info bits 0</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"></span><br><span class="line">*** WE ROLL BACK TRANSACTION (2)</span><br></pre></td></tr></table></figure>
+
 <p>这是两个insert操作，事务2失败，是由于等待索引idx_t_contact的排他锁。</p>
 <p>我们分析一下</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">死锁的索引约束</span><br><span class="line"> KEY `idx_t_contact` (`tenant_id`,`contact_id`),</span><br><span class="line">产生死锁的原因是：</span><br><span class="line">TRANSACTION 860653361，插入的记录是：INSERT INTO contact_identity (contact_id, external_id, last_updated, tenant_id) VALUES (34868134,  &apos;oPawF5kfWh7BjsgMesjfsndYc548&apos;, &apos;2020-03-27 10:35:51.579&apos;, 1)</span><br><span class="line"></span><br><span class="line">他被阻塞，需要等待这个记录的锁提供：</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"></span><br><span class="line">而这个记录的锁，被事务TRANSACTION 860653362持有了，没释放，没释放的情况下，接着在事务860653361后，又执行了一个插入（在860653362的事务中）：</span><br><span class="line">INSERT INTO contact_identity (contact_id, external_id, last_updated, tenant_id) VALUES (34868135, &apos;oPawF5t1K1_a1i96ZDrJQRx22T8w&apos;,&apos;2020-03-27 10:35:51.588&apos;, 1)</span><br><span class="line"></span><br><span class="line">它也需要这个记录的锁（其实它已经持有了这个记录的锁，但是他需要在队列里等待）：</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"> </span><br><span class="line">这样就造成了死循环，产生死锁</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">死锁的索引约束</span><br><span class="line"> KEY &#96;idx_t_contact&#96; (&#96;tenant_id&#96;,&#96;contact_id&#96;),</span><br><span class="line">产生死锁的原因是：</span><br><span class="line">TRANSACTION 860653361，插入的记录是：INSERT INTO contact_identity (contact_id, external_id, last_updated, tenant_id) VALUES (34868134,  &#39;oPawF5kfWh7BjsgMesjfsndYc548&#39;, &#39;2020-03-27 10:35:51.579&#39;, 1)</span><br><span class="line"></span><br><span class="line">他被阻塞，需要等待这个记录的锁提供：</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"></span><br><span class="line">而这个记录的锁，被事务TRANSACTION 860653362持有了，没释放，没释放的情况下，接着在事务860653361后，又执行了一个插入（在860653362的事务中）：</span><br><span class="line">INSERT INTO contact_identity (contact_id, external_id, last_updated, tenant_id) VALUES (34868135, &#39;oPawF5t1K1_a1i96ZDrJQRx22T8w&#39;,&#39;2020-03-27 10:35:51.588&#39;, 1)</span><br><span class="line"></span><br><span class="line">它也需要这个记录的锁（其实它已经持有了这个记录的锁，但是他需要在队列里等待）：</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"> </span><br><span class="line">这样就造成了死循环，产生死锁</span><br></pre></td></tr></table></figure>
+
 <p>这个就挺奇怪的，两个insert没有涉及到同一个主键或者同一个唯一索引，居然会持有S锁，并造成相同等待。咨询了阿里云的售后DBA，表示很有可能是在插入前有一个产生S锁的操作导致了这个问题，比如锁定行记录，或者是更新操作。但在我们的业务中，在写入之前只有查询操作，查询记录为空后执行插入，按理说是不会产生S锁的。之后我们又逐个的排查了应用日志中输出的SQL，也没有发现会加S锁的操作。</p>
 <p>这一下线索又断了，在与阿里云的DBA沟通了一天后也没什么进展，期间各种查binlog也没有任何发现。好在最后DBA建议我们打开RDS的SQL洞察功能，看看会不会有什么蛛丝马迹。虽然这个功能是收费的，不过也正是由于它我们才找到了真正的元凶。</p>
 <h3 id="转机"><a href="#转机" class="headerlink" title="转机"></a>转机</h3><p>SQL洞察购买以后才会开始收集，所以这时我们只需要静静地等待死锁的再次发生。由于是回顾，我们还是以刚刚死锁日志中的两个事务来看下SQL洞察中的记录。</p>
@@ -307,8 +315,7 @@
 <th>事务2</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;</td>
 <td>SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;</td>
 </tr>
@@ -328,8 +335,7 @@
 <td>死锁</td>
 <td>成功</td>
 </tr>
-</tbody>
-</table>
+</tbody></table>
 <p>事务1和事务2都开启了串行化，那么在查询时会将满足条件的索引都加上S锁，这里锁的就是tenant_id=1的记录，这个时候其实在事务2的第三步插入时就会产生锁等待，因为它在等待事务1释放S锁。这时事务1也提交一个插入操作，并且contact_id和tenant_id都一样（命中idx_t_contact索引），就会产生死锁，事务1失败回滚， 事务2成功。</p>
 <p><img src="http://img.deanwangpro.com/t/deadlock.png" alt=""></p>
 <h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>既然知道了造成了死锁的原因，但是究竟是什么代码会设置隔离级别为串行化呢？</p>
@@ -354,6 +360,7 @@
 <p>总算水落石出了，是spring-orm中一个“全局变量”的状态设置出现了问题。我也给spring-orm提了<a href="https://github.com/spring-projects/spring-framework/issues/24802" target="_blank" rel="noopener">issue</a>，并提供了<a href="https://github.com/deanwong/spring-orm-sample" target="_blank" rel="noopener">最简Project</a>来方便复现这个bug。感兴趣的可以看一下这个project。</p>
 <p>其实spring batch也算是躺枪，假设我们手动设置一个事务隔离级别，也会触发这个异常。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">UserRepository</span> <span class="keyword">extends</span> <span class="title">JpaRepository</span>&lt;<span class="title">User</span>, <span class="title">Long</span>&gt; </span>&#123;</span><br><span class="line">    <span class="meta">@Transactional</span>(isolation = Isolation.SERIALIZABLE)</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function">List&lt;User&gt; <span class="title">findAll</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>所以 root casue 并不是spring batch设置了SERIALIZABLE的隔离级别，而是<code>uow.getLogin()</code>的状态处理有bug。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>整个问题解决差不多用了3天，特别感谢阿里云RDS的SQL洞察服务和阿里出品的<code>arthas</code>（真不是软广）。</p>
 <p>全局state设置一直是个难题，无论是客户端代码还是服务端代码都会面临相同的问题，当我们希望用尽量少的开销保存更多的状态时，复杂度就难以避免。即便Pivotal团队的大神也不能保证bug free。Trouble shooting就像侦破案件一般，有时候黑夜中唯一的一束光就能带来真相，但往往需要巨大的耐心等待它的出现。</p>
@@ -491,19 +498,16 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -534,7 +538,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -576,9 +580,15 @@
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 

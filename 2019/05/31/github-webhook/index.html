@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -21,19 +21,20 @@
   </script>
 
   <meta name="description" content="Webhook是一种非常强大的推送机制，如果熟悉WordPress的同学可以类比构建WP生态的各类钩子函数。Githubt通过webhook让开发人员可以监听仓库的变化触发持续集成工具的运作，比如Travis CI。">
-<meta name="keywords" content="CAP,webhook">
 <meta property="og:type" content="article">
 <meta property="og:title" content="类似Github的webhook实现">
 <meta property="og:url" content="http://www.deanwangpro.com/2019/05/31/github-webhook/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="Webhook是一种非常强大的推送机制，如果熟悉WordPress的同学可以类比构建WP生态的各类钩子函数。Githubt通过webhook让开发人员可以监听仓库的变化触发持续集成工具的运作，比如Travis CI。">
-<meta property="og:locale" content="en">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://www.deanwangpro.com/images/201905/github-webhook.jpg">
 <meta property="og:image" content="http://www.deanwangpro.com/images/201905/github-webhook-history.jpg">
-<meta property="og:updated_time" content="2019-05-31T03:05:49.000Z">
+<meta property="article:published_time" content="2019-05-30T16:00:00.000Z">
+<meta property="article:modified_time" content="2019-05-31T03:05:49.000Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="CAP">
+<meta property="article:tag" content="webhook">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="类似Github的webhook实现">
-<meta name="twitter:description" content="Webhook是一种非常强大的推送机制，如果熟悉WordPress的同学可以类比构建WP生态的各类钩子函数。Githubt通过webhook让开发人员可以监听仓库的变化触发持续集成工具的运作，比如Travis CI。">
 <meta name="twitter:image" content="http://www.deanwangpro.com/images/201905/github-webhook.jpg">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2019/05/31/github-webhook/">
@@ -89,6 +90,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -227,6 +229,7 @@
       
         <p>Webhook是一种非常强大的推送机制，如果熟悉WordPress的同学可以类比构建WP生态的各类钩子函数。Githubt通过webhook让开发人员可以监听仓库的变化触发持续集成工具的运作，比如Travis CI。</p>
 <a id="more"></a>
+
 <h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><p>大家都看过Github上的webhook，可以对某一个repository设置webhook监听仓库变化，比如push，page_build等event（X-GitHub-Event）。</p>
 <p><img src="/images/201905/github-webhook.jpg" alt="github-webhook"><br>每一次发送都会有个uuid作为标记，并写入到HTTP Header的X-GitHub-Delivery，并且对于发送失败的历史记录，可以点击Redeliver进行重发。</p>
 <p><img src="/images/201905/github-webhook-history.jpg" alt="github-webhook-history"></p>
@@ -279,8 +282,7 @@ public class WebHookResponse {
         return this.code &gt;= 200 &amp;&amp; this.code &lt; 300;
     }
 
-}
-</code></pre><p>发送方法</p>
+}</code></pre><p>发送方法</p>
 <pre><code>public WebHookResponse send(WebHookRequest webHookRequest, String id, boolean retryOnServerError) {
     //如果traceId为空则根据请求参数生成一个md5的值作为traceId
     if (StringUtils.isBlank(id)) {
@@ -386,8 +388,7 @@ private void updateResendStatus(WebHookRecord webHookRecord) {
     if (count == 0) {
         throw new OptimisticLockingFailureException(&quot;Attempt to update WebHook id=&quot; + webHookRecord.getId() + &quot; with wrong version (&quot; + webHookRecord.getVersion() + &quot;)&quot;);
     }
-}
-</code></pre><p>为了避免对于同一个请求有多个线程同时发起重试的问题，我们在<code>updateResendStatus</code>方法上使用了乐观锁，如果其中一个线程更新状态成功，那么其他线程会因乐观锁问题直接失败，不会走到真正发送网络的请求的那步。也就是说在发送网络请求前过滤绝大部分并发问题。</p>
+}</code></pre><p>为了避免对于同一个请求有多个线程同时发起重试的问题，我们在<code>updateResendStatus</code>方法上使用了乐观锁，如果其中一个线程更新状态成功，那么其他线程会因乐观锁问题直接失败，不会走到真正发送网络的请求的那步。也就是说在发送网络请求前过滤绝大部分并发问题。</p>
 <p>最后，可以使用一个单元测试，模拟并发请求进行验证。</p>
 <pre><code>@Test
 public void testMultiThreads() throws InterruptedException {
@@ -422,8 +423,7 @@ public void testMultiThreads() throws InterruptedException {
         // 验证数据库里记录的发送次数是否 等于 真正调用发送网络请求接口的次数
     Mockito.verify(webHookIntegrationService, Mockito.times(times)).send(Mockito.any(),
             Mockito.any(), Mockito.any(), Mockito.any());
-}
-</code></pre><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>如果想进一步提升性能，可以使用支持异步的httpclient工具包，<code>onResponse</code>在callback中进行处理。</p>
+}</code></pre><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>如果想进一步提升性能，可以使用支持异步的httpclient工具包，<code>onResponse</code>在callback中进行处理。</p>
 <p>整体来说，这是个很简单的小需求，但要考虑周全其实还是要费一番功夫的。究其本质就是异构系统间的数据一致性问题。当我们把发送网络请求换成写数据到redis，到MQ，到另一个微服务时，就会发现它们存在的共通性。一次请求涉及多个系统，并且无法包裹进同一个事务，就会产生这样的问题。至于解决方案是二阶段提交，事后补偿，还是自动对账，就要根据自己的业务特点来选择了。</p>
 
     </div>
@@ -560,19 +560,16 @@ public void testMultiThreads() throws InterruptedException {
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -603,7 +600,7 @@ public void testMultiThreads() throws InterruptedException {
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -645,9 +642,15 @@ public void testMultiThreads() throws InterruptedException {
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 

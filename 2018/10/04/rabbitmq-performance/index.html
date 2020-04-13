@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -20,21 +20,23 @@
     var CONFIG = {"hostname":"www.deanwangpro.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="在做系统的整体性能测试时发现经常会卡在一个较低的QPS（单机低于100）数值，而且应用服务器的负载不高，检查MQ消费速率只有40左右。接着把目标放在消息发送端上，发现消息发送速率很低，大约40条/s。 果断搭建一个最小化工程单测Rabbitmq发送性能，发现在启用发送端事务后性能下降非常明显。    消息数量 开启事务 未开启事务     10w 320796ms 10246ms    本机SSD">
-<meta name="keywords" content="performance,tuning,rabbitmq">
+  <meta name="description" content="在做系统的整体性能测试时发现经常会卡在一个较低的QPS（单机低于100）数值，而且应用服务器的负载不高，检查MQ消费速率只有40左右。接着把目标放在消息发送端上，发现消息发送速率很低，大约40条&#x2F;s。 果断搭建一个最小化工程单测Rabbitmq发送性能，发现在启用发送端事务后性能下降非常明显。    消息数量 开启事务 未开启事务    10w 320796ms 10246ms   本机SSD硬盘">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Rabbitmq的性能测试">
 <meta property="og:url" content="http://www.deanwangpro.com/2018/10/04/rabbitmq-performance/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
-<meta property="og:description" content="在做系统的整体性能测试时发现经常会卡在一个较低的QPS（单机低于100）数值，而且应用服务器的负载不高，检查MQ消费速率只有40左右。接着把目标放在消息发送端上，发现消息发送速率很低，大约40条/s。 果断搭建一个最小化工程单测Rabbitmq发送性能，发现在启用发送端事务后性能下降非常明显。    消息数量 开启事务 未开启事务     10w 320796ms 10246ms    本机SSD">
-<meta property="og:locale" content="en">
+<meta property="og:description" content="在做系统的整体性能测试时发现经常会卡在一个较低的QPS（单机低于100）数值，而且应用服务器的负载不高，检查MQ消费速率只有40左右。接着把目标放在消息发送端上，发现消息发送速率很低，大约40条&#x2F;s。 果断搭建一个最小化工程单测Rabbitmq发送性能，发现在启用发送端事务后性能下降非常明显。    消息数量 开启事务 未开启事务    10w 320796ms 10246ms   本机SSD硬盘">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2018-10-04/rabbitmq_tx.jpg">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2018-10-04/high_iowa.png">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2018-10-04/low_iowa.png">
-<meta property="og:updated_time" content="2018-10-05T03:30:14.000Z">
+<meta property="article:published_time" content="2018-10-03T16:00:00.000Z">
+<meta property="article:modified_time" content="2018-10-05T03:30:14.000Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="performance">
+<meta property="article:tag" content="tuning">
+<meta property="article:tag" content="rabbitmq">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Rabbitmq的性能测试">
-<meta name="twitter:description" content="在做系统的整体性能测试时发现经常会卡在一个较低的QPS（单机低于100）数值，而且应用服务器的负载不高，检查MQ消费速率只有40左右。接着把目标放在消息发送端上，发现消息发送速率很低，大约40条/s。 果断搭建一个最小化工程单测Rabbitmq发送性能，发现在启用发送端事务后性能下降非常明显。    消息数量 开启事务 未开启事务     10w 320796ms 10246ms    本机SSD">
 <meta name="twitter:image" content="http://www.deanwangpro.com/images/2018-10-04/rabbitmq_tx.jpg">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2018/10/04/rabbitmq-performance/">
@@ -90,6 +92,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -242,21 +245,21 @@
 <th>未开启事务</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>10w</td>
 <td>320796ms</td>
 <td>10246ms</td>
 </tr>
-</tbody>
-</table>
+</tbody></table>
 <p>本机SSD硬盘测试结果10w条消息未开启事务，大约10s发送完毕；而开启了事务后，需要将近320s，差了30多倍。</p>
 <p>接着翻阅Rabbitmq官网，发现开启事务性能最大损失超过250倍。</p>
 <blockquote>
 <p>Using standard AMQP 0-9-1, the only way to guarantee that a message isn’t lost is by using transactions – make the channel transactional then for each message or set of messages publish, commit. In this case, transactions are unnecessarily heavyweight and decrease throughput by a factor of 250. To remedy this, a confirmation mechanism was introduced. It mimics the consumer acknowledgements mechanism already present in the protocol.</p>
 </blockquote>
 <a id="more"></a>
+
 <h3 id="事务为什么会慢"><a href="#事务为什么会慢" class="headerlink" title="事务为什么会慢"></a>事务为什么会慢</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rabbitTemplate.setChannelTransacted(<span class="keyword">true</span>);</span><br></pre></td></tr></table></figure>
+
 <p>该标志位开启后表示Rabbitmq的发送统一被spring事务管理。当一段代码被<code>@Transactional</code>包裹，那么只有当事务结束后，消息才会正在的发送到Rabbitmq的exchange中。具体代码详见<code>rabbitTemplate.java</code>中的<code>doSend()</code>。</p>
 <p>事务机制是Rabbitmq自身支持的，原理是<code>channel.txSelect()</code>开启事务，<code>channel.txRollback()</code>回滚事务。<code>channel.txCommit()</code>提交事务。当事务开启后，通过抓包会发现网络交互增多。</p>
 <p><img src="/images/2018-10-04/rabbitmq_tx.jpg" alt="rabbitmq_tx"></p>
@@ -407,19 +410,16 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -450,7 +450,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -492,9 +492,15 @@
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 

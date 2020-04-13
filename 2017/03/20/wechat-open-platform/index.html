@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -21,17 +21,18 @@
   </script>
 
   <meta name="description" content="微信火了这么久，这两周第一次从一个开发者的角度来研究微信的生态系统而不是应用本身。现在做国内的项目或者产品难免都需要集成微信，其实现在微信背后的支撑平台已经是非常繁杂的了：  公众平台（订阅号、服务号、企业号、小程序） 开放平台（网页应用、移动应用、公众号第三方平台开发） 商户平台 （支付） 服务商平台（代支付）">
-<meta name="keywords" content="Java,wechat">
 <meta property="og:type" content="article">
 <meta property="og:title" content="说一说微信第三方平台的初步集成">
 <meta property="og:url" content="http://www.deanwangpro.com/2017/03/20/wechat-open-platform/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="微信火了这么久，这两周第一次从一个开发者的角度来研究微信的生态系统而不是应用本身。现在做国内的项目或者产品难免都需要集成微信，其实现在微信背后的支撑平台已经是非常繁杂的了：  公众平台（订阅号、服务号、企业号、小程序） 开放平台（网页应用、移动应用、公众号第三方平台开发） 商户平台 （支付） 服务商平台（代支付）">
-<meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2017-03-22T03:17:42.000Z">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2017-03-19T16:00:00.000Z">
+<meta property="article:modified_time" content="2017-03-22T03:17:42.000Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="wechat">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="说一说微信第三方平台的初步集成">
-<meta name="twitter:description" content="微信火了这么久，这两周第一次从一个开发者的角度来研究微信的生态系统而不是应用本身。现在做国内的项目或者产品难免都需要集成微信，其实现在微信背后的支撑平台已经是非常繁杂的了：  公众平台（订阅号、服务号、企业号、小程序） 开放平台（网页应用、移动应用、公众号第三方平台开发） 商户平台 （支付） 服务商平台（代支付）">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2017/03/20/wechat-open-platform/">
 
@@ -86,6 +87,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -236,10 +238,11 @@
 <li>服务商平台（代支付）</li>
 </ul>
 <a id="more"></a>
+
 <p>是不是感觉有点懵，这么多平台如何选择，还是需要根据自己系统的业务来看。我今天说的是开放平台的初步集成。</p>
 <p>采用倒序的方式我们一步步来说：</p>
 <ol>
-<li><p>开放平台需要代公众号实现功能，就必须拿到公众号的<code>accessToken</code>，然后再去使用公众平台接口。那么获取<code>accessToken</code>的过程实际就是公众平台授权给你这个第三方开放平台的过程。相当于他给你了一把打开他家门的钥匙。详见<a href="https://open.weixin.qq.com/cgi-bin/showdocument?action=dir_list&amp;t=resource/res_list&amp;verify=1&amp;id=open1453779503&amp;token=&amp;lang=zh_CN" target="_blank" rel="noopener">官方文档</a>第5步.</p>
+<li><p>开放平台需要代公众号实现功能，就必须拿到公众号的<code>accessToken</code>，然后再去使用公众平台接口。那么获取<code>accessToken</code>的过程实际就是公众平台授权给你这个第三方开放平台的过程。相当于他给你了一把打开他家门的钥匙。详见<a href="https://open.weixin.qq.com/cgi-bin/showdocument?action=dir_list&t=resource/res_list&verify=1&id=open1453779503&token=&lang=zh_CN" target="_blank" rel="noopener">官方文档</a>第5步.</p>
 </li>
 <li><p>获得钥匙的过程可是需要一些功夫的，因为老换锁啊，每7200s换一次，所以有位管理员大爷出现了，就是<code>refresh_token</code>，锁换了找大爷拿把新的就行。那么这个管理员大爷怎么找到的呢？是在第一次授权成功后会通过参数返回给你的一个<code>authorization_code</code>这个相当于是地图，能让你第一次在毫无经验的情况下找到第一把钥匙和管理员大爷，也就是官方文档的第4步。</p>
 </li>
@@ -394,19 +397,16 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -437,7 +437,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -479,9 +479,15 @@
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 

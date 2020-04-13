@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -21,13 +21,12 @@
   </script>
 
   <meta name="description" content="微服务是否适合小团队是个见仁见智的问题。回归现象看本质，随着业务复杂度的提高，单体应用越来越庞大，就好像一个类的代码行越来越多，分而治之，切成多个类应该是更好的解决方法，所以一个庞大的单体应用分出多个小应用也更符合这种分治的思想。当然微服务架构不应该是一个小团队一开始就该考虑的问题，而是慢慢演化的结果，谨慎过度设计尤为重要。 公司的背景是提供SaaS服务，对于大客户也会有定制开发以及私有化部署。经">
-<meta name="keywords" content="spring-cloud,ci,microservice">
 <meta property="og:type" content="article">
 <meta property="og:title" content="小团队的微服务之路">
 <meta property="og:url" content="http://www.deanwangpro.com/2019/02/18/road-of-microservice/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="微服务是否适合小团队是个见仁见智的问题。回归现象看本质，随着业务复杂度的提高，单体应用越来越庞大，就好像一个类的代码行越来越多，分而治之，切成多个类应该是更好的解决方法，所以一个庞大的单体应用分出多个小应用也更符合这种分治的思想。当然微服务架构不应该是一个小团队一开始就该考虑的问题，而是慢慢演化的结果，谨慎过度设计尤为重要。 公司的背景是提供SaaS服务，对于大客户也会有定制开发以及私有化部署。经">
-<meta property="og:locale" content="en">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2018-02-18/arch_mono.png">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2018-02-18/ci_mono.png">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2018-02-18/arch_spring_cloud.png">
@@ -36,10 +35,13 @@
 <meta property="og:image" content="http://www.deanwangpro.com/images/2018-02-18/seq_trace.png">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2018-02-18/graylog_trace.png">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2018-02-18/arch_docker.png">
-<meta property="og:updated_time" content="2019-02-18T08:17:36.000Z">
+<meta property="article:published_time" content="2019-02-17T16:00:00.000Z">
+<meta property="article:modified_time" content="2019-02-18T08:17:36.000Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="spring-cloud">
+<meta property="article:tag" content="ci">
+<meta property="article:tag" content="microservice">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="小团队的微服务之路">
-<meta name="twitter:description" content="微服务是否适合小团队是个见仁见智的问题。回归现象看本质，随着业务复杂度的提高，单体应用越来越庞大，就好像一个类的代码行越来越多，分而治之，切成多个类应该是更好的解决方法，所以一个庞大的单体应用分出多个小应用也更符合这种分治的思想。当然微服务架构不应该是一个小团队一开始就该考虑的问题，而是慢慢演化的结果，谨慎过度设计尤为重要。 公司的背景是提供SaaS服务，对于大客户也会有定制开发以及私有化部署。经">
 <meta name="twitter:image" content="http://www.deanwangpro.com/images/2018-02-18/arch_mono.png">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2019/02/18/road-of-microservice/">
@@ -95,6 +97,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -234,6 +237,7 @@
         <p>微服务是否适合小团队是个见仁见智的问题。回归现象看本质，随着业务复杂度的提高，单体应用越来越庞大，就好像一个类的代码行越来越多，分而治之，切成多个类应该是更好的解决方法，所以一个庞大的单体应用分出多个小应用也更符合这种分治的思想。当然微服务架构不应该是一个小团队一开始就该考虑的问题，而是慢慢演化的结果，谨慎过度设计尤为重要。</p>
 <p>公司的背景是提供SaaS服务，对于大客户也会有定制开发以及私有化部署。经过2年不到的时间，技术架构经历了从单体到微服务再到容器化的过程。</p>
 <a id="more"></a>
+
 <h1 id="单体应用时代"><a href="#单体应用时代" class="headerlink" title="单体应用时代"></a>单体应用时代</h1><p>早期开发只有两个人，考虑微服务之类的都是多余。不过由于受前公司影响，最初就决定了前后端分离的路线，因为不需要考虑SEO的问题，索性就做成了SPA单页应用。多说一句，前后端分离也不一定就不能服务端渲染，例如电商系统或者一些匿名即可访问的系统，加一层薄薄的View层，无论是php还是用Thymeleaf都是不错的选择。</p>
 <p>部署架构上，我们使用Nginx代理前端HTML资源，在接收请求时根据路径反向代理到server的8080端口实现业务。</p>
 <p><img src="/images/2018-02-18/arch_mono.png" alt=""></p>
@@ -432,19 +436,16 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -475,7 +476,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -517,9 +518,15 @@
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 

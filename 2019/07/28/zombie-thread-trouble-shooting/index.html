@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -21,20 +21,22 @@
   </script>
 
   <meta name="description" content="这两天遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。">
-<meta name="keywords" content="spring boot,tomcat,zombie">
 <meta property="og:type" content="article">
 <meta property="og:title" content="记录一次Spring Boot假死诊断">
 <meta property="og:url" content="http://www.deanwangpro.com/2019/07/28/zombie-thread-trouble-shooting/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="这两天遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。">
-<meta property="og:locale" content="en">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2019-07-28/Thread.jpg">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2019-07-28/GC.jpg">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2019-07-28/mat.jpg">
-<meta property="og:updated_time" content="2019-07-30T12:40:11.000Z">
+<meta property="article:published_time" content="2019-07-27T16:00:00.000Z">
+<meta property="article:modified_time" content="2019-07-30T12:40:11.000Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="spring boot">
+<meta property="article:tag" content="tomcat">
+<meta property="article:tag" content="zombie">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="记录一次Spring Boot假死诊断">
-<meta name="twitter:description" content="这两天遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。">
 <meta name="twitter:image" content="http://www.deanwangpro.com/images/2019-07-28/Thread.jpg">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2019/07/28/zombie-thread-trouble-shooting/">
@@ -90,6 +92,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -234,22 +237,28 @@
       
         <p>这两天遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。</p>
 <a id="more"></a>
+
 <h2 id="检查系统状态"><a href="#检查系统状态" class="headerlink" title="检查系统状态"></a>检查系统状态</h2><p>执行top，发现CPU和内存占用都不高，但是通过命令</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -n | awk &apos;/^tcp/ &#123;++S[$NF]&#125; END &#123;for(a in S) print a, S[a]&#125;&apos;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -n | awk &#39;&#x2F;^tcp&#x2F; &#123;++S[$NF]&#125; END &#123;for(a in S) print a, S[a]&#125;&#39;</span><br></pre></td></tr></table></figure>
+
 <p>发现有大量的CLOSE_WAIT端口占用，继续调用该服务的api，等待超时之后发现CLOSE_WAIT的数量也没有上升，也就是说服务几乎完全僵死。</p>
 <h2 id="检查JVM情况"><a href="#检查JVM情况" class="headerlink" title="检查JVM情况"></a>检查JVM情况</h2><p>怀疑可能是线程有死锁，决定先dump一下线程情况，执行</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jstack &lt;pid&gt; &gt; /tmp/thread.hump</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jstack &lt;pid&gt; &gt; &#x2F;tmp&#x2F;thread.hump</span><br></pre></td></tr></table></figure>
+
 <p>发现tomcat线程基本也正常，都是parking状态。</p>
 <p><img src="/images/2019-07-28/Thread.jpg" alt=""></p>
 <p>这就比较奇怪了，继续想是不是GC导致了STW，使用<code>jstat</code>查看垃圾回收情况</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">app@server:/tmp$ jstat -gcutil 1 2000 10</span><br><span class="line">  S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     GCT</span><br><span class="line">  0.00  27.79  65.01  15.30  94.75  92.23   1338   44.375  1881  475.064  519.439</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">app@server:&#x2F;tmp$ jstat -gcutil 1 2000 10</span><br><span class="line">  S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     GCT</span><br><span class="line">  0.00  27.79  65.01  15.30  94.75  92.23   1338   44.375  1881  475.064  519.439</span><br></pre></td></tr></table></figure>
+
 <p>一看吓一跳，FGC的次数居然超过了YGC，时长有475s。一定是有什么原因触发了FGC，好在我们打开了GC log。</p>
 <p><img src="/images/2019-07-28/GC.jpg" alt=""></p>
 <p>发现一段时间内频繁发生Allocation Failure引起的Full GC。而且eden区的使用占比也很大，考虑有频繁新建对象逃逸到老年代造成问题。询问了一下业务的开发，确认有一个外部对接API没有分页，查询后可能会产生大量对象。</p>
 <p>由于外部API暂时无法联系对方修改，所以为了先解决问题，对原有的MaxNewSize进扩容，从192MB扩容到一倍。经过几天的观察，发现gc基本趋于正常</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     GCT</span><br><span class="line">0.00   3.37  60.55   8.60  95.08  92.98     87    2.421     0    0.000    2.421</span><br></pre></td></tr></table></figure>
+
 <p>扩容之前对heap进行了dump</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jmap -dump:format=b,file=heapDump &lt;PID&gt;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jmap -dump:format&#x3D;b,file&#x3D;heapDump &lt;PID&gt;</span><br></pre></td></tr></table></figure>
+
 <p>通过MAT分析内存泄露，居然疑似是jdbc中的一个类，但其实整体占用堆容量并不多。</p>
 <p><img src="/images/2019-07-28/mat.jpg" alt=""></p>
 <p>分析了线程数量，大约是240多条，与正常时也并没有很大的出入。而且大量的是在sleep的定时线程。</p>
@@ -390,19 +399,16 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -433,7 +439,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -475,9 +481,15 @@
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 

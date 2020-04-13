@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -21,23 +21,25 @@
   </script>
 
   <meta name="description" content="ZuulException REJECTED_SEMAPHORE_EXECUTION 是一个最近在性能测试中经常遇到的异常。查询资料发现是因为zuul默认每个路由直接用信号量做隔离，并且默认值是100，也就是当一个路由请求的信号量高于100那么就拒绝服务了，返回500。">
-<meta name="keywords" content="spring,spring-cloud,test">
 <meta property="og:type" content="article">
 <meta property="og:title" content="spring-cloud中zuul的两种隔离机制实验">
 <meta property="og:url" content="http://www.deanwangpro.com/2018/04/04/spring-cloud-zuul-threads/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="ZuulException REJECTED_SEMAPHORE_EXECUTION 是一个最近在性能测试中经常遇到的异常。查询资料发现是因为zuul默认每个路由直接用信号量做隔离，并且默认值是100，也就是当一个路由请求的信号量高于100那么就拒绝服务了，返回500。">
-<meta property="og:locale" content="en">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://www.deanwangpro.com/images/15228346573506.jpg">
 <meta property="og:image" content="http://www.deanwangpro.com/images/15228360753126.jpg">
 <meta property="og:image" content="http://www.deanwangpro.com/images/15228364522331.jpg">
 <meta property="og:image" content="http://www.deanwangpro.com/images/15228364349973.jpg">
 <meta property="og:image" content="http://www.deanwangpro.com/images/15228368284029.jpg">
 <meta property="og:image" content="http://www.deanwangpro.com/images/15228368551165.jpg">
-<meta property="og:updated_time" content="2018-04-04T10:39:13.000Z">
+<meta property="article:published_time" content="2018-04-03T16:00:00.000Z">
+<meta property="article:modified_time" content="2018-04-04T10:39:13.000Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="spring">
+<meta property="article:tag" content="test">
+<meta property="article:tag" content="spring-cloud">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="spring-cloud中zuul的两种隔离机制实验">
-<meta name="twitter:description" content="ZuulException REJECTED_SEMAPHORE_EXECUTION 是一个最近在性能测试中经常遇到的异常。查询资料发现是因为zuul默认每个路由直接用信号量做隔离，并且默认值是100，也就是当一个路由请求的信号量高于100那么就拒绝服务了，返回500。">
 <meta name="twitter:image" content="http://www.deanwangpro.com/images/15228346573506.jpg">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2018/04/04/spring-cloud-zuul-threads/">
@@ -93,6 +95,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -231,15 +234,19 @@
       
         <p>ZuulException REJECTED_SEMAPHORE_EXECUTION 是一个最近在性能测试中经常遇到的异常。查询资料发现是因为zuul默认每个路由直接用信号量做隔离，并且默认值是100，也就是当一个路由请求的信号量高于100那么就拒绝服务了，返回500。</p>
 <a id="more"></a>
+
 <h3 id="信号量隔离"><a href="#信号量隔离" class="headerlink" title="信号量隔离"></a>信号量隔离</h3><p>既然默认值太小，那么就在gateway的配置提高各个路由的信号量再实验。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">routes:</span><br><span class="line">    linkflow:</span><br><span class="line">      path: /api1/**</span><br><span class="line">      serviceId: lf</span><br><span class="line">      stripPrefix: false</span><br><span class="line">      semaphore:</span><br><span class="line">        maxSemaphores: 2000</span><br><span class="line">    oauth:</span><br><span class="line">      path: /api2/**</span><br><span class="line">      serviceId: lf</span><br><span class="line">      stripPrefix: false</span><br><span class="line">      semaphore:</span><br><span class="line">        maxSemaphores: 1000</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">routes:</span><br><span class="line">    linkflow:</span><br><span class="line">      path: &#x2F;api1&#x2F;**</span><br><span class="line">      serviceId: lf</span><br><span class="line">      stripPrefix: false</span><br><span class="line">      semaphore:</span><br><span class="line">        maxSemaphores: 2000</span><br><span class="line">    oauth:</span><br><span class="line">      path: &#x2F;api2&#x2F;**</span><br><span class="line">      serviceId: lf</span><br><span class="line">      stripPrefix: false</span><br><span class="line">      semaphore:</span><br><span class="line">        maxSemaphores: 1000</span><br></pre></td></tr></table></figure>
+
 <p>两个路由的信号量分开提高到2000和1000。我们再用gatling测试一下。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">setUp(scn.inject(rampUsers(200) over (3 seconds)).protocols(httpConf))</span><br></pre></td></tr></table></figure>
+
 <p>这是我们的模型，3s内启动200个用户，顺序访问5个API。所以会有1000个request。机器配置只有2核16G，并且是docker化的数据库。所以整体性能不高。</p>
 <p><img src="/images/15228346573506.jpg" alt="信号量统计"></p>
 <p>看结果仍然有57个KO，但是比之前1000个Request有900个KO的比例好很多了。</p>
 <h3 id="线程隔离"><a href="#线程隔离" class="headerlink" title="线程隔离"></a>线程隔离</h3><p><code>Edgware</code>版本的spring cloud提供了另一种基于线程池的隔离机制。实现起来也非常简单，</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">zuul:</span><br><span class="line">  ribbon-isolation-strategy: THREAD</span><br><span class="line">  thread-pool:</span><br><span class="line">    use-separate-thread-pools: true</span><br><span class="line">    thread-pool-key-prefix: zuulgw</span><br><span class="line">    </span><br><span class="line">hystrix:</span><br><span class="line">  threadpool:</span><br><span class="line">    default:</span><br><span class="line">      coreSize: 50</span><br><span class="line">      maximumSize: 10000</span><br><span class="line">      allowMaximumSizeToDivergeFromCoreSize: true</span><br><span class="line">      maxQueueSize: -1</span><br><span class="line">      execution:</span><br><span class="line">        isolation:</span><br><span class="line">          thread:</span><br><span class="line">            timeoutInMilliseconds: 60000</span><br></pre></td></tr></table></figure>
+
 <p><code>use-separate-thread-pools</code>的意思是每个路由都有自己的线程池，而不是共享一个。<br><code>thread-pool-key-prefix</code>会指定一个线程池前缀方便调试。<br><code>hystrix</code>的部分主要设置线程池的大小，这里设置了10000，其实并不是越大越好。线程池越大削峰填谷的效果越显著，也就是时间换空间。系统的整体负载会上升，导致响应时间越来越长，那么当响应时间超过某个限度，其实系统也算是不可用了。后面可以看到数据。</p>
 <p><img src="/images/15228360753126.jpg" alt="线程池统计"></p>
 <p>这次没有500的情况了，1000个Request都正常返回了。</p>
@@ -278,8 +285,8 @@
       <footer class="post-footer">
           <div class="post-tags">
               <a href="/tags/spring/" rel="tag"># spring</a>
-              <a href="/tags/spring-cloud/" rel="tag"># spring-cloud</a>
               <a href="/tags/test/" rel="tag"># test</a>
+              <a href="/tags/spring-cloud/" rel="tag"># spring-cloud</a>
           </div>
 
         
@@ -389,19 +396,16 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -432,7 +436,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -474,9 +478,15 @@
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 

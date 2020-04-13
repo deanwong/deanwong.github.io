@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -21,18 +21,19 @@
   </script>
 
   <meta name="description" content="节前没有新业务代码，正好Greenwich刚发布，于是开始为期四天的框架代码升级。 之前的版本是 spring boot 1.5.10 , spring cloud Edgware.SR3">
-<meta name="keywords" content="spring-cloud,spring-boot">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Spring Boot 2.1.2 &amp; Spring Cloud Greenwich 升级记录">
 <meta property="og:url" content="http://www.deanwangpro.com/2019/02/02/spring-boot-cloud-geenwich-upgrade/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="节前没有新业务代码，正好Greenwich刚发布，于是开始为期四天的框架代码升级。 之前的版本是 spring boot 1.5.10 , spring cloud Edgware.SR3">
-<meta property="og:locale" content="en">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://www.deanwangpro.com/images/springboot-prop-migrator.png">
-<meta property="og:updated_time" content="2019-03-20T04:15:15.000Z">
+<meta property="article:published_time" content="2019-02-01T16:00:00.000Z">
+<meta property="article:modified_time" content="2019-03-20T04:15:15.000Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="spring-boot">
+<meta property="article:tag" content="spring-cloud">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Spring Boot 2.1.2 &amp; Spring Cloud Greenwich 升级记录">
-<meta name="twitter:description" content="节前没有新业务代码，正好Greenwich刚发布，于是开始为期四天的框架代码升级。 之前的版本是 spring boot 1.5.10 , spring cloud Edgware.SR3">
 <meta name="twitter:image" content="http://www.deanwangpro.com/images/springboot-prop-migrator.png">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2019/02/02/spring-boot-cloud-geenwich-upgrade/">
@@ -88,6 +89,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -233,6 +235,7 @@
         <p>节前没有新业务代码，正好Greenwich刚发布，于是开始为期四天的框架代码升级。</p>
 <p>之前的版本是 spring boot 1.5.10 , spring cloud Edgware.SR3</p>
 <a id="more"></a>
+
 <h2 id="依赖升级"><a href="#依赖升级" class="headerlink" title="依赖升级"></a>依赖升级</h2><ul>
 <li>增加依赖管理插件 <code>apply plugin: &#39;io.spring.dependency-management&#39;</code></li>
 <li>spring-cloud-starter-eureka → spring-cloud-starter-netflix-eureka-client</li>
@@ -240,7 +243,8 @@
 <li>gradle版本要求4.4</li>
 </ul>
 <h2 id="boot-spring-boot-starter-data-jpa"><a href="#boot-spring-boot-starter-data-jpa" class="headerlink" title="boot : spring-boot-starter-data-jpa"></a>boot : spring-boot-starter-data-jpa</h2><ul>
-<li>delete → deleteById</li>
+<li><p>delete → deleteById</p>
+</li>
 <li><p>findone → findById</p>
 <p>  这个改动确实大，返回值变成了Optional，合理是合理的，只是改的真多。。</p>
 </li>
@@ -248,8 +252,7 @@
 <h2 id="boot-spring-boot-starter-data-redis"><a href="#boot-spring-boot-starter-data-redis" class="headerlink" title="boot : spring-boot-starter-data-redis"></a>boot : spring-boot-starter-data-redis</h2><p>Jedis → Lettuce</p>
 <p>还好并没有使用它的autoconfiguration，配置上有一个小坑，Jedis的redis.timeout是表示connection timeout, 而Lettuce是表示command timeout，之前配置成0的，如果set到Lettuce的commandtimeout里面那就要抛异常了。</p>
 <h2 id="配置"><a href="#配置" class="headerlink" title="配置:"></a>配置<strong>:</strong></h2><p>可以在build.gradle中加入，启动时会检查配置是否兼容</p>
-<pre><code>compile &quot;org.springframework.boot:spring-boot-properties-migrator&quot; 
-</code></pre><p><strong>注意：完成迁移后需要删除</strong></p>
+<pre><code>compile &quot;org.springframework.boot:spring-boot-properties-migrator&quot; </code></pre><p><strong>注意：完成迁移后需要删除</strong></p>
 <p><img src="/images/springboot-prop-migrator.png" alt="migrator"></p>
 <p>警告如上图会告知最新的配置格式</p>
 <h2 id="boot-spring-boot-starter-actuator"><a href="#boot-spring-boot-starter-actuator" class="headerlink" title="boot: spring-boot-starter-actuator"></a>boot: spring-boot-starter-actuator</h2><p>endpoint的暴露方式变化，<code>management.endpoints.web.exposure.include = &quot;*&quot;</code> 表示暴露所有endpoints，如果配置了security那么也需要在security的配置中开放访问<code>/actuator</code>路径</p>
@@ -265,7 +268,8 @@
 <li>Mock方法时请使用Mocikto.doReturn(…).when(…)，不使用when(…).thenReturn(…)，否则<code>@spybean</code>的会调用实际方法</li>
 </ul>
 <h2 id="其他问题"><a href="#其他问题" class="headerlink" title="其他问题"></a>其他问题</h2><ol>
-<li>版本升级后会有deprecated的类或方法，所以要注意看console中build的warning信息</li>
+<li><p>版本升级后会有deprecated的类或方法，所以要注意看console中build的warning信息</p>
+</li>
 <li><p>由于spring cloud依赖管理插件强制cuator升级到4.0.1，导致我们使用的elestic-job不能正常工作，只能强行控制版本。</p>
 <pre><code>dependencyManagement {
     imports {
@@ -276,17 +280,13 @@
         dependency &apos;org.apache.curator:curator-recipes:2.10.0&apos;
         dependency &apos;org.apache.curator:curator-client:2.10.0&apos;
     }
-}
-</code></pre></li>
+}</code></pre></li>
 <li><p>如果启用出现error，报bean重复，首先确认是不是故意覆盖，如重写spring-boot自带的bean，如是，可以在bootstrap.yml加入</p>
-<pre><code>spring.main.allow-bean-definition-overriding=true
-</code></pre></li>
+<pre><code>spring.main.allow-bean-definition-overriding=true</code></pre></li>
 <li><p>FeignClient注解增加了contextId属性</p>
-<pre><code>@FeignClient(value = &quot;foo&quot;, contextId = &quot;fooFeign&quot;)
-</code></pre><p> 此contextId即表示bean id，所有注入使用时需要</p>
+<pre><code>@FeignClient(value = &quot;foo&quot;, contextId = &quot;fooFeign&quot;)</code></pre><p> 此contextId即表示bean id，所有注入使用时需要</p>
 <pre><code>@Autowried
-FooFeign fooFeign
-</code></pre><p> 如果不写contextId，当多个class都是@FeignClient(“foo”)，即会认为是同一个bean而排除上一条所说的warning</p>
+FooFeign fooFeign</code></pre><p> 如果不写contextId，当多个class都是@FeignClient(“foo”)，即会认为是同一个bean而排除上一条所说的warning</p>
 </li>
 </ol>
 
@@ -313,8 +313,8 @@ FooFeign fooFeign
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/spring-cloud/" rel="tag"># spring-cloud</a>
               <a href="/tags/spring-boot/" rel="tag"># spring-boot</a>
+              <a href="/tags/spring-cloud/" rel="tag"># spring-cloud</a>
           </div>
 
         
@@ -424,19 +424,16 @@ FooFeign fooFeign
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -467,7 +464,7 @@ FooFeign fooFeign
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -509,9 +506,15 @@ FooFeign fooFeign
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 

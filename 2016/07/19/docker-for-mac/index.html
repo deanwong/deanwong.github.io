@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -21,18 +21,19 @@
   </script>
 
   <meta name="description" content="Docker官网出了最新的Docker For Mac.不是以前的基于virtual box的Toolbox了。内心小激动，赶紧下载安装。装完之后，menu bar上会有一个小鲸鱼的图标，可以restart，而且有GUI做一些额外配置，比如最需要的Proxy和文件mount。">
-<meta name="keywords" content="Mac,Docker">
 <meta property="og:type" content="article">
 <meta property="og:title" content="使用新版Docker for MAC">
 <meta property="og:url" content="http://www.deanwangpro.com/2016/07/19/docker-for-mac/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="Docker官网出了最新的Docker For Mac.不是以前的基于virtual box的Toolbox了。内心小激动，赶紧下载安装。装完之后，menu bar上会有一个小鲸鱼的图标，可以restart，而且有GUI做一些额外配置，比如最需要的Proxy和文件mount。">
-<meta property="og:locale" content="en">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://www.deanwangpro.com/images/14689130500269.png">
-<meta property="og:updated_time" content="2016-10-30T14:39:50.000Z">
+<meta property="article:published_time" content="2016-07-18T16:00:00.000Z">
+<meta property="article:modified_time" content="2016-10-30T14:39:50.000Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="Mac">
+<meta property="article:tag" content="Docker">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="使用新版Docker for MAC">
-<meta name="twitter:description" content="Docker官网出了最新的Docker For Mac.不是以前的基于virtual box的Toolbox了。内心小激动，赶紧下载安装。装完之后，menu bar上会有一个小鲸鱼的图标，可以restart，而且有GUI做一些额外配置，比如最需要的Proxy和文件mount。">
 <meta name="twitter:image" content="http://www.deanwangpro.com/images/14689130500269.png">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2016/07/19/docker-for-mac/">
@@ -88,6 +89,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -232,11 +234,13 @@
       
         <p>Docker官网出了最新的Docker For Mac.不是以前的基于virtual box的Toolbox了。内心小激动，赶紧下载安装。装完之后，menu bar上会有一个小鲸鱼的图标，可以restart，而且有GUI做一些额外配置，比如最需要的Proxy和文件mount。</p>
 <a id="more"></a>
+
 <p><img src="/images/14689130500269.png" alt="menu bar"></p>
 <p>阅读<a href="https://docs.docker.com/docker-for-mac/" target="_blank" rel="noopener">Getting Start</a>发现其实Docker for Mac也不是跟Linux一样使用内核原生的container。而是用了一个Mac内嵌的微型VM（HyperKit）替换了原来臃肿的virtual box。</p>
 <h3 id="Docker-for-MAC-vs-Docker-toolbox"><a href="#Docker-for-MAC-vs-Docker-toolbox" class="headerlink" title="Docker for MAC vs. Docker toolbox"></a>Docker for MAC vs. Docker toolbox</h3><p>看到这儿肯定有人问，机器里怎么有两套docker？<br>确实，就是有两套，如果你装过Toolbox，这两套互不影响都可以work。一个基于virtual box，一个基于HyperKit。可以运行<code>docker-machine</code>看看自己是不是已经有了Toolbox了。官方也发布了一篇<a href="https://docs.docker.com/docker-for-mac/docker-toolbox/" target="_blank" rel="noopener">《Docker for Mac vs. Docker Toolbox》</a>，来阐述二者的区别。从我看来，Toolbox迟早会被弃用。</p>
 <h3 id="Hello-world"><a href="#Hello-world" class="headerlink" title="Hello world"></a>Hello world</h3><p>装完之后，必须try一把，上docker hub，发现Nginx也有基于alpine的版本了。速度pull。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker pull nginx:alpine-stable</span><br><span class="line">docker run -d -p:43210:80 --name webserver nginx:stable-alpine</span><br></pre></td></tr></table></figure>
+
 <p>访问本机的<code>http://localhost:43210</code>,可以看到欢迎页面了。</p>
 <p>继续登录这个docker container。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -ti 0a41832c61af /bin/sh</span><br></pre></td></tr></table></figure>
@@ -244,6 +248,7 @@
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apk add bash</span><br></pre></td></tr></table></figure>
 <p>重新用bash进入container</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -ti 0a41832c61af /bin/bash</span><br></pre></td></tr></table></figure>
+
 <p>Enjoy!</p>
 
     </div>
@@ -380,19 +385,16 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -423,7 +425,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -465,9 +467,15 @@
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 

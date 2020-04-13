@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -21,17 +21,17 @@
   </script>
 
   <meta name="description" content="Websocket是HTML5之后的一个新事物，可以方便的实现客户端到服务端的长会话，特别适合用于客户端需要接收服务端推送的场景。例如在线客服聊天，提醒推送等等。改变了以往客户端只能通过轮询或者long poll来获取服务端状态的限制。">
-<meta name="keywords" content="DevOps">
 <meta property="og:type" content="article">
 <meta property="og:title" content="坑系列之阿里SLB上使用Webscoket">
 <meta property="og:url" content="http://www.deanwangpro.com/2018/03/10/Ali-SLB-for-Websocket/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="Websocket是HTML5之后的一个新事物，可以方便的实现客户端到服务端的长会话，特别适合用于客户端需要接收服务端推送的场景。例如在线客服聊天，提醒推送等等。改变了以往客户端只能通过轮询或者long poll来获取服务端状态的限制。">
-<meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2018-03-12T01:51:14.000Z">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2018-03-09T16:00:00.000Z">
+<meta property="article:modified_time" content="2018-03-12T01:51:14.000Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="DevOps">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="坑系列之阿里SLB上使用Webscoket">
-<meta name="twitter:description" content="Websocket是HTML5之后的一个新事物，可以方便的实现客户端到服务端的长会话，特别适合用于客户端需要接收服务端推送的场景。例如在线客服聊天，提醒推送等等。改变了以往客户端只能通过轮询或者long poll来获取服务端状态的限制。">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2018/03/10/Ali-SLB-for-Websocket/">
 
@@ -86,6 +86,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -230,20 +231,26 @@
       
         <p>Websocket是HTML5之后的一个新事物，可以方便的实现客户端到服务端的长会话，特别适合用于客户端需要接收服务端推送的场景。例如在线客服聊天，提醒推送等等。改变了以往客户端只能通过轮询或者long poll来获取服务端状态的限制。</p>
 <a id="more"></a>
+
 <h3 id="和HTTP协议有什么关系"><a href="#和HTTP协议有什么关系" class="headerlink" title="和HTTP协议有什么关系"></a>和HTTP协议有什么关系</h3><p>首先我们来看一下Websocket协议和HTTP有什么关系呢？<br>本质上说，Websocket和HTTP就不是一个协议，层级不一样。但是为了兼容现有浏览器的握手规范，必须借助HTTP协议建立连接。</p>
 <p>这是一个Websocket的握手请求</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">GET wss://server.example.com/ HTTP/1.1</span><br><span class="line">Host: server.example.com</span><br><span class="line">Pragma: no-cache</span><br><span class="line">Cache-Control: no-cache</span><br><span class="line">Connection: Upgrade</span><br><span class="line">Upgrade: websocket</span><br><span class="line">Origin: https://server.example.com</span><br><span class="line">Accept-Encoding: gzip, deflate, br</span><br><span class="line">Sec-WebSocket-Version: 13</span><br><span class="line">Sec-WebSocket-Key: fFFIlFcwULSAmQacRAbS2A==</span><br><span class="line">Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">GET wss:&#x2F;&#x2F;server.example.com&#x2F; HTTP&#x2F;1.1</span><br><span class="line">Host: server.example.com</span><br><span class="line">Pragma: no-cache</span><br><span class="line">Cache-Control: no-cache</span><br><span class="line">Connection: Upgrade</span><br><span class="line">Upgrade: websocket</span><br><span class="line">Origin: https:&#x2F;&#x2F;server.example.com</span><br><span class="line">Accept-Encoding: gzip, deflate, br</span><br><span class="line">Sec-WebSocket-Version: 13</span><br><span class="line">Sec-WebSocket-Key: fFFIlFcwULSAmQacRAbS2A&#x3D;&#x3D;</span><br><span class="line">Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits</span><br></pre></td></tr></table></figure>
+
 <p>这里面有几个和一般HTTP Request不一样的地方，</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Connection: Upgrade</span><br><span class="line">Upgrade: websocket</span><br><span class="line">Sec-WebSocket-Version: 13</span><br><span class="line">Sec-WebSocket-Key: fFFIlFcwULSAmQacRAbS2A==</span><br><span class="line">Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Connection: Upgrade</span><br><span class="line">Upgrade: websocket</span><br><span class="line">Sec-WebSocket-Version: 13</span><br><span class="line">Sec-WebSocket-Key: fFFIlFcwULSAmQacRAbS2A&#x3D;&#x3D;</span><br><span class="line">Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits</span><br></pre></td></tr></table></figure>
+
 <p>这是告诉服务端这不是一个普通的请求，而是Websocket协议。Sec-WebSocket-Key 是一个Base64 encode的值，是浏览器随机生成的，用于让服务端知道这是一个全新的socket客户端。</p>
 <p>服务端如果开启了Socket监听，那么就会返回这样的Response</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 101 Switching Protocols</span><br><span class="line">Date: Fri, 09 Mar 2018 16:24:45 GMT</span><br><span class="line">Connection: upgrade</span><br><span class="line">upgrade: websocket</span><br><span class="line">sec-websocket-accept: i/tCy92JmOXIoZwGi8ROh6CgUwk=</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">HTTP&#x2F;1.1 101 Switching Protocols</span><br><span class="line">Date: Fri, 09 Mar 2018 16:24:45 GMT</span><br><span class="line">Connection: upgrade</span><br><span class="line">upgrade: websocket</span><br><span class="line">sec-websocket-accept: i&#x2F;tCy92JmOXIoZwGi8ROh6CgUwk&#x3D;</span><br></pre></td></tr></table></figure>
+
 <p>表示接收了请求，并且即将切换到Websocket协议，所以code是101。Sec-WebSocket-Accept 这个则是经过服务器确认，并且加密过后的 Sec-WebSocket-Key。到这里HTTP协议的任务就已经完成，之后的通信都是基于Websocket协议了。</p>
 <h3 id="怎么通过nginx转发Websocket的握手请求"><a href="#怎么通过nginx转发Websocket的握手请求" class="headerlink" title="怎么通过nginx转发Websocket的握手请求"></a>怎么通过nginx转发Websocket的握手请求</h3><p>本质上说握手请求就是一个特殊的HTTP Request，只是需要加一些上文提到的特殊内容，从<a href="https://www.nginx.com/blog/websocket-nginx/" target="_blank" rel="noopener">Nignx官方介绍</a>可以看到</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">location /wsapp/ &#123;</span><br><span class="line">    proxy_pass http://wsbackend;</span><br><span class="line">    proxy_http_version 1.1;</span><br><span class="line">    proxy_set_header Upgrade $http_upgrade;</span><br><span class="line">    proxy_set_header Connection &quot;Upgrade&quot;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">location &#x2F;wsapp&#x2F; &#123;</span><br><span class="line">    proxy_pass http:&#x2F;&#x2F;wsbackend;</span><br><span class="line">    proxy_http_version 1.1;</span><br><span class="line">    proxy_set_header Upgrade $http_upgrade;</span><br><span class="line">    proxy_set_header Connection &quot;Upgrade&quot;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>只是在Request header加了两个属性，并且强制升级到HTTP 1.1，原因是HTTP 1.0不支持keep alive。如果使用HTTP 1.0发握手请求，服务端返回101以后就会直接结束这次HTTP会话了。这一点也为之后的坑埋下了伏笔。</p>
 <h3 id="坑从何来"><a href="#坑从何来" class="headerlink" title="坑从何来"></a>坑从何来</h3><p>自从上线了Websocket服务之后，就会经常发现socket无法建立，获得504的超时响应。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 504 Gateway Time-out</span><br><span class="line">Date: Fri, 09 Mar 2018 03:34:54 GMT</span><br><span class="line">Content-Type: text/html</span><br><span class="line">Content-Length: 272</span><br><span class="line">Connection: keep-alive</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">HTTP&#x2F;1.1 504 Gateway Time-out</span><br><span class="line">Date: Fri, 09 Mar 2018 03:34:54 GMT</span><br><span class="line">Content-Type: text&#x2F;html</span><br><span class="line">Content-Length: 272</span><br><span class="line">Connection: keep-alive</span><br></pre></td></tr></table></figure>
+
 <p>而且这一响应只有在经过SLB（负载均衡）时才有，如果直接请求到我们自己的nginx是没有问题的。但是基于对阿里的信任，还是觉得问题应该还是我们自己这儿。从code review到nginx配置，折腾了五六个小时。</p>
 <p>最后只有自己搭建的nginx access log上寻找蛛丝马迹，一开始抓到一些响应都是499的返回，并且request_time时间都在60s上下。</p>
 <blockquote>
@@ -255,7 +262,8 @@
 <p>[09/Mar/2018:15:03:51 +0800] 100.97.88.238 - - - 10.0.20.11  to: 127.0.0.1:8011: GET /ws/?id=168451&amp;url=<a href="http://server.example.com" target="_blank" rel="noopener">http://server.example.com</a> <strong>HTTP/1.1</strong> upstream_response_time 11.069 msec 1520579031.198 request_time 11.|<br>069 status 101 client - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36                     |<br>[09/Mar/2018:15:04:32 +0800] 100.97.88.254 - - - 10.0.20.11  to: 127.0.0.1:8011: GET /ws/?id=168451&amp;url=<a href="http://server.example.com" target="_blank" rel="noopener">http://server.example.com</a> <strong>HTTP/1.0</strong> upstream_response_time - msec 1520579072.716 request_time 36.755 s|<br>tatus 499 client - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36</p>
 </blockquote>
 <p>就好像这两个请求，同一个页面发出的，但是一个成功一个失败。失败的正好就是HTTP/1.0，为什么会有两个版本的协议呢，<br>为了证据更加“确凿”，我们对请求进行了抓包分析，并将Sec-WebSocket-Key打印到Nginx的access log中方便trace同一个请求。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">GET http://server.example.com/ws/ HTTP/1.1</span><br><span class="line">Host: app.linkflowtech.com</span><br><span class="line">Connection: Upgrade</span><br><span class="line">Pragma: no-cache</span><br><span class="line">Cache-Control: no-cache</span><br><span class="line">Upgrade: websocket</span><br><span class="line">Origin: http://server.example.com</span><br><span class="line">Sec-WebSocket-Key: 8+qDYeKJGFTWKB2ov4p5TA==</span><br><span class="line">Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">GET http:&#x2F;&#x2F;server.example.com&#x2F;ws&#x2F; HTTP&#x2F;1.1</span><br><span class="line">Host: app.linkflowtech.com</span><br><span class="line">Connection: Upgrade</span><br><span class="line">Pragma: no-cache</span><br><span class="line">Cache-Control: no-cache</span><br><span class="line">Upgrade: websocket</span><br><span class="line">Origin: http:&#x2F;&#x2F;server.example.com</span><br><span class="line">Sec-WebSocket-Key: 8+qDYeKJGFTWKB2ov4p5TA&#x3D;&#x3D;</span><br><span class="line">Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits</span><br></pre></td></tr></table></figure>
+
 <blockquote>
 <p>[09/Mar/2018:17:07:07 +0800] 100.97.88.252 - - - 10.0.21.11  to: 10.0.20.11:8011: GET /ws/ HTTP/1.0 upstream_response_time - msec 1520586427.537 request_time 59.999 status 499 client - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36 <strong>8+qDYeKJGFTWKB2ov4p5TA==</strong><br>2018-03-09 17:12:04</p>
 </blockquote>
@@ -400,19 +408,16 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -443,7 +448,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -485,9 +490,15 @@
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 

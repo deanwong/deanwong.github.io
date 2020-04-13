@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -21,17 +21,17 @@
   </script>
 
   <meta name="description" content="这两天抽空使用了一下两款压测工具  wrk Artillery  并且通过两款工具对产品的两个环境进行了测试">
-<meta name="keywords" content="Test">
 <meta property="og:type" content="article">
 <meta property="og:title" content="压测工具wrk和Artillery的比较">
 <meta property="og:url" content="http://www.deanwangpro.com/2017/12/09/wrk-and-artillery/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="这两天抽空使用了一下两款压测工具  wrk Artillery  并且通过两款工具对产品的两个环境进行了测试">
-<meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2017-12-22T06:06:05.000Z">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2017-12-08T16:00:00.000Z">
+<meta property="article:modified_time" content="2017-12-22T06:06:05.000Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="Test">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="压测工具wrk和Artillery的比较">
-<meta name="twitter:description" content="这两天抽空使用了一下两款压测工具  wrk Artillery  并且通过两款工具对产品的两个环境进行了测试">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2017/12/09/wrk-and-artillery/">
 
@@ -86,6 +86,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -233,31 +234,40 @@
 <li>wrk</li>
 <li>Artillery</li>
 </ul>
-<p>并且通过两款工具对产品的两个环境进行了测试<br><a id="more"></a></p>
+<p>并且通过两款工具对产品的两个环境进行了测试</p>
+<a id="more"></a>
+
 <h3 id="工具比较"><a href="#工具比较" class="headerlink" title="工具比较"></a>工具比较</h3><h4 id="wrk"><a href="#wrk" class="headerlink" title="wrk"></a>wrk</h4><p>wrk自身性能就非常惊人，使用epoll这种多路复用技术，所以可以用少量的线程来跟被测服务创建大量连接，进行压测，同时不占用过多的CPU和内存。</p>
 <p>命令非常简单</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wrk -t8 -c200 -d30s --latency  <span class="string">"http://www.baidu.com"</span></span><br></pre></td></tr></table></figure>
+
 <p>这样就可以进行最简单的压测。但是真实使用起来肯定会有复杂的场景，比如先要登录取到token再进行下一步。好在wrk支持lua脚本，提供了几个阶段的hook来让用户自定义逻辑，具体可以看github上的官方提供的script sample。</p>
 <p>我这里举一个获取token的例子</p>
 <figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- @Author: wangding</span></span><br><span class="line"><span class="comment">-- @Date:   2017-12-06 15:13:19</span></span><br><span class="line"><span class="comment">-- @Last Modified by:   wangding</span></span><br><span class="line"><span class="comment">-- @Last Modified time: 2017-12-06 23:57:49</span></span><br><span class="line"><span class="keyword">local</span> cjson = <span class="built_in">require</span> <span class="string">"cjson"</span></span><br><span class="line"><span class="keyword">local</span> cjson2 = cjson.new()</span><br><span class="line"><span class="keyword">local</span> cjson_safe = <span class="built_in">require</span> <span class="string">"cjson.safe"</span></span><br><span class="line"></span><br><span class="line">token = <span class="literal">nil</span></span><br><span class="line"><span class="built_in">path</span>  = <span class="string">"/api/auth/login"</span></span><br><span class="line">method = <span class="string">"POST"</span></span><br><span class="line"></span><br><span class="line">wrk.headers[<span class="string">"Content-Type"</span>] = <span class="string">"application/json"</span></span><br><span class="line"></span><br><span class="line">request = <span class="function"><span class="keyword">function</span><span class="params">()</span></span></span><br><span class="line">   <span class="keyword">return</span> wrk.<span class="built_in">format</span>(method, <span class="built_in">path</span>, <span class="literal">nil</span>, <span class="string">'&#123;"username":"demo@demo.com","password":"demo"&#125;'</span>)</span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">response = <span class="function"><span class="keyword">function</span><span class="params">(status, headers, body)</span></span></span><br><span class="line">   <span class="keyword">if</span> <span class="keyword">not</span> token <span class="keyword">and</span> <span class="built_in">status</span> == <span class="number">200</span> <span class="keyword">then</span></span><br><span class="line">      value = cjson.decode(body)</span><br><span class="line">      token = value[<span class="string">"token"</span>]</span><br><span class="line">      method = <span class="string">"GET"</span></span><br><span class="line">      <span class="built_in">path</span>  = <span class="string">"/api/contact?size=20&amp;page=0"</span></span><br><span class="line">      wrk.headers[<span class="string">"Authorization"</span>] = token</span><br><span class="line">   <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+
 <p><code>request</code> 和 <code>response</code> 分别是两个hook，每次请求都会调用，那么这里request的逻辑就是一开始就使用<code>POST</code>请求<code>/api/auth/login</code>并且带有body，请求完成进入response，第一次token肯定是nil，所以把repose的token解析出来付给全局变量<code>token</code>，之后改写全局变量为<code>GET</code>请求地址<code>/api/contact</code>并且设置了header包含<code>Authorization</code>。</p>
 <p>这样实际是变通的实现了一个简单scenario的测试，那么问题来了，如果场景更复杂怎么办？写肯定是可以写的，但是并不直观，所以wrk不太适合一个包含有序场景的压力测试。</p>
 <p>再来看一下wrk的report，这一点是我最喜欢的</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">wrk -t8 -c200 -d30s -H <span class="string">"Authorization: token"</span> --latency <span class="string">"http://10.0.20.2:8080/api/contact?size=20&amp;page=0"</span></span><br><span class="line">Running 30s <span class="built_in">test</span> @ http://10.0.20.2:8080/api/contact?size=20&amp;page=0</span><br><span class="line">  8 threads and 200 connections</span><br><span class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</span><br><span class="line">    Latency   769.49ms  324.43ms   1.99s    72.08%</span><br><span class="line">    Req/Sec    33.37     21.58   131.00     62.31%</span><br><span class="line">  Latency Distribution</span><br><span class="line">     50%  728.97ms</span><br><span class="line">     75%  958.69ms</span><br><span class="line">     90%    1.21s</span><br><span class="line">     99%    1.74s</span><br><span class="line">  7606 requests <span class="keyword">in</span> 30.03s, 176.69MB <span class="built_in">read</span></span><br><span class="line">  Socket errors: connect 0, <span class="built_in">read</span> 0, write 0, timeout 38</span><br><span class="line">Requests/sec:    253.31</span><br><span class="line">Transfer/sec:      5.88MB</span><br></pre></td></tr></table></figure>
+
 <p>开启8线程，每个线程200个连接，持续30s的调用，可以看到报告中直接给出了最关键的指标QPS，这里的值是253.31。平均响应时间是33.37ms。简单直接，非常易懂。</p>
 <p>但是这里面有个坑就是cjson这个lua module的使用，不可以使用lua5.2，必须使用lua5.1而且需要特定的wrk和cjson。我直接使用docker来封装这个运行环境，坏处是docker使用host模式本身性能可能就有影响。</p>
 <h4 id="Artillery"><a href="#Artillery" class="headerlink" title="Artillery"></a>Artillery</h4><p>一开始看到Artillery主要是因为它支持带场景的测试，也就是带有步骤，看一眼获取token再进行下一步的脚本。</p>
-<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">config:</span></span><br><span class="line"><span class="attr">  target:</span> <span class="string">"http://10.0.20.2:8080"</span></span><br><span class="line"><span class="attr">  phases:</span></span><br><span class="line"><span class="attr">    - duration:</span> <span class="number">30</span></span><br><span class="line"><span class="attr">      arrivalRate:</span> <span class="number">100</span></span><br><span class="line"><span class="attr">scenarios:</span></span><br><span class="line"><span class="attr">  - flow:</span></span><br><span class="line"><span class="attr">    - post:</span></span><br><span class="line"><span class="attr">        url:</span> <span class="string">"/api/auth/login"</span></span><br><span class="line"><span class="attr">        json:</span></span><br><span class="line"><span class="attr">          username:</span> <span class="string">"demo@demo.com"</span></span><br><span class="line"><span class="attr">          password:</span> <span class="string">"demo"</span></span><br><span class="line"><span class="attr">        capture:</span></span><br><span class="line"><span class="attr">          json:</span> <span class="string">"$.token"</span></span><br><span class="line"><span class="attr">          as:</span> <span class="string">"token"</span></span><br><span class="line"><span class="attr">    - log:</span> <span class="string">"Login token: <span class="template-variable">&#123;&#123; token &#125;&#125;</span>"</span></span><br><span class="line"><span class="attr">    - get:</span></span><br><span class="line"><span class="attr">        url:</span> <span class="string">"/api/contact?size=20&amp;page=0"</span></span><br><span class="line"><span class="attr">        headers:</span></span><br><span class="line"><span class="attr">          Authorization:</span> <span class="string">"<span class="template-variable">&#123;&#123; token &#125;&#125;</span>"</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">config:</span></span><br><span class="line">  <span class="attr">target:</span> <span class="string">"http://10.0.20.2:8080"</span></span><br><span class="line">  <span class="attr">phases:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">duration:</span> <span class="number">30</span></span><br><span class="line">      <span class="attr">arrivalRate:</span> <span class="number">100</span></span><br><span class="line"><span class="attr">scenarios:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">flow:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">post:</span></span><br><span class="line">        <span class="attr">url:</span> <span class="string">"/api/auth/login"</span></span><br><span class="line">        <span class="attr">json:</span></span><br><span class="line">          <span class="attr">username:</span> <span class="string">"demo@demo.com"</span></span><br><span class="line">          <span class="attr">password:</span> <span class="string">"demo"</span></span><br><span class="line">        <span class="attr">capture:</span></span><br><span class="line">          <span class="attr">json:</span> <span class="string">"$.token"</span></span><br><span class="line">          <span class="attr">as:</span> <span class="string">"token"</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">log:</span> <span class="string">"Login token: <span class="template-variable">&#123;&#123; token &#125;&#125;</span>"</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">get:</span></span><br><span class="line">        <span class="attr">url:</span> <span class="string">"/api/contact?size=20&amp;page=0"</span></span><br><span class="line">        <span class="attr">headers:</span></span><br><span class="line">          <span class="attr">Authorization:</span> <span class="string">"<span class="template-variable">&#123;&#123; token &#125;&#125;</span>"</span></span><br></pre></td></tr></table></figure>
+
 <p><code>flow</code>就是表示步骤，<code>duration</code>表示持续30s，跟wrk不同的是没有thread的概念，Artillery是nodejs写的，<code>arrivalRate</code>表示每秒模拟100个请求，所以两个参数乘起来就是3000个请求。看一下报告什么样：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">All virtual users finished</span><br><span class="line">Summary report @ 12:45:41(+0800) 2017-12-08</span><br><span class="line">  Scenarios launched:  3000</span><br><span class="line">  Scenarios completed: 3000</span><br><span class="line">  Requests completed:  3000</span><br><span class="line">  RPS sent: 98.33</span><br><span class="line">  Request latency:</span><br><span class="line">    min: 15.7</span><br><span class="line">    max: 179.1</span><br><span class="line">    median: 19</span><br><span class="line">    p95: 25.8</span><br><span class="line">    p99: 37.5</span><br><span class="line">  Scenario duration:</span><br><span class="line">    min: 16.4</span><br><span class="line">    max: 191.4</span><br><span class="line">    median: 19.8</span><br><span class="line">    p95: 27</span><br><span class="line">    p99: 44.6</span><br><span class="line">  Scenario counts:</span><br><span class="line">    0: 3000 (100%)</span><br><span class="line">  Codes:</span><br><span class="line">    200: 3000</span><br></pre></td></tr></table></figure>
+
 <p>这里的<code>RPS sent</code>是指前10s平均发送请求数，所以这个和我们常说的QPS还是不一样的。如果想提高request的总数就要增加<code>arrivalRate</code>，比如上文wrk一共发了7606请求，那么这里<code>arrivalRate</code>提高到200一共可以在30s发6000次，但是改完就悲剧了，</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Warning: High CPU usage warning.</span><br><span class="line">See https://artillery.io/docs/faq/<span class="comment">#high-cpu-warnings for details.</span></span><br></pre></td></tr></table></figure>
 <p>Artillery一直在不断的告警，说明这个工具自身的局限性导致想要并发发送大量请求的时候，自己就很占CPU。</p>
 <h4 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h4><p>wrk小巧而且性能非常好，报告直观。但是对于带多个步骤的压测场景无力。<br>Artillery太耗资源，而且报告不直观。<strong>不建议采用</strong>。<br>除此之外唯一带场景的测试工具就是Jmeter了，但是Jmeter本身使用JVM是否可以短时间模拟大量并发，还是需要测试，建议与wrk做对比实验。</p>
 <h3 id="附录：简单的性能调优"><a href="#附录：简单的性能调优" class="headerlink" title="附录：简单的性能调优"></a>附录：简单的性能调优</h3><p>在用wrk测试GET请求的时候，发现无论如何提高连接数，QPS都是在250左右，此时CPU和内存都没有占满。怀疑是有其他瓶颈。最后发现Spring Boot内嵌的tomcat线程无法突破200，所以看了一下文档，发现默认最大线程数就是200，对<code>application.yml</code>进行了调整（同时调整了多个服务，包括gateway）</p>
-<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">server:</span></span><br><span class="line"><span class="attr">  tomcat:</span></span><br><span class="line"><span class="attr">    max-threads:</span> <span class="number">1000</span></span><br><span class="line"><span class="attr">    max-connections:</span> <span class="number">2000</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">tomcat:</span></span><br><span class="line">    <span class="attr">max-threads:</span> <span class="number">1000</span></span><br><span class="line">    <span class="attr">max-connections:</span> <span class="number">2000</span></span><br></pre></td></tr></table></figure>
+
 <p>调整之后开启8线程，每个100个连接测试</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Running 30s <span class="built_in">test</span> @ http://10.0.10.4:8769/api/contact?size=20&amp;page=0</span><br><span class="line">  8 threads and 100 connections</span><br><span class="line">  Thread Stats   Avg      Stdev     Max   +/- Stdev</span><br><span class="line">    Latency   235.56ms  267.57ms   1.98s    91.07%</span><br><span class="line">    Req/Sec    72.12     30.19   190.00     68.17%</span><br><span class="line">  Latency Distribution</span><br><span class="line">     50%  166.46ms</span><br><span class="line">     75%  281.10ms</span><br><span class="line">     90%  472.03ms</span><br><span class="line">     99%    1.45s</span><br><span class="line">  15714 requests <span class="keyword">in</span> 30.03s, 4.77MB <span class="built_in">read</span></span><br><span class="line">Requests/sec:    523.29</span><br><span class="line">Transfer/sec:    162.56KB</span><br></pre></td></tr></table></figure>
+
 <p>可以看到QPS达到了500以上直接翻倍了，再尝试提高连接数发现瓶颈就在内存了。</p>
 <p>此外之前用公网做了一次压测，QPS只有10左右，看了一下阿里云的监控原来是出口带宽造成的，只有1MB的出口带宽，连接数调多大也没用。</p>
 <p>未来还需要进行场景的细化，再决定是否使用不同的工具进行测试。</p>
@@ -395,19 +405,16 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -438,7 +445,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -480,9 +487,15 @@
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -21,13 +21,12 @@
   </script>
 
   <meta name="description" content="我们的产品是一个客户数据平台。产品的一个重要部分类似企业版的”捷径”，让运营人员可以像搭乐高积木一样创建企业的自动化流程，无需编程即可让数据流动起来。从这一点上，我们的业务特点就是聚少成多，把一个个服务连接起来就成了数据的海洋。理念上跟微服务一致，一个个独立的小服务最终实现大功能。当然我们一开始也没有使用微服务，当业务还未成型就开始考虑架构，那么就是”过度设计”。另一方面需要考虑的因素就是”人”，">
-<meta name="keywords" content="spring-cloud,ci,microservice">
 <meta property="og:type" content="article">
 <meta property="og:title" content="小团队微服务落地实践">
 <meta property="og:url" content="http://www.deanwangpro.com/2019/04/19/microservice-practice/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="我们的产品是一个客户数据平台。产品的一个重要部分类似企业版的”捷径”，让运营人员可以像搭乐高积木一样创建企业的自动化流程，无需编程即可让数据流动起来。从这一点上，我们的业务特点就是聚少成多，把一个个服务连接起来就成了数据的海洋。理念上跟微服务一致，一个个独立的小服务最终实现大功能。当然我们一开始也没有使用微服务，当业务还未成型就开始考虑架构，那么就是”过度设计”。另一方面需要考虑的因素就是”人”，">
-<meta property="og:locale" content="en">
+<meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/CI-7f63954d-d630-4d00-a138-8cbbe6810812.png">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/-9e423b2c-8c0b-4ae5-80aa-1414394848feuntitled.jpg">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/-47c5e4c3-9d49-442f-bd61-1d0f2167e23euntitled.jpg">
@@ -44,10 +43,13 @@
 <meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/Untitled-eedbc8b1-14e7-4a64-b29c-8703fb84ff88.png">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/grafana1-d2675f57-eeca-4669-a764-70cb3af9fb68.png">
 <meta property="og:image" content="http://www.deanwangpro.com/images/2019-04-19/-5f7ae443-5d3e-48bb-9c67-cc60e717d33cuntitled.jpg">
-<meta property="og:updated_time" content="2019-04-19T13:00:21.000Z">
+<meta property="article:published_time" content="2019-04-18T16:00:00.000Z">
+<meta property="article:modified_time" content="2019-04-19T13:00:21.000Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="spring-cloud">
+<meta property="article:tag" content="ci">
+<meta property="article:tag" content="microservice">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="小团队微服务落地实践">
-<meta name="twitter:description" content="我们的产品是一个客户数据平台。产品的一个重要部分类似企业版的”捷径”，让运营人员可以像搭乐高积木一样创建企业的自动化流程，无需编程即可让数据流动起来。从这一点上，我们的业务特点就是聚少成多，把一个个服务连接起来就成了数据的海洋。理念上跟微服务一致，一个个独立的小服务最终实现大功能。当然我们一开始也没有使用微服务，当业务还未成型就开始考虑架构，那么就是”过度设计”。另一方面需要考虑的因素就是”人”，">
 <meta name="twitter:image" content="http://www.deanwangpro.com/images/2019-04-19/CI-7f63954d-d630-4d00-a138-8cbbe6810812.png">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2019/04/19/microservice-practice/">
@@ -103,6 +105,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -241,6 +244,8 @@
       
         <p>我们的产品是一个客户数据平台。产品的一个重要部分类似企业版的”捷径”，让运营人员可以像搭乐高积木一样创建企业的自动化流程，无需编程即可让数据流动起来。从这一点上，我们的业务特点就是聚少成多，把一个个服务连接起来就成了数据的海洋。理念上跟微服务一致，一个个独立的小服务最终实现大功能。当然我们一开始也没有使用微服务，当业务还未成型就开始考虑架构，那么就是”过度设计”。另一方面需要考虑的因素就是”人”，有没有经历过微服务项目的人，团队是否有devops文化等等，综合考量是否需要微服务化。</p>
 <a id="more"></a>
+
+
 <h1 id="要不要微服务"><a href="#要不要微服务" class="headerlink" title="要不要微服务"></a>要不要微服务</h1><p>微服务的好处是什么？</p>
 <ul>
 <li>相比于单体应用，每个服务的复杂度会下降，特别是数据层面（数据表关系）更清晰，不会一个应用上百张表，新员工上手快。</li>
@@ -270,8 +275,7 @@
 <p><img src="/images/2019-04-19/CI-7f63954d-d630-4d00-a138-8cbbe6810812.png" alt=""></p>
 <h2 id="集成测试"><a href="#集成测试" class="headerlink" title="集成测试"></a>集成测试</h2><p>一般来说代码自动执行的都是单元测试(Unit Test)，即不依赖任何资源（数据库，消息队列）和其他服务，只测试本系统的代码逻辑。但这种测试需要mock的部分非常多，一是写起来复杂，二是代码重构起来跟着改的测试用例也非常多，显得不够敏捷。而且一旦要求开发团队要达到某个覆盖率，就会出现很多造假的情况。所以我们选择主要针对API进行测试，即针对controller层的测试。另外对于一些公共组件如分布式锁，json序列化模块也会有对应的测试代码覆盖。测试代码在运行时会采用一个随机端口拉起项目，并通过http client对本地API发起请求，测试只会对外部服务做mock，数据库的读写，消息队列的消费等都是真实操作，相当于把Jmeter的事情在Java层面完成一部分。Spring Boot项目可以很容易的启动这样一个测试环境，代码如下：</p>
 <pre><code>@RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-</code></pre><p>测试过程的http client推荐使用<code>io.rest-assured:rest-assured</code>支持JsonPath，十分好用。</p>
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)</code></pre><p>测试过程的http client推荐使用<code>io.rest-assured:rest-assured</code>支持JsonPath，十分好用。</p>
 <p>测试时需要注意的一个点是测试数据的构造和清理。构造又分为schema的创建和测试数据的创建。</p>
 <ul>
 <li>schema由flyway处理，在启用测试环境前先删除所有表，再进行表的创建。</li>
@@ -311,8 +315,7 @@
 <p><img src="/images/2019-04-19/harbor2-ca928974-9b42-4262-8272-892a428ebd56.png" alt=""></p>
 <p>在jenkins中执行build docker image job时会在每次pull代码之后调用harbor的api来判断此版本的docker image是否已经存在，如果存在就不执行后续编译打包的stage。在jenkins的发布任务中会调用打包job，避免了重复打包镜像，这样就大大的加快了发布速度。</p>
 <h2 id="数据库Schema升级"><a href="#数据库Schema升级" class="headerlink" title="数据库Schema升级"></a>数据库Schema升级</h2><p>数据库的升级用的是flyway，打包成docker镜像后，在openshift中创建job去执行数据库升级。job可以用最简单的命令行的方式去创建</p>
-<pre><code>oc run upgrade-foo --image=upgrade/production --replicas=1 --restart=OnFailure --command -- java -jar -Dprofile=production /app/upgrade-foo.jar
-</code></pre><p>脚本升级任务也集成在jenkins中。</p>
+<pre><code>oc run upgrade-foo --image=upgrade/production --replicas=1 --restart=OnFailure --command -- java -jar -Dprofile=production /app/upgrade-foo.jar</code></pre><p>脚本升级任务也集成在jenkins中。</p>
 <h2 id="容器发布"><a href="#容器发布" class="headerlink" title="容器发布"></a>容器发布</h2><p>openshift有个特别概念叫DeploymentConfig，原生k8s Deployment与之相似，但openshift的DeploymentConfig功能更多些。</p>
 <p>Deploymentconfig关联了一个叫做ImageStreamTag的东西，而这个ImagesStreamTag和实际的镜像地址做关联，当ImageStreamTag关联的镜像地址发生了变更，就会触发相应的DeploymentConfig重新部署。我们发布是使用了jenkins+openshift插件，只需要将项目对应的ImageStreamTag指向到新生成的镜像上，就触发了部署。</p>
 <p><img src="/images/2019-04-19/deploymentconfig-b8e607bf-23b0-440d-8e8c-f157281c5765.png" alt=""></p>
@@ -327,8 +330,7 @@
     initialDelaySeconds: 60
     periodSeconds: 15
     successThreshold: 2
-    timeoutSeconds: 2
-</code></pre><h1 id="线上运维的挑战"><a href="#线上运维的挑战" class="headerlink" title="线上运维的挑战"></a>线上运维的挑战</h1><h2 id="服务间调用"><a href="#服务间调用" class="headerlink" title="服务间调用"></a>服务间调用</h2><p>Spring Cloud使用eruka接受服务注册请求，并在内存中维护服务列表。当一个服务作为客户端发起跨服务调用时，会先获取服务提供者列表，再通过某种负载均衡算法取得具体的服务提供者地址(ip + port)，即所谓的客户端服务发现。在本地开发环境中我们使用这种方式。</p>
+    timeoutSeconds: 2</code></pre><h1 id="线上运维的挑战"><a href="#线上运维的挑战" class="headerlink" title="线上运维的挑战"></a>线上运维的挑战</h1><h2 id="服务间调用"><a href="#服务间调用" class="headerlink" title="服务间调用"></a>服务间调用</h2><p>Spring Cloud使用eruka接受服务注册请求，并在内存中维护服务列表。当一个服务作为客户端发起跨服务调用时，会先获取服务提供者列表，再通过某种负载均衡算法取得具体的服务提供者地址(ip + port)，即所谓的客户端服务发现。在本地开发环境中我们使用这种方式。</p>
 <p>由于Openshift天然就提供服务端服务发现，即service模块，客户端无需关注服务发现具体细节，只需知道服务的域名就可以发起调用。由于我们有nodejs应用，在实现eureka的注册和去注册的过程中都遇到过一些问题，不能达到生产级别。所以决定直接使用service方式替换掉eureka，也为以后采用service mesh做好铺垫。具体的做法是，配置环境变量<code>EUREKA_CLIENT_ENABLED=false</code>，<code>RIBBON_EUREKA_ENABLED=false</code>，并将服务列表如 <code>FOO_RIBBON_LISTOFSERVERS: &#39;[http://foo:8080](http://foo:8080/)&#39;</code> 写进configmap中，以<code>envFrom: configMapRef</code>方式获取环境变量列表。</p>
 <p>如果一个服务需要暴露到外部怎么办，比如暴露前端的html文件或者服务端的gateway。</p>
 <p>Openshift内置的haproxy router，相当于k8s的ingress，直接在Openshift的web界面里面就可以很方便的配置。我们将前端的资源也作为一个Pod并有对应的Service，当请求进入haproxy符合规则就会转发到ui所在的Service。router支持A/B test等功能，唯一的遗憾是还不支持url rewrite。</p>
@@ -485,19 +487,16 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -528,7 +527,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -570,9 +569,15 @@
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 

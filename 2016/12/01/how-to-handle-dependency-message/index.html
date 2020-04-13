@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 3.7.1">
+<meta name="generator" content="Hexo 4.2.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
@@ -21,17 +21,18 @@
   </script>
 
   <meta name="description" content="在项目中踏完一系列坑后总结出来，消息的处理有两个要务：  消费一定要快，我们喜欢供小于求的市场。生产者生产的消息要满足不了消费者才行。 任何消息都不能丢，因为这都是数据啊，即使处理不了也得找地方存着。最好每次的消息都存着，之后就变成了event sourcing（另一个大坑）。">
-<meta name="keywords" content="Java,MQ">
 <meta property="og:type" content="article">
 <meta property="og:title" content="如何处理有依赖的消息">
 <meta property="og:url" content="http://www.deanwangpro.com/2016/12/01/how-to-handle-dependency-message/index.html">
 <meta property="og:site_name" content="大名Dean鼎">
 <meta property="og:description" content="在项目中踏完一系列坑后总结出来，消息的处理有两个要务：  消费一定要快，我们喜欢供小于求的市场。生产者生产的消息要满足不了消费者才行。 任何消息都不能丢，因为这都是数据啊，即使处理不了也得找地方存着。最好每次的消息都存着，之后就变成了event sourcing（另一个大坑）。">
-<meta property="og:locale" content="en">
-<meta property="og:updated_time" content="2016-12-01T16:15:14.000Z">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2016-11-30T16:00:00.000Z">
+<meta property="article:modified_time" content="2016-12-01T16:15:14.000Z">
+<meta property="article:author" content="Dean Wang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="MQ">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="如何处理有依赖的消息">
-<meta name="twitter:description" content="在项目中踏完一系列坑后总结出来，消息的处理有两个要务：  消费一定要快，我们喜欢供小于求的市场。生产者生产的消息要满足不了消费者才行。 任何消息都不能丢，因为这都是数据啊，即使处理不了也得找地方存着。最好每次的消息都存着，之后就变成了event sourcing（另一个大坑）。">
 
 <link rel="canonical" href="http://www.deanwangpro.com/2016/12/01/how-to-handle-dependency-message/">
 
@@ -86,6 +87,7 @@
   </style>
 </noscript>
 
+<link rel="alternate" href="/atom.xml" title="大名Dean鼎" type="application/atom+xml">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -234,6 +236,7 @@
 <li>任何消息都不能丢，因为这都是数据啊，即使处理不了也得找地方存着。最好每次的消息都存着，之后就变成了event sourcing（另一个大坑）。</li>
 </ol>
 <a id="more"></a>
+
 <p>要实现上述2点，其实要解决很多问题。一个<strong>快</strong>字就不是那么做到的。业务系统收到消息有可能会触发一连串的，并且包裹着<strong>事务</strong>的逻辑。因为通常我们希望如果这一连串的处理失败的话，可以把ack退回给MQ。一旦业务逻辑过于复杂，work消费消息的速度也会变慢。这就需要开发人员去做权衡了，是不是有些非常heavy的操作可以先记一笔，等业务不繁忙的时候再做。具体实现不在这篇讨论。</p>
 <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>回到主题，有一类消息最让人头疼，就是消息之间有依赖，关系一般为单向的父子关系。举个栗子，Product和SKU的关系，一个Product包含多个SKU。比如我们的业务逻辑是要监听这两个消息组成一颗树放到索引中。可想而知，这棵树肯定是至少两层结构，第一级是Product，下面挂着一个或多个SKU。</p>
 <p>一般来说，子结构如果是个单独的消息肯定会有个字段说明自己的parent id是什么。那么很自然的，我们在某一刻只收到一个SKU的Create事件，会去通过parent id找到索引中对应的Product，然后<strong>挂</strong>上去。问题来了，要是索引中没有对应的Product怎么办，消息是没有顺序的，可能是Product的Create事件还没处理到，或者是生产者出了bug消息没发出来造成的。这时SKU的消息就成了<strong>孤儿消息</strong>。</p>
@@ -251,8 +254,7 @@
 <th>parent_id</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>101010</td>
 <td>Product</td>
 <td>1010</td>
@@ -262,12 +264,13 @@
 <td>Product</td>
 <td>1010</td>
 </tr>
-</tbody>
-</table>
+</tbody></table>
 <p>上面两条数据就是SKU的，然后为了提升一点性能我们得对对象分个类，一类是有依赖的，一类是无依赖的。没有依赖的直接消费就好，像Product，SKU这种有依赖的，都得打上标签（就是对象里写个isDependency）。例如一个SKU(101010)的消息进来，worker发现这是一个有依赖的消息，那么先拿parent id (1010)去找Product, 发现Product找不到就把这个SKU丢到<strong>孤儿院</strong>表里去。如果你是用OO的语言，这里其实可以抽象一下。一个BaseWorker，一个SKUWorker，BaseWork负责写个abstract的findParent()，SKUWorker去实现找Product的逻辑就好了。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">BaseWorker</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">	</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handle</span><span class="params">(T t)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (t.isDependency() &amp;&amp; findParent(t) == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="comment">// 送到孤儿院</span></span><br><span class="line">            takeToOrphanage(t);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">	</span><br><span class="line">    <span class="function"><span class="keyword">abstract</span> Entity <span class="title">findParent</span><span class="params">(T t)</span></span>;</span><br><span class="line">	</span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">takeToOrphanage</span><span class="params">(T t)</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>消息记录下来以后，Worker的工作就终止，等待下一条消息进来。过了几分钟，Product(1010)的消息过来了，这时候我们需要给BaseWorker再添加一些代码。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handle</span><span class="params">(T t)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (t.isDependency() &amp;&amp; findParent(t) == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="comment">// 送到孤儿院</span></span><br><span class="line">            takeToOrphanage(t);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">	</span><br><span class="line">        <span class="comment">// 正常业务...</span></span><br><span class="line">	</span><br><span class="line">        <span class="comment">// 正常业务处理之后</span></span><br><span class="line">        <span class="keyword">if</span> (t.isDependency()) &#123;</span><br><span class="line">            List&lt;Entity&gt; children = findChildren(t);</span><br><span class="line">            <span class="keyword">if</span> (children != <span class="keyword">null</span>) &#123;</span><br><span class="line">                children.forEach(child -&gt; &#123;</span><br><span class="line">                    sendAsMessage(child);</span><br><span class="line">                &#125;);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">	</span><br><span class="line">    &#125;</span><br><span class="line">	</span><br><span class="line">    <span class="function"><span class="keyword">abstract</span> List&lt;Entity&gt; <span class="title">findChildren</span><span class="params">(T t)</span></span>;</span><br></pre></td></tr></table></figure>
+
 <p>我们增加一个findChildren方法，让ProductWorker去实现具体逻辑。handle()中增加的代码含义是，当Product这个消息消费完了以后，去<strong>孤儿院</strong>转一圈看看是不是有等待认领的孩子，简单的利用<code>parent_type</code>和<code>parent_id</code>就能查到。查到以后别直接处理，仍然是以消息的形式发出，让SKUWorker自己去handle，然后可以delete/soft-delete<strong>孤儿院</strong>中的记录。</p>
 <p>可以看到一个有依赖的消息我们在处理的过程，会多一次查询操作，性能多少会受点影响。之前的那次findParent查询其实思路一也有的，目的就是挂靠。</p>
 <p>再多一个层级看看是不是罩得住，<code>Category --&gt; Product --&gt; SKU</code> 三层。</p>
@@ -280,8 +283,7 @@
 <th>parent_id</th>
 </tr>
 </thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td>101010</td>
 <td>Product</td>
 <td>1010</td>
@@ -296,8 +298,7 @@
 <td>Category</td>
 <td>10</td>
 </tr>
-</tbody>
-</table>
+</tbody></table>
 <p>某一时刻Category的消息进来，CategoryWorker会先到表里查到一条1010的Product消息，把它send出来。ProductWorker收到之后再处理，紧接着又找到SKU的2条消息，再send出来，让SKUWorker去处理。可以看到，自带递归，多层级只要是单向依赖的肯定搞的定。</p>
 
     </div>
@@ -434,19 +435,16 @@
 </div>
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
-        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+        <a href="https://github.com/deanwong" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
       </span>
       <span class="links-of-author-item">
         <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+        <a href="https://twitter.com/wongding" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
       </span>
       <span class="links-of-author-item">
-        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
       </span>
   </div>
 
@@ -477,7 +475,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -519,9 +517,15 @@
 
   
   <script src="/lib/anime.min.js"></script>
+
 <script src="/js/utils.js"></script>
+
+
 <script src="/js/schemes/pisces.js"></script>
+
+
 <script src="/js/next-boot.js"></script>
+
 
 
 
