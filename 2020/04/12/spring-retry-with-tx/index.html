@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.7.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.deanwangpro.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="MySQL死锁从产品之初就偶有发生，算是萦绕在心中的噩梦之一。由于死锁大都伴随着锁等待，所以一般都会拉低服务QPS，在死锁发生时肯定会出现各种意料不到的问题。前期一直采用“指标不治本”的办法，对特别容易产生死锁的方法增加retry。但当retry和事务嵌套在一起时也会出现不可预知的错误。 对于数据库死锁这个万恶之源，真可谓深恶痛绝，所以这次在解决retry和事务嵌套问题时，将这个元凶也一并解决。">
+<meta name="keywords" content="spring,mysql,deadlock,retry">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL死锁与Spring事务">
+<meta property="og:url" content="http://www.deanwangpro.com/2020/04/12/spring-retry-with-tx/index.html">
+<meta property="og:site_name" content="大名Dean鼎">
+<meta property="og:description" content="MySQL死锁从产品之初就偶有发生，算是萦绕在心中的噩梦之一。由于死锁大都伴随着锁等待，所以一般都会拉低服务QPS，在死锁发生时肯定会出现各种意料不到的问题。前期一直采用“指标不治本”的办法，对特别容易产生死锁的方法增加retry。但当retry和事务嵌套在一起时也会出现不可预知的错误。 对于数据库死锁这个万恶之源，真可谓深恶痛绝，所以这次在解决retry和事务嵌套问题时，将这个元凶也一并解决。">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="http://img.deanwangpro.com/t/tx_threadlocal.png">
+<meta property="og:image" content="http://img.deanwangpro.com/t/tx_commit.png">
+<meta property="og:image" content="http://img.deanwangpro.com/t/tx_rollback.png">
+<meta property="og:image" content="http://img.deanwangpro.com/t/tx1.png">
+<meta property="og:image" content="http://img.deanwangpro.com/t/tx2.png">
+<meta property="og:image" content="http://img.deanwangpro.com/t/deadlock.png">
+<meta property="og:image" content="http://img.deanwangpro.com/t/arthas_deadlock.png">
+<meta property="og:image" content="http://img.deanwangpro.com/t/tx_spring_batch.png">
+<meta property="og:image" content="http://img.deanwangpro.com/t/tx_spring_orm_eclipselink.png">
+<meta property="og:updated_time" content="2020-04-13T02:05:12.548Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MySQL死锁与Spring事务">
+<meta name="twitter:description" content="MySQL死锁从产品之初就偶有发生，算是萦绕在心中的噩梦之一。由于死锁大都伴随着锁等待，所以一般都会拉低服务QPS，在死锁发生时肯定会出现各种意料不到的问题。前期一直采用“指标不治本”的办法，对特别容易产生死锁的方法增加retry。但当retry和事务嵌套在一起时也会出现不可预知的错误。 对于数据库死锁这个万恶之源，真可谓深恶痛绝，所以这次在解决retry和事务嵌套问题时，将这个元凶也一并解决。">
+<meta name="twitter:image" content="http://img.deanwangpro.com/t/tx_threadlocal.png">
+
+<link rel="canonical" href="http://www.deanwangpro.com/2020/04/12/spring-retry-with-tx/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>MySQL死锁与Spring事务 | 大名Dean鼎</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-69554053-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-69554053-1');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta custom-logo">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">大名Dean鼎</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <a>
+        <img class="custom-logo-image" src="/images/logo-asksource.png" alt="大名Dean鼎">
+      </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://www.deanwangpro.com/2020/04/12/spring-retry-with-tx/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar-cartoon.jpg">
+      <meta itemprop="name" content="Dean Wang">
+      <meta itemprop="description" content="Software Engineer Java, PHP, VueJs and more, techie, Music & Movie lover, Photograph junkee">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="大名Dean鼎">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySQL死锁与Spring事务
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-04-12 00:00:00" itemprop="dateCreated datePublished" datetime="2020-04-12T00:00:00+08:00">2020-04-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-04-13 10:05:12" itemprop="dateModified" datetime="2020-04-13T10:05:12+08:00">2020-04-13</time>
+              </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2020/04/12/spring-retry-with-tx/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2020/04/12/spring-retry-with-tx/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>MySQL死锁从产品之初就偶有发生，算是萦绕在心中的噩梦之一。由于死锁大都伴随着锁等待，所以一般都会拉低服务QPS，在死锁发生时肯定会出现各种意料不到的问题。前期一直采用“指标不治本”的办法，对特别容易产生死锁的方法增加retry。但当retry和事务嵌套在一起时也会出现不可预知的错误。</p>
+<p>对于数据库死锁这个万恶之源，真可谓深恶痛绝，所以这次在解决retry和事务嵌套问题时，将这个元凶也一并解决。</p>
+<a id="more"></a>
+<h2 id="一些关于事务的概念"><a href="#一些关于事务的概念" class="headerlink" title="一些关于事务的概念"></a>一些关于事务的概念</h2><p>为了更好的说明问题，我们先来解释一下基本概念</p>
+<h3 id="隔离级别"><a href="#隔离级别" class="headerlink" title="隔离级别"></a>隔离级别</h3><p>TransactionDefinition 接口中定义了五个表示隔离级别的常量：</p>
+<ul>
+<li><strong>TransactionDefinition.ISOLATION_DEFAULT:</strong> 使用后端数据库默认的隔离级别，Mysql 默认采用的 REPEATABLE_READ隔离级别 Oracle 默认采用的 READ_COMMITTED隔离级别.</li>
+<li><strong>TransactionDefinition.ISOLATION_READ_UNCOMMITTED:</strong> 最低的隔离级别，允许读取尚未提交的数据变更，<strong>可能会导致脏读、幻读或不可重复读</strong></li>
+<li><strong>TransactionDefinition.ISOLATION_READ_COMMITTED:</strong> 允许读取并发事务已经提交的数据，<strong>可以阻止脏读，但是幻读或不可重复读仍有可能发生</strong></li>
+<li><strong>TransactionDefinition.ISOLATION_REPEATABLE_READ:</strong> 对同一字段的多次读取结果都是一致的，除非数据是被本身事务自己所修改，<strong>可以阻止脏读和不可重复读，但幻读仍有可能发生。</strong></li>
+<li><strong>TransactionDefinition.ISOLATION_SERIALIZABLE:</strong> 最高的隔离级别，完全服从ACID的隔离级别。所有的事务依次逐个执行，这样事务之间就完全不可能产生干扰，也就是说，<strong>该级别可以防止脏读、不可重复读以及幻读</strong>。但是这将严重影响程序的性能。通常情况下也不会用到该级别。</li>
+</ul>
+<p>隔离级别是数据库和应用层（这里就是指Spring）都有的概念，一般来说应用层不应该修改隔离级别，都应默认使用数据库的隔离级别，也就是使用TransactionDefinition.ISOLATION_DEFAULT</p>
+<h3 id="事务传播行为"><a href="#事务传播行为" class="headerlink" title="事务传播行为"></a>事务传播行为</h3><p>当一个事务方法被另一个事务方法调用时，对于已存在的事务如何处理？通过指定事务传播机制来解决。在TransactionDefinition定义中包括了如下几个表示传播行为：</p>
+<p><strong>支持当前事务的情况：</strong></p>
+<ul>
+<li><strong>TransactionDefinition.PROPAGATION_REQUIRED：</strong> 如果当前存在事务，则加入该事务；如果当前没有事务，则创建一个新的事务。</li>
+<li><strong>TransactionDefinition.PROPAGATION_SUPPORTS：</strong> 如果当前存在事务，则加入该事务；如果当前没有事务，则以非事务的方式继续运行。</li>
+<li><strong>TransactionDefinition.PROPAGATION_MANDATORY：</strong> 如果当前存在事务，则加入该事务；如果当前没有事务，则抛出异常。</li>
+</ul>
+<p><strong>不支持当前事务的情况：</strong></p>
+<ul>
+<li><strong>TransactionDefinition.PROPAGATION_REQUIRES_NEW：</strong> 创建一个新的事务，如果当前存在事务，则把当前事务挂起。</li>
+<li><strong>TransactionDefinition.PROPAGATION_NOT_SUPPORTED：</strong> 以非事务方式运行，如果当前存在事务，则把当前事务挂起。</li>
+<li><strong>TransactionDefinition.PROPAGATION_NEVER：</strong> 以非事务方式运行，如果当前存在事务，则抛出异常。</li>
+</ul>
+<p><strong>其他情况：</strong></p>
+<ul>
+<li><strong>TransactionDefinition.PROPAGATION_NESTED：</strong> 如果当前存在事务，则创建一个事务作为当前事务的嵌套事务来运行；如果当前没有事务，则该取值等价于TransactionDefinition.PROPAGATION_REQUIRED。</li>
+</ul>
+<p>一般常用的就是PROPAGATION_REQUIRED。特别需要注意的是事务传播行为并不是数据库的定义，而是应用层（这里就是指Spring）引入的概念。</p>
+<h3 id="事务状态是如何传递的"><a href="#事务状态是如何传递的" class="headerlink" title="事务状态是如何传递的"></a>事务状态是如何传递的</h3><p>假设默认使用PROPAGATION_REQUIRED，当一个事务方法A调用事务方法B（即都用@Transactional声明的方法），事务方法B为何知道此时已经存在事务了？</p>
+<p>其实spring的事务管理器<code>TransactionManager</code>内部会持有当前线程的事务状态<code>transcationInfo</code>来判断一个事务是否已经开启。每个线程都要有一个状态，聪明的你一定会想到使用ThreadLocal这个框架必备的工具。</p>
+<p><img src="http://img.deanwangpro.com/t/tx_threadlocal.png" alt=""></p>
+<p>那么对于嵌套事务，Spring是怎么实现子事务失败，父事务也失败呢？先来看commit方法，</p>
+<p><img src="http://img.deanwangpro.com/t/tx_commit.png" alt=""></p>
+<p>看标注①的代码，如果TransactionStatus里的rollbackOnly是true，那么就会processRollback。继续跟进标注②的代码，看什么时候会设置这个标志位。在processCommit这个方法内，一旦捕获RuntimeException都会进入doRollbackOnCommitException方法，继续跟进这个方法</p>
+<p><img src="http://img.deanwangpro.com/t/tx_rollback.png" alt=""></p>
+<p>可以看到一个条件分支，如果当前是新开启的事务，直接进行rollback。如果当前已有父事务，那么不会直接发送rollback到数据库，而是执行标注①的<code>doSetRollbackOnly</code>方法，设置<code>TransactionStatus</code>里的rollbackOnly=true。这样父事务在commit的时候就会rollback。</p>
+<p>由于篇幅原因，源码部分就不过多展示了， 如果感兴趣可以自行debug一下就能了解其中的机制。</p>
+<h2 id="当-Spring-Retry-与事务相遇"><a href="#当-Spring-Retry-与事务相遇" class="headerlink" title="当 Spring Retry 与事务相遇"></a>当 Spring Retry 与事务相遇</h2><p>上文谈到我们在处理死锁时采用重试的方式解决，但并不是说任何方法都套上<code>@Retryable</code>就万事大吉了。</p>
+<h3 id="Retry的注意点"><a href="#Retry的注意点" class="headerlink" title="Retry的注意点"></a>Retry的注意点</h3><p>一般来说，在spring中使用retry非常的简单，在注解中定义好重试次数和避让策略就可以了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="meta">@Retryable</span>(maxAttempts = MAX_RETIES, value = &#123;MySQLIntegrityConstraintViolationException.class, MySQLTransactionRollbackException.class&#125;, backoff = <span class="meta">@Backoff</span>(delay = <span class="number">100</span>, multiplier = <span class="number">2</span>))</span><br><span class="line"><span class="function"><span class="keyword">public</span> Foo <span class="title">save</span><span class="params">(@Nullable Foo foo)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="comment">// foo.setXXX(...)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>值得注意是，如果方法内部会对参数对象进行修改，那么实际上每次retry的逻辑就都不是幂等的了，因为这一次的retry会受上一次的影响。假设这个<code>save</code>方法会根据有没有id来判断处理逻辑是创建还是更新，那么第二次的retry很有可能就会变成更新逻辑，而不是预期的创建逻辑了。如果参数是不可变的（immutable）那么可以很大程序上降低这种复杂度。这也告诉我们，immutable思想非常重要，可以在设计和编译阶段就解决很多“头疼”的问题。</p>
+<p>回到正题，试想一下，如果这个<code>save</code>是个子事务方法会发生什么？按照上一节说的，第一次执行就会设置rollbackOnly=true，那么即使第二次重试成功也并不会将rollbackOnly设置为false，所以父事务依然会失败。换句话说，<strong>retry在子事务方法上是没有意义的</strong>。这点在编码时尤其需要注意。</p>
+<h2 id="数据库死锁"><a href="#数据库死锁" class="headerlink" title="数据库死锁"></a>数据库死锁</h2><p>事务的问题说完，回到万恶之源的数据库死锁问题。</p>
+<h3 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h3><p>其实死锁的困扰已久，一般一周次数在几次到十几次不等。而且死锁的对象都是索引或者主键，查阅了一些资料觉得可能是并发写入比较严重造成，但线下模拟了很久也没有复现。次数倒也不多，也就先用重试策略抵挡一下。当然也就遇到了上文提及的问题。</p>
+<p>近期由于业务增长，死锁发生的频繁愈发频繁，所以“治本”的任务也紧急地提上了日程。</p>
+<h3 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h3><p>死锁第一步分析肯定先从MySQL的死锁log入手</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">------------------------</span><br><span class="line">LATEST DETECTED DEADLOCK</span><br><span class="line">------------------------</span><br><span class="line">2020-03-27 10:35:51 0x7f5124f91700</span><br><span class="line">*** (1) TRANSACTION:</span><br><span class="line">TRANSACTION 860653361, ACTIVE 0 sec inserting</span><br><span class="line">mysql tables in use 1, locked 1</span><br><span class="line">LOCK WAIT 15 lock struct(s), heap size 1136, 7 row lock(s), undo log entries 2</span><br><span class="line">MySQL thread id 11732538, OS thread handle 139984633485056, query id 5318215849 10.0.20.22 linkflow update</span><br><span class="line">INSERT INTO contact_identity (contact_id, external_id, last_updated, tenant_id) VALUES (34868134,  &apos;oPawF5kfWh7BjsgMesjfsndYc548&apos;, &apos;2020-03-27 10:35:51.579&apos;, 1)</span><br><span class="line">*** (1) WAITING FOR THIS LOCK TO BE GRANTED:</span><br><span class="line">RECORD LOCKS space id 433 page no 911218 n bits 600 index idx_t_contact of table `linkflow`.`contact_identity` trx id 860653361 lock_mode X locks gap before rec insert intention waiting</span><br><span class="line">Record lock, heap no 412 PHYSICAL RECORD: n_fields 3; compact format; info bits 0</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"></span><br><span class="line">*** (2) TRANSACTION:</span><br><span class="line">TRANSACTION 860653362, ACTIVE 0 sec inserting</span><br><span class="line">mysql tables in use 1, locked 1</span><br><span class="line">15 lock struct(s), heap size 1136, 7 row lock(s), undo log entries 2</span><br><span class="line">MySQL thread id 11736226, OS thread handle 139986489382656, query id 5318215869 10.0.20.22 linkflow update</span><br><span class="line">INSERT INTO contact_identity (contact_id, external_id, last_updated, tenant_id) VALUES (34868135, &apos;oPawF5t1K1_a1i96ZDrJQRx22T8w&apos;,&apos;2020-03-27 10:35:51.588&apos;, 1)</span><br><span class="line">*** (2) HOLDS THE LOCK(S):</span><br><span class="line">RECORD LOCKS space id 433 page no 911218 n bits 600 index idx_t_contact of table `linkflow`.`contact_identity` trx id 860653362 lock mode S locks gap before rec</span><br><span class="line">Record lock, heap no 412 PHYSICAL RECORD: n_fields 3; compact format; info bits 0</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"></span><br><span class="line">*** (2) WAITING FOR THIS LOCK TO BE GRANTED:</span><br><span class="line">RECORD LOCKS space id 433 page no 911218 n bits 600 index idx_t_contact of table `linkflow`.`contact_identity` trx id 860653362 lock_mode X locks gap before rec insert intention waiting</span><br><span class="line">Record lock, heap no 412 PHYSICAL RECORD: n_fields 3; compact format; info bits 0</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"></span><br><span class="line">*** WE ROLL BACK TRANSACTION (2)</span><br></pre></td></tr></table></figure>
+<p>这是两个insert操作，事务2失败，是由于等待索引idx_t_contact的排他锁。</p>
+<p>我们分析一下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">死锁的索引约束</span><br><span class="line"> KEY `idx_t_contact` (`tenant_id`,`contact_id`),</span><br><span class="line">产生死锁的原因是：</span><br><span class="line">TRANSACTION 860653361，插入的记录是：INSERT INTO contact_identity (contact_id, external_id, last_updated, tenant_id) VALUES (34868134,  &apos;oPawF5kfWh7BjsgMesjfsndYc548&apos;, &apos;2020-03-27 10:35:51.579&apos;, 1)</span><br><span class="line"></span><br><span class="line">他被阻塞，需要等待这个记录的锁提供：</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"></span><br><span class="line">而这个记录的锁，被事务TRANSACTION 860653362持有了，没释放，没释放的情况下，接着在事务860653361后，又执行了一个插入（在860653362的事务中）：</span><br><span class="line">INSERT INTO contact_identity (contact_id, external_id, last_updated, tenant_id) VALUES (34868135, &apos;oPawF5t1K1_a1i96ZDrJQRx22T8w&apos;,&apos;2020-03-27 10:35:51.588&apos;, 1)</span><br><span class="line"></span><br><span class="line">它也需要这个记录的锁（其实它已经持有了这个记录的锁，但是他需要在队列里等待）：</span><br><span class="line"> 0: len 8; hex 800000000000016e; asc        n;;</span><br><span class="line"> 1: len 8; hex 800000000107ef32; asc        2;;</span><br><span class="line"> 2: len 8; hex 80000000020c7f31; asc        1;;</span><br><span class="line"> </span><br><span class="line">这样就造成了死循环，产生死锁</span><br></pre></td></tr></table></figure>
+<p>这个就挺奇怪的，两个insert没有涉及到同一个主键或者同一个唯一索引，居然会持有S锁，并造成相同等待。咨询了阿里云的售后DBA，表示很有可能是在插入前有一个产生S锁的操作导致了这个问题，比如锁定行记录，或者是更新操作。但在我们的业务中，在写入之前只有查询操作，查询记录为空后执行插入，按理说是不会产生S锁的。之后我们又逐个的排查了应用日志中输出的SQL，也没有发现会加S锁的操作。</p>
+<p>这一下线索又断了，在与阿里云的DBA沟通了一天后也没什么进展，期间各种查binlog也没有任何发现。好在最后DBA建议我们打开RDS的SQL洞察功能，看看会不会有什么蛛丝马迹。虽然这个功能是收费的，不过也正是由于它我们才找到了真正的元凶。</p>
+<h3 id="转机"><a href="#转机" class="headerlink" title="转机"></a>转机</h3><p>SQL洞察购买以后才会开始收集，所以这时我们只需要静静地等待死锁的再次发生。由于是回顾，我们还是以刚刚死锁日志中的两个事务来看下SQL洞察中的记录。</p>
+<p>事务1</p>
+<p><img src="http://img.deanwangpro.com/t/tx1.png" alt=""></p>
+<p>事务2</p>
+<p><img src="http://img.deanwangpro.com/t/tx2.png" alt="tx2"></p>
+<p>可以看到在两次查询时都执行了<code>SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;</code>，这个就非常奇怪了，而且正是由于这个操作导致了死锁，因为设置隔离级别为串行化以后，所以查询都会加S锁。</p>
+<p>我们来模拟下死锁过程</p>
+<table>
+<thead>
+<tr>
+<th>事务1</th>
+<th>事务2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;</td>
+<td>SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;</td>
+</tr>
+<tr>
+<td>select * from contact_identity where external_id=”abc123” and tenant_id = 1;</td>
+<td>select * from contact_identity where external_id=”123abc” and tenant_id = 1;</td>
+</tr>
+<tr>
+<td></td>
+<td>INSERT INTO contact_identity (contact_id, external_id, TENANT_ID) VALUES (9999, ‘123abc’, 1);</td>
+</tr>
+<tr>
+<td>INSERT INTO contact_identity (contact_id, external_id, TENANT_ID) VALUES (9999, ‘abc123’, 1);</td>
+<td></td>
+</tr>
+<tr>
+<td>死锁</td>
+<td>成功</td>
+</tr>
+</tbody>
+</table>
+<p>事务1和事务2都开启了串行化，那么在查询时会将满足条件的索引都加上S锁，这里锁的就是tenant_id=1的记录，这个时候其实在事务2的第三步插入时就会产生锁等待，因为它在等待事务1释放S锁。这时事务1也提交一个插入操作，并且contact_id和tenant_id都一样（命中idx_t_contact索引），就会产生死锁，事务1失败回滚， 事务2成功。</p>
+<p><img src="http://img.deanwangpro.com/t/deadlock.png" alt=""></p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>既然知道了造成了死锁的原因，但是究竟是什么代码会设置隔离级别为串行化呢？</p>
+<p>我们排查了所有代码依然没有任何发现，直觉告诉我，应该是某些三方库的设置导致的。目前应用中涉及到数据库的三方库也并不是很多，决定逐个摸排。</p>
+<p>这里还得提一个阿里出品的线上调试神器<code>arthas</code>，拿来直接watch mysql驱动内<code>connectionImpl</code>的<code>setTransactionIsolation</code>方法，只要有触发了改变隔离级别的操作，那么立刻就可以看到输出。当然这一切都是在staging环境进行的。</p>
+<p>一起准备就绪后，我就开始通过UI操作可疑的功能。果然在进行数据导出的时候，发现<code>arthas</code>的控制台有输出了，从图上可以看到隔离级别在 2 (READ_COMMITTED) 和 8 (SERIALIZABLE) 之间来回切换。</p>
+<p><img src="http://img.deanwangpro.com/t/arthas_deadlock.png" alt=""></p>
+<p>其实这样的切换和SQL洞察的输出也对的上，在事务结束后会将隔离级别恢复到数据库默认级别。阅读源码得知，设置回READ_COMMITTED是HikariCP的逻辑，在connection还回pool的时候会reset connection到默认级别。</p>
+<h3 id="解决"><a href="#解决" class="headerlink" title="解决"></a>解决</h3><p>原因弄清楚了，接下来着手解决。导出业务使用的是spring batch做异步任务。分析其源码，发现默认隔离级别是<code>ISOLATION_SERIALIZABLE</code>。</p>
+<p><img src="http://img.deanwangpro.com/t/tx_spring_batch.png" alt=""></p>
+<p>所以确实是该三方库导致的。解决很简单，既然都已经有public的setter了，那么初始化时直接设置其隔离级别，<code>setIsolationLevelForCreate(&quot;ISOLATION_DEFAULT&quot;)</code>，避免使用默认值。修改以后再进行测试，确实没有修改隔离级别的情况出现了。</p>
+<h3 id="寻根溯源"><a href="#寻根溯源" class="headerlink" title="寻根溯源"></a>寻根溯源</h3><p>可还是有疑问，我们的查询业务跟spring batch并没有关系。另一方面，即使在使用spring batch后，SERIALIZABLE的connection也应该被重置回了READ_COMMITTED，那么业务中获得connection时应当还是READ_COMMITTED，不应该出现问题。正好我们有另一个服务也使用spring batch，测试下来发现过程就如上面预想的，一切正常。看来还有更深的秘密等待着我…</p>
+<p>根据<code>arthas</code>给出的调用栈信息，定位到spring-orm的<code>EclipseLinkJpaDialect</code>这个方言适配类（我们使用的是EclipseLink而不是Hibernate）。</p>
+<p><img src="http://img.deanwangpro.com/t/tx_spring_orm_eclipselink.png" alt=""></p>
+<p>问题就出在划红线的这行。<code>uow.getLogin()</code>获得是一个可复用的对象（简单地认为是个单例就好），这个值在设置成SERIALIZABLE后，后续的操作都不能被设置回来。为什么后面的执行代码都不能满足<code>definition.getIsolationLevel() != TransactionDefinition.ISOLATION_DEFAULT</code>这个条件判断呢？我们来脑补一下步骤：</p>
+<ol>
+<li>执行导出，这时由于使用了spring batch，在获取connection时将其隔离级别设置为SERIALIZABLE (8)。</li>
+<li>执行完成后，将connection放回pool，HikariCP恢复connection的隔离级别为READ_COMMITTED (2)。</li>
+<li>一个非导出业务，需要执行数据库操作，从HikariCP的pool中借出一个connection，此时<code>TransactionDefinition</code>的<code>IsolationLevel</code>是默认值<code>ISOLATION_DEFAULT</code>（<code>TransactionDefinition</code>其实就是方法上<code>@Transactional</code>注解的信息，一般都不会设置<code>IsolationLevel</code>的）。所以无法满足条件判断，<code>uow.getLogin()</code>的隔离级别还是第1步设置的SERIALIZABLE，这也是为什么READ_COMMITTED (2)又会被设置成SERIALIZABLE (8) 的原因。</li>
+<li>这个业务执行完成后，将connection放回pool，HikariCP恢复connection的隔离级别为READ_COMMITTED (2)。</li>
+</ol>
+<p>总算水落石出了，是spring-orm中一个“全局变量”的状态设置出现了问题。我也给spring-orm提了<a href="https://github.com/spring-projects/spring-framework/issues/24802" target="_blank" rel="noopener">issue</a>，并提供了<a href="https://github.com/deanwong/spring-orm-sample" target="_blank" rel="noopener">最简Project</a>来方便复现这个bug。感兴趣的可以看一下这个project。</p>
+<p>其实spring batch也算是躺枪，假设我们手动设置一个事务隔离级别，也会触发这个异常。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">UserRepository</span> <span class="keyword">extends</span> <span class="title">JpaRepository</span>&lt;<span class="title">User</span>, <span class="title">Long</span>&gt; </span>&#123;</span><br><span class="line">    <span class="meta">@Transactional</span>(isolation = Isolation.SERIALIZABLE)</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function">List&lt;User&gt; <span class="title">findAll</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>所以 root casue 并不是spring batch设置了SERIALIZABLE的隔离级别，而是<code>uow.getLogin()</code>的状态处理有bug。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>整个问题解决差不多用了3天，特别感谢阿里云RDS的SQL洞察服务和阿里出品的<code>arthas</code>（真不是软广）。</p>
+<p>全局state设置一直是个难题，无论是客户端代码还是服务端代码都会面临相同的问题，当我们希望用尽量少的开销保存更多的状态时，复杂度就难以避免。即便Pivotal团队的大神也不能保证bug free。Trouble shooting就像侦破案件一般，有时候黑夜中唯一的一束光就能带来真相，但往往需要巨大的耐心等待它的出现。</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>希望对你有帮助，分享或是请我喝杯咖啡吧~</div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    Donate
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/reward_wechat.jpg" alt="Dean Wang WeChat Pay">
+        <p>WeChat Pay</p>
+      </div>
+
+  </div>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/spring/" rel="tag"># spring</a>
+              <a href="/tags/mysql/" rel="tag"># mysql</a>
+              <a href="/tags/deadlock/" rel="tag"># deadlock</a>
+              <a href="/tags/retry/" rel="tag"># retry</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/02/22/oom-address/" rel="prev" title="Full GC (Allocation Failure) 引发的应用僵死">
+      <i class="fa fa-chevron-left"></i> Full GC (Allocation Failure) 引发的应用僵死
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#一些关于事务的概念"><span class="nav-number">1.</span> <span class="nav-text">一些关于事务的概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#隔离级别"><span class="nav-number">1.1.</span> <span class="nav-text">隔离级别</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#事务传播行为"><span class="nav-number">1.2.</span> <span class="nav-text">事务传播行为</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#事务状态是如何传递的"><span class="nav-number">1.3.</span> <span class="nav-text">事务状态是如何传递的</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#当-Spring-Retry-与事务相遇"><span class="nav-number">2.</span> <span class="nav-text">当 Spring Retry 与事务相遇</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Retry的注意点"><span class="nav-number">2.1.</span> <span class="nav-text">Retry的注意点</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据库死锁"><span class="nav-number">3.</span> <span class="nav-text">数据库死锁</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#起因"><span class="nav-number">3.1.</span> <span class="nav-text">起因</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#问题分析"><span class="nav-number">3.2.</span> <span class="nav-text">问题分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#转机"><span class="nav-number">3.3.</span> <span class="nav-text">转机</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析"><span class="nav-number">3.4.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解决"><span class="nav-number">3.5.</span> <span class="nav-text">解决</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#寻根溯源"><span class="nav-number">3.6.</span> <span class="nav-text">寻根溯源</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Dean Wang"
+      src="/images/avatar-cartoon.jpg">
+  <p class="site-author-name" itemprop="name">Dean Wang</p>
+  <div class="site-description" itemprop="description">Software Engineer Java, PHP, VueJs and more, techie, Music & Movie lover, Photograph junkee</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">35</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">48</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/deanwong" title="GitHub → https://github.com/deanwong" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wangding85@gmail.com" title="E-Mail → mailto:wangding85@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/wongding" title="Twitter → https://twitter.com/wongding" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.instagram.com/rockgeek" title="Instagram → https://www.instagram.com/rockgeek" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://weibo.com/wangding85" title="Weibo → http://weibo.com/wangding85" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2015 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Dean Wang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+        <div class="beian">
+          <a target="_blank" href="http://www.beian.miit.gov.cn">苏ICP备19023727号-1</a>
+          <!-- <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=32010402000664" style="float:right;display:inline-block;text-decoration:none;height:20px;line-height:20px;"><img src="http://www.beian.gov.cn/img/ghs.png" style="float:left;"/><p style="float:left;height:20px;line-height:20px;margin: 0px 0px 0px 5px; color:#939393;">苏公网安备 32010402000664号</p></a> -->
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://wangdean.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "http://www.deanwangpro.com/2020/04/12/spring-retry-with-tx/";
+    this.page.identifier = "2020/04/12/spring-retry-with-tx/";
+    this.page.title = "MySQL死锁与Spring事务";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://wangdean.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>
