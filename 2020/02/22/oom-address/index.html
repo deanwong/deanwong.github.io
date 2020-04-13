@@ -17,7 +17,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.deanwangpro.com","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+    var CONFIG = {"hostname":"www.deanwangpro.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
   <meta name="description" content="距离上次博文已经有快半年了。原本打算在过年期间写一篇2019年的回顾和总结。但也被这突如其来的疫情打乱。放假期间一直关注相关新闻导致信息过载，一度非常沮丧。 2月复工以后，停止了疫情信息的摄取，反倒心理上轻松不少。人都是健忘的，可不是吗？ 言归正传，上篇博文说遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。正好最近又重现了，并且找到了root caus">
@@ -31,7 +31,7 @@
 <meta property="og:image" content="http://img.deanwangpro.com/t/20200222-oom-jstat.jpg">
 <meta property="og:image" content="http://img.deanwangpro.com/t/20200222-big-object.jpg">
 <meta property="og:image" content="http://img.deanwangpro.com/t/20200222-mysql-full-scan.jpg">
-<meta property="og:updated_time" content="2020-02-27T15:58:47.228Z">
+<meta property="og:updated_time" content="2020-03-08T15:38:46.875Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Full GC (Allocation Failure) 引发的应用僵死">
 <meta name="twitter:description" content="距离上次博文已经有快半年了。原本打算在过年期间写一篇2019年的回顾和总结。但也被这突如其来的疫情打乱。放假期间一直关注相关新闻导致信息过载，一度非常沮丧。 2月复工以后，停止了疫情信息的摄取，反倒心理上轻松不少。人都是健忘的，可不是吗？ 言归正传，上篇博文说遇到一个服务假死的问题，具体现象就是服务不再接收任何请求，客户端会抛出Broken Pipe。正好最近又重现了，并且找到了root caus">
@@ -113,6 +113,9 @@
       <h1 class="site-title">大名Dean鼎</h1>
       <span class="logo-line-after"><i></i></span>
     </a>
+      <a>
+        <img class="custom-logo-image" src="/images/logo-asksource.png" alt="大名Dean鼎">
+      </a>
   </div>
 
   <div class="site-nav-right">
@@ -194,7 +197,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-02-27 23:58:47" itemprop="dateModified" datetime="2020-02-27T23:58:47+08:00">2020-02-27</time>
+                <time title="Modified: 2020-03-08 23:38:46" itemprop="dateModified" datetime="2020-03-08T23:38:46+08:00">2020-03-08</time>
               </span>
 
           
@@ -437,7 +440,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Dean Wang</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a>
   </div>
 
         
@@ -480,7 +483,7 @@
   
   <script src="/lib/anime.min.js"></script>
 <script src="/js/utils.js"></script>
-<script src="/js/schemes/muse.js"></script>
+<script src="/js/schemes/pisces.js"></script>
 <script src="/js/next-boot.js"></script>
 
 
